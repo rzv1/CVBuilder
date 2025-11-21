@@ -1,0 +1,131 @@
+#root {
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.content{
+    display: grid;
+    grid-template-columns: 65% 35%;
+}
+
+.left {
+    padding: 2rem;
+    background: #ffffff;
+}
+
+.right {
+    padding: 2rem;
+    background: #f7f7f7;
+}
+
+.formArea{
+    padding: 1.5rem;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 8px;
+    min-height: 650px;
+}
+
+.navBtn{
+    display: flex;
+    min-width: 500px;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.5rem 2rem 2rem;
+}
+
+.navBtn button{
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.navBtn button:hover{
+    background: #dfdfdf;
+}
+.navBtn button.active:hover{
+    background: #375bda;
+    color: white;
+}
+
+.navBtn .active{
+    background: #375bda;
+    color: white;
+}
+
+.tabsBtn{
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: -20px;
+    margin-bottom: 20px;
+}
+
+.tabsBtn button{
+    padding: 0.4rem;
+    min-width: 34px;
+}
+
+.tabsBtn button.active{
+    background: #375bda;
+    color: white;
+}
+
+.tabsBtn button:hover{
+    background: #dfdfdf;
+}
+.tabsBtn button.active:hover{
+    background: #375bda;
+    color: white;
+}
+
+.entry{
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+
+}
+
+.entry label{
+    font-weight: 800;
+    align-self: flex-start;
+    margin-bottom: -10px;
+    display: block;
+}
+
+.entry input{
+    padding: 0.65rem 0.8rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+    background: #fafafa;
+    color: black;
+    transition: border 0.15s ease, background 0.15s ease;
+}
+
+.entry input:focus{
+    border-color: #375bda;
+    background: white;
+    outline: none;
+}
+
+.removeBtn {
+    align-self: flex-end;
+    padding: 0.4rem 0.8rem;
+    background: #e74646;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.removeBtn:hover {
+    background: #d63030;
+}
