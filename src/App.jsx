@@ -40,7 +40,7 @@ function ExperienceForm({ data, update, remove, add }) {
             <div key={entry.id} className="entry">
                 <label>Role</label>
                 <input type="text" value={entry.name} placeholder={entry.name}
-                       onChange={(e) => update(activeIndex, "name", e.target.value)}/>
+                       onChange={(e) => update(activeIndex, "role", e.target.value)}/>
                 <label>Company</label>
                 <input type="text" value={entry.company} placeholder={entry.company}
                        onChange={(e) => update(activeIndex, "company", e.target.value)}/>
@@ -150,7 +150,57 @@ function FormNav({ active, setActive }) {
     )
 }
 
-//function PreviewContainer({ })
+function PreviewContainer({ personal, experience, education, language }){
+    return (
+        <div className="cv">
+            <div className="header">
+                <img src="assets/react.svg" class="avatar"/>
+                <div className="headerText">Curriculum vitae</div>
+            </div>
+            <div className="description">
+                <p className="text">
+                    {personal.description}
+                </p>
+            </div>
+            <hr/>
+            <h3 className="sectionHeader">PERSONAL DETAILS</h3>
+            <div className="section">
+                <p className="textLeft text">Name</p>
+                <p className="textRight textStrong">{personal.name}</p>
+                <p className="textLeft text">Address</p>
+                <p className="textRight textStrong">{personal.address}</p>
+                <p className="textLeft text">Phone number</p>
+                <p className="textRight textStrong">{personal.phone}</p>
+                <p className="textLeft text">Email address</p>
+                <p className="textRight textStrong">{personal.email}</p>
+            </div>
+            <hr/>
+            <h3 className="sectionHeader">WORK EXPERIENCE</h3>
+                {experience.map(exp =>
+                    <div className="section">
+                        <p className="textLeft text">{exp.start}-{exp.end}</p>
+                        <div className="textBatch">
+                            <p className="textRight textStrong">{exp.role}</p>
+                            <p className="textRight text">{exp.company}</p>
+                            <p className="textRight text">{exp.description}</p>
+                            <p className="textRight text">{exp.skills}</p>
+                        </div>
+                    </div>
+                )}
+            <hr/>
+            <h3 className="sectionHeader">EDUCATION</h3>
+                {education.map(e =>
+                    <div className="section">
+                        <p className="textLeft text">{e.start}-{e.end}</p>
+                        <div className="textBatch">
+                            <p className="textRight textStrong">{e.degree}</p>
+                            <p className="textRight text">{e.institution}</p>
+                            <p className="textRight text">{e.description}</p>
+                        </div></div>
+                )}
+        </div>
+    )
+}
 
 
 
@@ -242,6 +292,7 @@ function App() {
                 {activeState === "language" && <LanguageForm data={language} update={updateLanguage} remove={removeLanguage} add={addLanguage}/>}
             </div>
             <div className="right">
+                <PreviewContainer personal={personal} experience={experience} education={education} language={language}/>
             </div>
         </div>
     )

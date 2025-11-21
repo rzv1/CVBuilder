@@ -6,17 +6,21 @@
 
 .content{
     display: grid;
-    grid-template-columns: 65% 35%;
+    grid-template-columns: 50% 50%;
+    min-height: 100vh;
 }
 
 .left {
-    padding: 2rem;
+    align-self: center;
     background: #ffffff;
+    max-height: 700px;
 }
 
 .right {
-    padding: 2rem;
     background: #f7f7f7;
+    width: 794px;
+    min-height: 1123px;
+    padding: 1rem;
 }
 
 .formArea{
@@ -25,6 +29,7 @@
     border: 1px solid rgba(0,0,0,0.08);
     border-radius: 8px;
     min-height: 650px;
+    max-width: 600px;
 }
 
 .navBtn{
@@ -33,15 +38,6 @@
     justify-content: center;
     gap: 1rem;
     padding: 0.5rem 2rem 2rem;
-}
-
-.navBtn button{
-    padding: 0.6rem 1.2rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
 }
 
 .navBtn button:hover{
@@ -122,10 +118,50 @@
     border-radius: 4px;
     color: white;
     font-size: 0.9rem;
-    cursor: pointer;
     transition: background 0.15s ease;
 }
 
 .removeBtn:hover {
     background: #d63030;
+}
+
+.header{
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 25px;
+}
+.textLeft{
+    text-align: right;
+}
+.textRight{
+    text-align: left;
+}
+
+.section{
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: 2.5rem;
+    margin-left: 2.5rem;
+}
+.sectionHeader{
+    text-align: left;
+}
+.line{
+    display: flex;
+}
+.label{
+    align-self: flex-start;
+    justify-content: flex-end;
+}
+.text{
+    font-weight: 300;
+    font-size: 17px;
+    color: rgb(101, 101, 101);
+}
+.textStrong{
+    font-weight: 800;
+    font-size: 17px;
 }
