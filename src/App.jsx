@@ -1,301 +1,385 @@
-import {useState} from 'react'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import './App.css';
 
+import Header from './components/Header';
+import PreviewPanel from './components/PreviewPanel';
 
+import ContentEditorTab from './components/tabs/ContentEditorTab';
+import AtsOptimizerTab from './components/tabs/AtsOptimizerTab';
+import GitVersioningTab from './components/tabs/GitVersioningTab';
+import CollaborationTab from './components/tabs/CollaborationTab';
+import AnalyticsTab from './components/tabs/AnalyticsTab';
+import TechBlogView from './components/blog/TechBlogView';
 
-function PersonalForm({ data, update, generate }) {
-    return (
-        <div className="form">
-            <div className="entry">
-                <label>Full name</label>
-                <input type="text" value={data.name} placeholder={data.name}
-                       onChange={(e) => update("name", e.target.value)}/>
-                <label>Address</label>
-                <input type="text" value={data.address} placeholder={data.address}
-                       onChange={(e) => update("address", e.target.value)}/>
-                <label>Phone</label>
-                <input type="text" value={data.phone} placeholder={data.phone}
-                       onChange={(e) => update("phone", e.target.value)}/>
-                <label>Email</label>
-                <input type="text" value={data.email} placeholder={data.email}
-                       onChange={(e) => update("email", e.target.value)}/>
-                <label>Description</label>
-                <input type="text" value={data.description} placeholder={data.description}
-                       onChange={(e) => update("description", e.target.value)}/>
-                <button className="personalDescription" onClick={() => generate()}>Generate AI description</button>
-            </div>
-        </div>
-    )
-}
+import JsonResumeModal from './components/modals/JsonResumeModal';
+import VisualDiffModal from './components/modals/VisualDiffModal';
+import AnalyticsModal from './components/modals/AnalyticsModal';
+import ShareQrModal from './components/modals/ShareQrModal';
+import AiChatDrawer from './components/ai/AiChatDrawer';
 
-function ExperienceForm({ data, update, remove, add }) {
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [isPresent, setIsPresent] = useState(false);
-    const entry = data[activeIndex];
+import { INITIAL_CV_DATA, MOCK_GIT_COMMITS } from './mockData';
+import { Edit3, Target, GitBranch, Users, BarChart3, GripVertical, Sparkles } from './components/Icons';
 
-    return (
-        <div className="form">
-            <EntryTabs data={data} add={add} activeIndex={activeIndex} setActiveIndex={setActiveIndex}/>
+export default function App() {
+  const [cvData, setCvData] = useState(INITIAL_CV_DATA);
+  const [viewMode, setViewMode] = useState('app'); // 'app' | 'blog'
+  const [isDevMode, setIsDevMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('editor'); // 'editor' | 'ats' | 'git' | 'collab' | 'analytics'
+  const [activeVariant, setActiveVariant] = useState('all'); // 'all' | 'frontend' | 'backend'
+  const [variants, setVariants] = useState([
+    { id: 'all', label: 'Full Stack Developer (Default)' },
+    { id: 'frontend', label: 'Frontend Specialist' },
+    { id: 'backend', label: 'Backend Architect' }
+  ]);
+  const [isAiChatOpen, setIsAiChatOpen] = useState(true);
 
-            <div key={entry.id} className="entry">
-                <label>Role</label>
-                <input type="text" value={entry.name} placeholder={entry.name}
-                       onChange={(e) => update(activeIndex, "role", e.target.value)}/>
-                <label>Company</label>
-                <input type="text" value={entry.company} placeholder={entry.company}
-                       onChange={(e) => update(activeIndex, "company", e.target.value)}/>
-                <label>Start</label>
-                <input type="number" min="1980" max="2025" value={entry.start} placeholder={entry.date}
-                       onChange={(e) => update(activeIndex, "start", e.target.value)}/>
-                {!isPresent && (<label>End</label>)}
-                {!isPresent && (<input type="number" value={entry.end} placeholder={entry.end}
-                       onChange={(e) => update(activeIndex, "end", e.target.value)}/>)}
-                {activeIndex !== 0 && (<button className="removeBtn" onClick={() => {remove(activeIndex); setActiveIndex(activeIndex-1);}}>Remove</button>)}
-            </div>
-            <label><input type="checkbox" checked={isPresent} onChange={(e) => setIsPresent(e.target.checked)}/>
-                    No End
-                </label>
+  // AI Proposal Approval Mockup State
+  const [pendingProposal, setPendingProposal] = useState(null);
+  const [proposalViewMode, setProposalViewMode] = useState('after'); // 'before' | 'after'
 
-        </div>
-    )
-}
+  const handleTriggerMockProposal = (proposal) => {
+    setPendingProposal(proposal);
+    setProposalViewMode('after');
+  };
 
-function EducationForm({ data, update, remove, add }) {
-    const [activeIndex, setActiveIndex] = useState(0);
-    const edx = data[activeIndex];
-    return (
-        <div className="form">
-            <EntryTabs data={data} add={add} activeIndex={activeIndex} setActiveIndex={setActiveIndex}/>
-
-            <div key={edx.id} className="entry">
-                <label>Degree</label>
-                <input type="text"
-                       value={edx.degree} placeholder={edx.degree}
-                       onChange={(e) => update(activeIndex, "degree", e.target.value)}/>
-                <label>Institution</label>
-                <input type="text"
-                       value={edx.institution} placeholder={edx.institution}
-                       onChange={(e) => update(activeIndex, "institution", e.target.value)}/>
-                <label>Description</label>
-                <input type="text"
-                       value={edx.description} placeholder={edx.description}
-                       onChange={(e) => update(activeIndex, "description", e.target.value)}/>
-                <label>Start</label>
-                <input type="number" min="1980" max="2100"
-                       value={edx.start} onChange={(e) => update(activeIndex, "start", e.target.value)}/>
-                <label>End</label>
-                <input type="number" min="1980" max="2100"
-                        value={edx.end} onChange={(e) => update(activeIndex, "end", e.target.value)}/>
-                {activeIndex !== 0 && (<button className="removeBtn" onClick={() => {remove(activeIndex); setActiveIndex(activeIndex-1);}}>Remove</button>)}
-            </div>
-        </div>
-    )
-}
-
-function EntryTabs({ data, activeIndex, setActiveIndex, add, max = 2}){
-    return(
-            <div className="tabsBtn">
-                {data.map((obj, index) => (
-                    <button key={obj.id} className={activeIndex === index ? "active" : ""}
-                            onClick={() => setActiveIndex(index)}>
-                        {index + 1}
-                    </button>
-                ))}
-                <button onClick={() => {
-                    if (activeIndex < max) {
-                        add();
-                        setActiveIndex(activeIndex + 1);
-                    }
-                }}>+
-                </button>
-            </div>
-    )
-}
-
-function LanguageForm({ data, update, remove, add }) {
-    const [activeIndex, setActiveIndex] = useState(0);
-    const lang = data[activeIndex];
-    return (
-        <div className="form">
-           <EntryTabs data={data} add={add} activeIndex={activeIndex} setActiveIndex={setActiveIndex}/>
-
-            <div key={lang.id} className="entry">
-                <label>Language Name</label>
-                <input type="text"
-                       value={lang.name}
-                       placeholder={lang.name} onChange={(e) => update(activeIndex, "name", e.target.value)}/>
-                <label>Language Level</label>
-                <input type="text"
-                       value={lang.level}
-                       placeholder={lang.level} onChange={(e) => update(activeIndex, "level", e.target.value)} />
-                {activeIndex !== 0 && (<button className="removeBtn" onClick={() => {remove(activeIndex); setActiveIndex(activeIndex-1)}}>Delete</button>)}
-            </div>
-            <button className="addBtn" onClick={() => add()}>Add new</button>
-        </div>
-    )
-}
-
-function FormNav({ active, setActive }) {
-    return (
-        <div className="navBtn">
-            <button className={active === "personal" ? "active" : ""}
-                onClick={() => setActive("personal")}>Personal</button>
-            <button className={active === "experience" ? "active" : ""}
-                onClick={() => setActive("experience")}>Experience</button>
-            <button className={active === "education" ? "active" : ""}
-                onClick={() => setActive("education")}>Education</button>
-            <button className={active === "language" ? "active" : ""}
-                onClick={() => setActive("language")}>Language</button>
-        </div>
-    )
-}
-
-function PreviewContainer({ personal, experience, education, language }){
-    return (
-        <div className="cv">
-            <div className="header">
-                <img src="assets/react.svg" class="avatar"/>
-                <div className="headerText">Curriculum vitae</div>
-            </div>
-            <div className="description">
-                <p className="text">
-                    {personal.description}
-                </p>
-            </div>
-            <hr/>
-            <h3 className="sectionHeader">PERSONAL DETAILS</h3>
-            <div className="section">
-                <p className="textLeft text">Name</p>
-                <p className="textRight textStrong">{personal.name}</p>
-                <p className="textLeft text">Address</p>
-                <p className="textRight textStrong">{personal.address}</p>
-                <p className="textLeft text">Phone number</p>
-                <p className="textRight textStrong">{personal.phone}</p>
-                <p className="textLeft text">Email address</p>
-                <p className="textRight textStrong">{personal.email}</p>
-            </div>
-            <hr/>
-            <h3 className="sectionHeader">WORK EXPERIENCE</h3>
-                {experience.map(exp =>
-                    <div className="section">
-                        <p className="textLeft text">{exp.start}-{exp.end}</p>
-                        <div className="textBatch">
-                            <p className="textRight textStrong">{exp.role}</p>
-                            <p className="textRight text">{exp.company}</p>
-                            <p className="textRight text">{exp.description}</p>
-                            <p className="textRight text">{exp.skills}</p>
-                        </div>
-                    </div>
-                )}
-            <hr/>
-            <h3 className="sectionHeader">EDUCATION</h3>
-                {education.map(e =>
-                    <div className="section">
-                        <p className="textLeft text">{e.start}-{e.end}</p>
-                        <div className="textBatch">
-                            <p className="textRight textStrong">{e.degree}</p>
-                            <p className="textRight text">{e.institution}</p>
-                            <p className="textRight text">{e.description}</p>
-                        </div></div>
-                )}
-        </div>
-    )
-}
-
-
-
-function App() {
-    const [activeState, setActiveState] = useState("personal");
-
-    const [personal, setPersonal] = useState({
-        id: crypto.randomUUID(),
-        name: "John Smith",
-        address: "Horizon Street",
-        phone: "+0132412321",
-        email: "",
-        description: ""
+  const handleAcceptCurrent = (proposal) => {
+    if (!proposal) return;
+    setCvData(prevData => {
+      const updatedExp = prevData.experience.map(exp => {
+        if (exp.id === proposal.expId || exp.id === '1') {
+          const updatedBullets = [...exp.bullets];
+          updatedBullets[proposal.bulletIndex || 0] = proposal.proposedText;
+          return { ...exp, bullets: updatedBullets };
+        }
+        return exp;
+      });
+      return { ...prevData, experience: updatedExp };
     });
 
-    const [experience, setExperience] = useState([{
-        id: crypto.randomUUID(),
-        role: "",
-        company: "",
-        start: "",
-        end: "",
-        description: "",
-        skills: []
-    }]);
+    setPendingProposal(null);
+  };
 
-    const [education, setEducation] = useState([{
-        id: crypto.randomUUID(),
-        degree: "",
-        institution: "",
-        description: "",
-        start: "",
-        end: ""
-    }])
+  const handleAcceptNewProfile = (proposal, profileName) => {
+    if (!proposal) return;
+    const newVariantId = 'var-' + Date.now();
+    
+    setVariants(prev => [
+      ...prev,
+      { id: newVariantId, label: profileName }
+    ]);
 
-    const [language, setLanguage] = useState([{
-        id: crypto.randomUUID(),
-        name: "",
-        level: ""
-    }])
+    setCvData(prevData => {
+      const updatedExp = prevData.experience.map(exp => {
+        if (exp.id === proposal.expId || exp.id === '1') {
+          const updatedBullets = [...exp.bullets];
+          updatedBullets[proposal.bulletIndex || 0] = proposal.proposedText;
+          return { 
+            ...exp, 
+            bullets: updatedBullets,
+            variant: newVariantId 
+          };
+        }
+        return exp;
+      });
+      return { ...prevData, experience: updatedExp };
+    });
 
-    function updatePersonal(field, value) {
-        setPersonal(prev => ({ ...prev, [field]: value }))
-    }
-    function updateExperience(index, field, value) {
-        setExperience(prev => prev.map((exp, i) => i === index ? {...exp, [field]: value} : exp))
-    }
-    function updateEducation(index, field, value) {
-        setEducation(prev => prev.map((edu, i) => i === index ? {...edu, [field]: value} : edu))
-    }
-    function updateLanguage(index, field, value) {
-        setLanguage(prev => prev.map((lang, i) => i === index ? {...lang, [field]: value} : lang))
+    setActiveVariant(newVariantId);
+    setPendingProposal(null);
+  };
+
+  const handleRejectProposal = () => {
+    setPendingProposal(null);
+  };
+
+  // Resizable Left Panel State
+  const [leftPanelWidth, setLeftPanelWidth] = useState(520);
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Resizable Right AI Panel State
+  const [rightPanelWidth, setRightPanelWidth] = useState(360);
+  const [isRightResizing, setIsRightResizing] = useState(false);
+
+  const handleRightMouseDown = (e) => {
+    e.preventDefault();
+    setIsRightResizing(true);
+  };
+
+  useEffect(() => {
+    const handleRightMouseMove = (e) => {
+      if (!isRightResizing) return;
+      const newWidth = Math.min(Math.max(window.innerWidth - e.clientX, 280), 550);
+      setRightPanelWidth(newWidth);
+    };
+
+    const handleRightMouseUp = () => {
+      if (isRightResizing) {
+        setIsRightResizing(false);
+      }
+    };
+
+    if (isRightResizing) {
+      window.addEventListener('mousemove', handleRightMouseMove);
+      window.addEventListener('mouseup', handleRightMouseUp);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
     }
 
-    function removeExperience(index){
-        setExperience(prev => prev.filter((_, i) => i !== index));
+    return () => {
+      window.removeEventListener('mousemove', handleRightMouseMove);
+      window.removeEventListener('mouseup', handleRightMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isRightResizing]);
+
+  // Auto-expand left panel width when Dev Mode is active on Content Editor
+  useEffect(() => {
+    if (isDevMode && activeTab === 'editor') {
+      const maxLeftWidth = Math.min(1100, Math.max(360, window.innerWidth - 280));
+      const devWidth = Math.min(980, Math.max(720, maxLeftWidth - 50));
+      setLeftPanelWidth(devWidth);
+    } else if (!isDevMode) {
+      setLeftPanelWidth(520);
     }
-    function removeEducation(index){
-        setEducation(prev => prev.filter((_, i) => i !== index));
-    }
-    function removeLanguage(index){
-        setLanguage(prev => prev.filter((_, i) => i !== index));
+  }, [isDevMode, activeTab]);
+
+  // Mouse Drag Resizing Logic
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      // Maximum width for left panel is 1100px (double of right panel's 550px max limit)
+      const maxLeftWidth = Math.min(1100, Math.max(360, window.innerWidth - 280));
+      const newWidth = Math.min(Math.max(e.clientX, 360), maxLeftWidth);
+      setLeftPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) {
+        setIsResizing(false);
+      }
+    };
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
     }
 
-    function addExperience() {
-        setExperience(prev => [
-            ...prev,
-                {id:crypto.randomUUID(), role:"", company:"", start:"", end:"", description:"", skills:[]}
-        ]);
-    }
-    function addEducation() {
-        setEducation(prev => [
-            ...prev,
-            {id:crypto.randomUUID(), degree: "", institution: "", description: "", start: "", end: ""}
-        ]);
-    }
-    function addLanguage() {
-        setLanguage(prev => [
-            ...prev, {id:crypto.randomUUID(), name:"", level:""}
-        ]);
-    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizing]);
 
-    return (
-        <div className="content">
-            <div className="formArea left">
-                <FormNav active={activeState} setActive={setActiveState}/>
-                {activeState === "personal" && <PersonalForm data={personal} update={updatePersonal}/>}
-                {activeState === "experience" && <ExperienceForm data={experience} update={updateExperience} remove={removeExperience} add={addExperience}/>}
-                {activeState === "education" && <EducationForm data={education} update={updateEducation} remove={removeEducation} add={addEducation}/>}
-                {activeState === "language" && <LanguageForm data={language} update={updateLanguage} remove={removeLanguage} add={addLanguage}/>}
+  // Toggle dev mode and handle active tab fallback if needed
+  const handleToggleDevMode = (devState) => {
+    const nextDevMode = typeof devState === 'boolean' ? devState : !isDevMode;
+    setIsDevMode(nextDevMode);
+    if (!nextDevMode && activeTab === 'git') {
+      setActiveTab('editor');
+    }
+  };
+
+  // Modals state
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
+  const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+
+  const handleExportPdf = () => {
+    window.print();
+  };
+
+  return (
+    <div className="app-container">
+      {/* Top Navbar */}
+      <Header 
+        activeVariant={activeVariant}
+        setActiveVariant={setActiveVariant}
+        variants={variants}
+        latestCommit={MOCK_GIT_COMMITS[0]}
+        onOpenJsonModal={() => setIsJsonModalOpen(true)}
+        onOpenDiffModal={() => setIsDiffModalOpen(true)}
+        onOpenAnalyticsModal={() => setIsAnalyticsModalOpen(true)}
+        onOpenShareModal={() => setIsShareModalOpen(true)}
+        onExportPdf={handleExportPdf}
+        onOpenBlog={() => setViewMode(prev => prev === 'blog' ? 'app' : 'blog')}
+        viewMode={viewMode}
+        isDevMode={isDevMode}
+        onToggleDevMode={handleToggleDevMode}
+      />
+
+      {viewMode === 'blog' ? (
+        <TechBlogView onBackToApp={() => setViewMode('app')} />
+      ) : (
+        /* Main Workspace Grid */
+        <div 
+          className={`workspace ${(isResizing || isRightResizing) ? 'is-resizing' : ''}`}
+          style={{ 
+            gridTemplateColumns: isAiChatOpen 
+              ? `${leftPanelWidth}px 6px 1fr 6px ${rightPanelWidth}px` 
+              : `${leftPanelWidth}px 6px 1fr` 
+          }}
+        >
+          {/* Left Side: Editor & Smart Tools Panel */}
+          <div className="left-panel">
+            {/* Tabs Navigation */}
+            <div className="editor-tabs-nav">
+              <button 
+                className={`tab-btn ${activeTab === 'editor' ? 'active' : ''}`}
+                onClick={() => setActiveTab('editor')}
+              >
+                <Edit3 size={14} /> Content Editor
+              </button>
+
+              <button 
+                className={`tab-btn ${activeTab === 'ats' ? 'active' : ''}`}
+                onClick={() => setActiveTab('ats')}
+              >
+                <Target size={14} /> ATS & AI Optimizer
+              </button>
+
+              {isDevMode && (
+                <button 
+                  className={`tab-btn ${activeTab === 'git' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('git')}
+                >
+                  <GitBranch size={14} /> Git Versioning
+                </button>
+              )}
+
+              <button 
+                className={`tab-btn ${activeTab === 'collab' ? 'active' : ''}`}
+                onClick={() => setActiveTab('collab')}
+              >
+                <Users size={14} /> Collaboration
+              </button>
+
+              <button 
+                className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+                onClick={() => setActiveTab('analytics')}
+              >
+                <BarChart3 size={14} /> Analytics
+              </button>
             </div>
-            <div className="right">
-                <PreviewContainer personal={personal} experience={experience} education={education} language={language}/>
+
+            {/* Tab Content Area */}
+            <div className="tab-content">
+              {activeTab === 'editor' && (
+                <ContentEditorTab cvData={cvData} setCvData={setCvData} isDevMode={isDevMode} />
+              )}
+
+              {activeTab === 'ats' && (
+                <AtsOptimizerTab cvData={cvData} onTriggerMockProposal={handleTriggerMockProposal} />
+              )}
+
+              {activeTab === 'git' && (
+                <GitVersioningTab onOpenDiffModal={() => setIsDiffModalOpen(true)} />
+              )}
+
+              {activeTab === 'collab' && (
+                <CollaborationTab />
+              )}
+
+              {activeTab === 'analytics' && (
+                <AnalyticsTab onOpenShareModal={() => setIsShareModalOpen(true)} />
+              )}
             </div>
+          </div>
+
+          {/* Left Workspace Resizer Handle */}
+          <div 
+            className={`workspace-resizer ${isResizing ? 'active' : ''}`}
+            onMouseDown={handleMouseDown}
+            title="Trage cu mouse-ul pentru a redimensiona panoul din stânga"
+          >
+            <div className="resizer-handle-pill">
+              <GripVertical size={10} />
+            </div>
+          </div>
+
+          {/* Center: Live A4 Paper Preview Engine */}
+          <PreviewPanel 
+            cvData={cvData} 
+            activeVariant={activeVariant}
+            pendingProposal={pendingProposal}
+            proposalViewMode={proposalViewMode}
+            setProposalViewMode={setProposalViewMode}
+            onAcceptCurrent={handleAcceptCurrent}
+            onAcceptNewProfile={handleAcceptNewProfile}
+            onRejectProposal={handleRejectProposal}
+          />
+
+          {/* Right Workspace Resizer Handle & AI Chat Panel */}
+          {isAiChatOpen && (
+            <>
+              <div 
+                className={`workspace-resizer ${isRightResizing ? 'active' : ''}`}
+                onMouseDown={handleRightMouseDown}
+                title="Trage cu mouse-ul pentru a redimensiona panoul AI Agent din dreapta"
+              >
+                <div className="resizer-handle-pill">
+                  <GripVertical size={10} />
+                </div>
+              </div>
+
+              <AiChatDrawer 
+                cvData={cvData}
+                isOpen={isAiChatOpen}
+                setIsOpen={setIsAiChatOpen}
+              />
+            </>
+          )}
         </div>
-    )
+      )}
+
+      {/* Floating Bottom-Right Trigger Button when AI Chat is closed */}
+      {!isAiChatOpen && (
+        <button 
+          className="ai-chat-trigger-btn"
+          onClick={() => setIsAiChatOpen(true)}
+          title="Deschide panou AI Assistant"
+        >
+          <div className="trigger-icon-wrapper">
+            <Sparkles size={22} className="sparkles-icon" />
+          </div>
+          <span className="trigger-label">AI Agent</span>
+          <span className="trigger-badge">Pro</span>
+        </button>
+      )}
+
+      {/* Modals */}
+      <JsonResumeModal 
+        isOpen={isJsonModalOpen} 
+        onClose={() => setIsJsonModalOpen(false)} 
+      />
+
+      <VisualDiffModal 
+        isOpen={isDiffModalOpen} 
+        onClose={() => setIsDiffModalOpen(false)} 
+      />
+
+      <AnalyticsModal 
+        isOpen={isAnalyticsModalOpen} 
+        onClose={() => setIsAnalyticsModalOpen(false)} 
+      />
+
+      <ShareQrModal 
+        isOpen={isShareModalOpen} 
+        onClose={() => setIsShareModalOpen(false)} 
+      />
+    </div>
+  );
 }
 
-export default App
+

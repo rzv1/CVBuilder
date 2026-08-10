@@ -1,0 +1,323 @@
+export const INITIAL_CV_DATA = {
+  personal: {
+    name: "Alexandru Popescu",
+    title: "Senior Full Stack Engineer & Cloud Architect",
+    email: "alex.popescu@techdev.io",
+    phone: "+40 722 123 456",
+    address: "Bucharest, Romania",
+    website: "https://alexpopescu.dev",
+    github: "github.com/alexp-dev",
+    linkedin: "linkedin.com/in/alex-popescu",
+    summary: "Senior Software Engineer with 7+ years of experience building high-scale distributed web applications and modern cloud architectures. Specialized in React, Node.js, TypeScript, and microservices."
+  },
+  experience: [
+    {
+      id: "exp-1",
+      role: "Lead Full Stack Engineer",
+      company: "TechScale Solutions",
+      location: "Bucharest, RO (Hybrid)",
+      start: "2022",
+      end: "Present",
+      variant: "all", // 'all' | 'frontend' | 'backend'
+      description: "Led core product development for real-time analytics platform handling 5M daily active users.",
+      bullets: [
+        "Accelerated page load speed by 62% as measured by Lighthouse Core Web Vitals, by implementing server-side rendering (SSR) and route-level code splitting.",
+        "Increased system throughput by 45% (handling 12,000 req/sec), by redesigning the event-driven microservices architecture using Redis and Kafka.",
+        "Reduced CI/CD build times from 28 minutes to 6 minutes, by constructing dockerized build pipelines and automated caching strategies."
+      ],
+      skills: ["React", "TypeScript", "Node.js", "GraphQL", "AWS", "Docker"]
+    },
+    {
+      id: "exp-2",
+      role: "Senior Frontend Engineer",
+      company: "CloudCore SaaS",
+      location: "Remote",
+      start: "2020",
+      end: "2022",
+      variant: "frontend",
+      description: "Engineered scalable design system and interactive client dashboards.",
+      bullets: [
+        "Boosted user engagement by 35% as measured by monthly active time, by introducing modular drag-and-drop dashboard widgets.",
+        "Decreased UI bundle size by 140KB, by replacing legacy monolithic libraries with custom tree-shakeable components.",
+        "Mentored a team of 5 junior frontend engineers through weekly code reviews and architecture workshops."
+      ],
+      skills: ["React", "Next.js", "Redux Toolkit", "Tailwind CSS", "Jest"]
+    },
+    {
+      id: "exp-3",
+      role: "Backend & Systems Engineer",
+      company: "DataStream Systems",
+      location: "Cluj-Napoca, RO",
+      start: "2018",
+      end: "2020",
+      variant: "backend",
+      description: "Developed distributed REST APIs and high-availability database pipelines.",
+      bullets: [
+        "Cut database query response times by 75% as measured by p99 latency benchmarks, by optimizing PostgreSQL indexing strategies and query plans.",
+        "Achieved 99.99% system uptime over 24 consecutive months, by deploying automated health monitoring and graceful failover services."
+      ],
+      skills: ["Node.js", "Go", "PostgreSQL", "Redis", "Docker", "Kubernetes"]
+    }
+  ],
+  education: [
+    {
+      id: "edu-1",
+      degree: "B.Sc. Computer Science & Software Engineering",
+      institution: "Politehnica University of Bucharest",
+      location: "Bucharest, Romania",
+      start: "2014",
+      end: "2018",
+      description: "Graduated with Honors. Focused on Distributed Systems, Algorithms, and Artificial Intelligence."
+    }
+  ],
+  skills: [
+    {
+      id: "sk-1",
+      category: "Frontend Development",
+      items: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Redux Toolkit", "HTML5/CSS3"]
+    },
+    {
+      id: "sk-2",
+      category: "Backend & Cloud",
+      items: ["Node.js", "Express", "PostgreSQL", "Docker", "AWS", "Redis", "GraphQL"]
+    }
+  ],
+  languages: [
+    { id: "lang-1", name: "English", level: "Full Professional / C2" },
+    { id: "lang-2", name: "Romanian", level: "Native Speaker" },
+    { id: "lang-3", name: "German", level: "Conversational / B1" }
+  ],
+  awards: [
+    {
+      id: "aw-1",
+      title: "Best Cloud Architecture Award",
+      issuer: "TechScale Summit 2023",
+      date: "2023",
+      description: "Recognized for architecting a zero-downtime event-driven microservices infrastructure."
+    }
+  ],
+  customSections: [
+    {
+      id: "sec-1",
+      title: "Open Source Projects",
+      items: [
+        {
+          id: "csi-1",
+          heading: "React-Fast-Grid",
+          subheading: "Maintainer (4.2k GitHub Stars)",
+          start: "2023",
+          end: "Present",
+          detail: "High-performance virtualized canvas data grid for React apps. Over 80k monthly NPM downloads."
+        },
+        {
+          id: "csi-2",
+          heading: "Typst-CV-Engine",
+          subheading: "Creator",
+          start: "2024",
+          end: "2024",
+          detail: "Ultra-fast Typst resume template generator for deterministic PDF exports."
+        }
+      ]
+    },
+    {
+      id: "sec-2",
+      title: "Conference Talks & Workshops",
+      items: [
+        {
+          id: "csi-3",
+          heading: "JSHeroes 2024 - Masterclass",
+          subheading: "Keynote Speaker",
+          start: "May 2024",
+          end: "May 2024",
+          detail: "Delivered keynote on 'Building Real-time Collaborative UIs with CRDTs and WebSockets'."
+        }
+      ]
+    }
+  ]
+};
+
+export const MOCK_ATS_JOB_DESCRIPTION = `
+We are looking for a Senior Full Stack Engineer with strong expertise in React, TypeScript, Node.js, and Cloud Infrastructure (AWS / Docker). 
+Key requirements:
+- 5+ years experience building web applications using React, Next.js, and TypeScript.
+- Hands-on experience with GraphQL, REST APIs, and microservices architecture.
+- Demonstrated ability to optimize performance (Core Web Vitals, SSR, Bundle Size).
+- Experience with Docker, Kubernetes, CI/CD automation, and Redis caching.
+- Excellent communication skills, team leadership, and mentorship experience.
+- Bonus points for Open Source contributions and CRDT / Real-time WebSocket experience.
+`;
+
+export const MOCK_GIT_COMMITS = [
+  {
+    id: "c-104",
+    hash: "a7f3b91",
+    author: "Alexandru Popescu",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
+    timestamp: "10 mins ago",
+    tag: "v1.4",
+    message: "Updated lead experience bullets with Google XYZ metric formula",
+    changes: { added: 3, deleted: 1 }
+  },
+  {
+    id: "c-103",
+    hash: "d4e21a8",
+    author: "Alexandru Popescu",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
+    timestamp: "2 hours ago",
+    tag: "v1.3",
+    message: "Added Open Source & Conference Talks modular sections",
+    changes: { added: 8, deleted: 0 }
+  },
+  {
+    id: "c-102",
+    hash: "8c91b22",
+    author: "Elena Ionescu (Reviewer)",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena",
+    timestamp: "1 day ago",
+    tag: "v1.2",
+    message: "Suggested refining Senior Frontend role summary for ATS optimization",
+    changes: { added: 2, deleted: 2 }
+  },
+  {
+    id: "c-101",
+    hash: "1a00f45",
+    author: "Alexandru Popescu",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
+    timestamp: "3 days ago",
+    tag: "v1.0",
+    message: "Initial JSON Resume import & baseline setup",
+    changes: { added: 24, deleted: 0 }
+  }
+];
+
+export const MOCK_COLLABORATORS = [
+  { id: "u-1", name: "Alexandru Popescu (You)", role: "Owner", color: "#3b82f6", active: true, status: "Editing Experience" },
+  { id: "u-2", name: "Elena Ionescu", role: "Reviewer / HR", color: "#10b981", active: true, status: "Viewing ATS Score" },
+  { id: "u-3", name: "Mihai TechLead", role: "Collaborator", color: "#f59e0b", active: false, status: "Offline" }
+];
+
+export const MOCK_COMMENTS = [
+  {
+    id: "cm-1",
+    author: "Elena Ionescu",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena",
+    timestamp: "15 mins ago",
+    section: "Work Experience - TechScale Solutions",
+    text: "Great metric in bullet #1! Consider adding Kubernetes to your cloud skills tags as well since the job description emphasizes it.",
+    resolved: false
+  },
+  {
+    id: "cm-2",
+    author: "Mihai TechLead",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mihai",
+    timestamp: "1 hour ago",
+    section: "Open Source Projects",
+    text: "React-Fast-Grid stats look impressive. The link to your GitHub repo is clear.",
+    resolved: true
+  }
+];
+
+export const MOCK_ANALYTICS = {
+  hostedUrl: "https://cvbuilder.live/alex-popescu",
+  qrCodeUrl: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://cvbuilder.live/alex-popescu",
+  stats: {
+    totalViews: 342,
+    pdfDownloads: 89,
+    qrScans: 41,
+    avgReadTime: "2m 14s"
+  },
+  recentViews: [
+    { date: "Mon", views: 24, downloads: 6 },
+    { date: "Tue", views: 45, downloads: 12 },
+    { date: "Wed", views: 68, downloads: 18 },
+    { date: "Thu", views: 52, downloads: 15 },
+    { date: "Fri", views: 81, downloads: 22 },
+    { date: "Sat", views: 39, downloads: 9 },
+    { date: "Sun", views: 33, downloads: 7 }
+  ],
+  topReferrers: [
+    { source: "LinkedIn Direct Link", count: 184, percentage: "53.8%" },
+    { source: "GitHub Profile Readme", count: 92, percentage: "26.9%" },
+    { source: "QR Code Scan (PDF Header)", count: 41, percentage: "12.0%" },
+    { source: "Direct / Email Share", count: 25, percentage: "7.3%" }
+  ]
+};
+
+export const SAMPLE_JSON_RESUME = {
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json",
+  "basics": {
+    "name": "Alexandru Popescu",
+    "label": "Senior Full Stack Engineer & Cloud Architect",
+    "image": "",
+    "email": "alex.popescu@techdev.io",
+    "phone": "+40 722 123 456",
+    "url": "https://alexpopescu.dev",
+    "summary": "Senior Software Engineer with 7+ years of experience building high-scale distributed web applications and modern cloud architectures.",
+    "location": {
+      "city": "Bucharest",
+      "countryCode": "RO"
+    },
+    "profiles": [
+      { "network": "GitHub", "username": "alexp-dev", "url": "https://github.com/alexp-dev" },
+      { "network": "LinkedIn", "username": "alex-popescu", "url": "https://linkedin.com/in/alex-popescu" }
+    ]
+  },
+  "work": [
+    {
+      "name": "TechScale Solutions",
+      "position": "Lead Full Stack Engineer",
+      "startDate": "2022-01-01",
+      "endDate": "2026-08-01",
+      "summary": "Led core product development for real-time analytics platform handling 5M daily active users.",
+      "highlights": [
+        "Accelerated page load speed by 62% as measured by Lighthouse Core Web Vitals",
+        "Increased system throughput by 45% (handling 12,000 req/sec)"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Politehnica University of Bucharest",
+      "area": "Computer Science",
+      "studyType": "Bachelor of Science",
+      "startDate": "2014-10-01",
+      "endDate": "2018-07-01"
+    }
+  ],
+  "skills": [
+    { "name": "Web Development", "keywords": ["React", "TypeScript", "Node.js", "Next.js", "GraphQL"] },
+    { "name": "Cloud & Infrastructure", "keywords": ["AWS", "Docker", "Kubernetes", "Redis", "PostgreSQL"] }
+  ]
+};
+
+export const INITIAL_AI_CHAT_MESSAGES = [
+  {
+    id: 'msg-1',
+    sender: 'ai',
+    text: 'Salut Alexandru! Sunt Asistentul tău AI dedicat optimizării CV-ului. Am analizat secțiunile din CV-ul tău curent și sunt pregătit să te ajut să obții maximum de vizibilitate în fața recrutatorilor.',
+    timestamp: '10:42',
+    actions: [
+      { label: '🚀 Optimizare Rezumat', prompt: 'Cum pot optimiza rezumatul profesional pentru un rol de Lead Cloud Architect?' },
+      { label: '📊 Adaugă Metrici de Impact', prompt: 'Sugerează metrici cu impact cuantificabil pentru experiența la TechScale Solutions.' }
+    ]
+  },
+  {
+    id: 'msg-2',
+    sender: 'user',
+    text: 'Cum pot îmbunătăți prima experiență profesională pentru a evidenția abilitățile de leadership și cloud?',
+    timestamp: '10:43'
+  },
+  {
+    id: 'msg-3',
+    sender: 'ai',
+    text: 'Recomand să adaugi un punct cheie axat pe arhitectură cloud și optimizarea costurilor. De exemplu:\n\n• *"Orchestrated migration of monolithic services to AWS ECS & Terraform, reducing infrastructure costs by 38% while boosting deployment frequency by 4x."*',
+    timestamp: '10:44'
+  }
+];
+
+export const AI_QUICK_ACTIONS = [
+  { id: 'act-1', label: '✨ Optimizare Rezumat', prompt: 'Generează o versiune mai concisă și impactantă a rezumatului meu profesional.' },
+  { id: 'act-2', label: '🎯 Analiză ATS', prompt: 'Analizează cuvintele cheie din CV-ul meu și sugerează îmbunătățiri pentru ATS.' },
+  { id: 'act-3', label: '📝 Verifică Gramatica', prompt: 'Verifică limbajul și stilul din experiențele mele profesionale.' },
+  { id: 'act-4', label: '⚡ Sugerează Competente Top', prompt: 'Ce competențe tehnice moderne în Cloud și React ar trebui să scot în evidență?' }
+];
