@@ -19,8 +19,10 @@ import AiChatDrawer from './components/ai/AiChatDrawer';
 
 import INITIAL_CONTENT from './data/content.json';
 import INITIAL_STYLE from './data/style.json';
+import { MOCK_GIT_COMMITS } from './mockData';
 import { applySmartPatches, getAffectedPaths } from './utils/jsonPatch';
 import { Edit3, Target, GitBranch, Users, BarChart3, GripVertical, Sparkles } from './components/Icons';
+
 
 export default function App() {
   const [cvData, setCvData] = useState(INITIAL_CONTENT);

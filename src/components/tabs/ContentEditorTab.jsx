@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { configureMonacoYaml } from "monaco-yaml";
-import mySchema from '../../../schema.json';
+//import { configureMonacoYaml } from "monaco-yaml";
+//import mySchema from '../../../schema.json';
 import EditorWorker from '../../editor.worker?worker';
 import YamlWorker from '../../yaml.worker?worker';
 
@@ -16,20 +16,20 @@ self.MonacoEnvironment = {
 };
 
 // Configure Monaco YAML support globally on the monaco instance
-configureMonacoYaml(monaco, {
-  enableSchemaRequest: false,
-  validate: true,
-  format: true,
-  hover: true,
-  completion: true,
-  schemas: [
-    {
-      uri: 'https://raw.githubusercontent.com/cvbuilder-ai/cvbuilder-ai-studio/main/src/schemas/content.yaml',
-      fileMatch: ['*'],
-      schema: mySchema
-    }
-  ]
-});
+// configureMonacoYaml(monaco, {
+//   enableSchemaRequest: false,
+//   validate: true,
+//   format: true,
+//   hover: true,
+//   completion: true,
+//   schemas: [
+//     {
+//       uri: 'https://raw.githubusercontent.com/cvbuilder-ai/cvbuilder-ai-studio/main/src/schemas/content.yaml',
+//       fileMatch: ['*'],
+//       schema: mySchema
+//     }
+//   ]
+// });
 
 // Use local bundled Monaco instance rather than downloading from CDN
 loader.config({ monaco });

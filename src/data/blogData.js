@@ -21,13 +21,13 @@ export const BLOG_CATEGORIES = [
     "id": "ai-agent",
     "name": "AI Agent",
     "icon": "Zap",
-    "count": 0
+    "count": 1
   },
   {
     "id": "social",
     "name": "Social",
     "icon": "Users",
-    "count": 1
+    "count": 0
   },
   {
     "id": "misc",
@@ -62,16 +62,16 @@ export const DOCS_SECTIONS = [
 
 export const BLOG_ARTICLES = [
   {
-    id: "cv-preview-engine",
-    title: "Cum funcționează Motorul de Previziune A4 Deterministică",
+    id: "wysiwyg-preview",
+    title: "WYSIWYG preview",
     category: "cv-preview",
     categoryName: "CV Preview",
-    date: "10 Aug 2026",
+    date: "11 Aug 2026",
     readTime: "6 min citire",
-    author: "Echipa CVBuilder Core",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-    summary: "Explicație tehnică despre simularea fizică a paginii A4 în browser, gestionarea dinamica a marginilor și calcularea deterministă a rupturilor de pagină fără alterarea stilului.",
-    tags: ["CSS Layout","Paper Physics","Print Styles","React Engine"],
+    author: "Razvan R",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Radu",
+    summary: "How to preview json data as a A4 page and export it as PDF afterwards.",
+    tags: ["preview","PDF"],
     content: "\n# Arhitectura Motorului CV Preview A4\n\nÎn CVBuilder AI Studio, principala provocare tehnică este garantarea potrivirii exacte a layout-ului din ecranul browser-ului cu documentul PDF fizic generat la printare (WSIWYG - *What You See Is What You Get*).\n\n### 1. Raportul de Aspect A4 Fiziologic\nPentru a asigura precizia pixel-perfect, foaia din preview este restricționată la dimensiunea standard ISO 216:\n- **Lățime fizică**: 210mm (~794px la 96 DPI)\n- **Înălțime fizică**: 297mm (~1123px la 96 DPI)\n\n```css\n/* Componenta A4 Preview Container */\n.paper-a4 {\n  width: 210mm;\n  min-height: 297mm;\n  background: #ffffff;\n  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);\n  margin: 0 auto;\n  position: relative;\n  page-break-after: always;\n}\n```\n\n### 2. Filtrarea Dinamică după Variantă (*Profile Tailoring*)\nAplicația permite comutarea instantanee între variante de profil (**Full Stack**, **Frontend**, **Backend**). Articolele din CV conțin atributul `variantFilter: ['all', 'frontend']`.\n\n```javascript\n// Reacția motorului de filtrare\nconst filteredExperience = cvData.experience.filter(item => {\n  if (activeVariant === 'all') return true;\n  return item.variants?.includes(activeVariant);\n});\n```\n\n### 3. Evitarea Rupturilor Inestetice la Print\nPrin utilizarea regulilor CSS modern **`break-inside: avoid`** și **`page-break-inside: avoid`**, ne asigurăm că blocurile de experiență sau educație nu sunt tăiate pe jumătate la tranziția dintre pagini.\n    "
   },
   {
@@ -127,17 +127,17 @@ export const BLOG_ARTICLES = [
     content: "Modificarea unui singur field astfel incat randarea sa fie rapida si friendly cu modul de functionare React se face prin exemplul de cod de mai jos:\n```\nconst handleEducationChange = (idx, field, value) => {  \n  setCvData(prev => {  \n    const list = [...(prev.education || [])];  \n    list[idx] = { ...list[idx], [field]: value };  \n    return { ...prev, education: list };  \n  });  \n};\n```\n\nAdaugare unui nou item in lista:\n```\nconst addExperience = () => {  \n  const newEntry = {  \n\t// id-ul este important pentru randare corecta\n    id: `exp-${Date.now()}`,  \n    role: \"Software Developer\"\n  }; \n   \n  setCvData(prev => ({  \n    ...prev,  \n    experience: [...prev.experience, newEntry]  \n  }));  \n};\n```\n\nStergerea unui item din lista pentru re-randare:\n```\nconst deleteExperience = (idx) => {  \n  setCvData(prev => ({  \n    ...prev,  \n    experience: prev.experience.filter((_, i) => i !== idx)  \n  }));  \n};"
   },
   {
-    id: "misc-performance-state",
-    title: "Ghid de Performanță: Re-randări Zero în React & State Modular",
-    category: "social",
-    categoryName: "Social",
-    date: "20 Iul 2026",
+    id: "token-efficient-ai-design",
+    title: "Token-efficient AI design",
+    category: "ai-agent",
+    categoryName: "AI Agent",
+    date: "11 Aug 2026",
     readTime: "1 min citire",
-    author: "Radu - Lead Architect",
+    author: "Razvan R",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Radu",
-    summary: "Tehnici folosite pentru a menține aplicația la 60 FPS în timpul editării rapide a textului în panoul de control.",
-    tags: ["React Perf","Debounce","Memoization","State Management"],
-    content: "\n# Optimizări de Performanță la Nivel de Cadru\n\nPentru a preveni întârzierile la tastare în editoarele de text cu previzualizare live:\n1. **Debounce pe actualizarea stării de previzualizare** (150ms).\n2. **React.memo** pe panoul A4 pentru a evita re-desenarea atunci când se schimbă tab-uri secundare.\n3. **Immutability helpers** pentru update-uri rapide pe arce adânci în obiectul de CV.\n    "
+    summary: "How to have an average output of 400 tokens, no matter the CV length.",
+    tags: ["AI","json-patch","gemini"],
+    content: "### Front-end\nFolosesc libraria de UI Vercel AI SDK pentru a gestiona automat starea mesajelor si streaming-ul.\n```bash\nnpm install @ai-sdk/react ai\n```\n\nPentru a evita erorile CORS vom configura proxy catre backend:\n```javascript\nexport default defineConfig({ \n\tplugins: [react()], \n\tserver: { \n\t\tproxy: { \n\t\t'/api': 'http://localhost:3002', \n\t\t}, \n\t}, \n});\n```\nPentru a economisi consumul de tokens, s-a folosit standardul RFC 6902 de a transmite modificarea unui fisier JSON, fara a trimite intregul fisier. Astfel, motorul AI poate trimite chiar si doar 200 output tokens pentru o modificare minora, si pana la 3k tokens pentru modificari majore care oricum nu sunt recomandate.\n\nAceste diferente sunt apoi afisate pe preview sub forma de chenare. CV-ul este salvat in spate in format JSON. Se foloseste un translator intre JSON si YAML pentru a actualiza si editorul cu modificarile sugerate de AI.\n"
   }
 ];
 

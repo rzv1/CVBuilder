@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CVBuilder CMS Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --bg-card: #111827;
+      --bg-input: #1f2937;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Navbar */
+    header {
+      height: 60px;
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .btn-primary:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--accent-green), #059669);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-success:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: #374151;
+    }
+
+    /* Main Container */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    aside {
+      width: 320px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 0.875rem;
+    }
+
+    .category-filter {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .category-filter::-webkit-scrollbar {
+      height: 4px;
+    }
+    .category-filter::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+    }
+
+    .cat-chip {
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      background: var(--bg-input);
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .cat-chip.active {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .article-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .article-card {
+      padding: 12px;
+      background: rgba(31, 41, 55, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .article-card:hover {
+      background: rgba(31, 41, 55, 0.8);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .article-card.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: var(--accent-blue);
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .card-tag {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 0.7rem;
+    }
+
+    /* Content Workspace */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background: var(--bg-dark);
+      padding: 24px;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .col-12 { grid-column: span 12; }
+    .col-8 { grid-column: span 8; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+    .col-3 { grid-column: span 3; }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 0.875rem;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    .input-with-btn {
+      display: flex;
+      gap: 8px;
+    }
+
+    .avatar-preview-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar-preview-img {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      object-fit: cover;
+    }
+
+    /* Editor Split Area */
+    .editor-container {
+      display: flex;
+      flex: 1;
+      min-height: 500px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .editor-toolbar {
+      background: rgba(31, 41, 55, 0.6);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      padding: 4px 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: 'Fira Code', monospace;
+    }
+    .tool-btn:hover {
+      background: #374151;
+    }
+
+    .split-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .split-pane:first-child {
+      border-right: 1px solid var(--border-color);
+    }
+
+    .pane-header {
+      padding: 8px 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      background: rgba(17, 24, 39, 0.5);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    textarea.code-editor {
+      flex: 1;
+      width: 100%;
+      padding: 16px;
+      background: transparent;
+      border: none;
+      color: #e5e7eb;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      resize: none;
+    }
+
+    .preview-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #0d1117;
+      color: #c9d1d9;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* Rudimentary Markdown Preview Styling */
+    .preview-body h1 { font-size: 1.5rem; margin-bottom: 12px; color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 6px; }
+    .preview-body h2 { font-size: 1.25rem; margin-top: 16px; margin-bottom: 8px; color: #79c0ff; }
+    .preview-body h3 { font-size: 1.1rem; margin-top: 12px; margin-bottom: 6px; color: #a5d6ff; }
+    .preview-body p { margin-bottom: 12px; }
+    .preview-body code { font-family: 'Fira Code', monospace; background: rgba(110,118,129,0.4); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+    .preview-body pre { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin-bottom: 12px; overflow-x: auto; }
+    .preview-body pre code { background: none; padding: 0; }
+    .preview-body blockquote { border-left: 3px solid #388bfd; padding-left: 12px; color: #8b949e; margin-bottom: 12px; }
+    .preview-body ul { margin-left: 20px; margin-bottom: 12px; }
+    .preview-body li { margin-bottom: 4px; }
+
+    /* Footer / Action Bar */
+    .action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+
+    /* Toast Notifications */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .toast.success { border-color: var(--accent-green); }
+    .toast.error { border-color: var(--accent-red); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">CV</div>
+      <div class="brand-title">CVBuilder CMS</div>
+      <div class="brand-badge">blogData.js Manager</div>
+    </div>
+    <div class="header-actions">
+      <span id="stats-badge" style="font-size:0.8rem; color:var(--text-muted);">Incarcare...</span>
+      <button class="btn btn-primary" onclick="initNewArticle()">+ Articol Nou</button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- Sidebar -->
+    <aside>
+      <div class="sidebar-header">
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Caută articole..." oninput="renderArticleList()">
+        </div>
+        <div class="category-filter" id="category-filter-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+      <div class="article-list" id="article-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main>
+      <!-- Metadate Form -->
+      <div class="panel">
+        <div class="panel-title">
+          <span id="form-heading">Editează Articol</span>
+          <span id="article-id-badge" style="font-size:0.75rem; font-family:'Fira Code', monospace; color:var(--accent-blue);"></span>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group col-8">
+            <label>Titlu Articol *</label>
+            <input type="text" id="field-title" placeholder="ex: Cum funcționează Motorul de Previziune A4" oninput="onTitleInput()">
+          </div>
+
+          <div class="form-group col-4">
+            <label>Categorie *</label>
+            <select id="field-category" onchange="onCategoryChange()">
+              <option value="cv-preview">CV Preview</option>
+              <option value="cv-as-code">CV-as-Code</option>
+              <option value="ai-agent">AI Agent</option>
+              <option value="social">Social</option>
+              <option value="misc">Misc</option>
+            </select>
+          </div>
+
+          <div class="form-group col-6">
+            <label>ID / Slug URL</label>
+            <div class="input-with-btn">
+              <input type="text" id="field-slug" placeholder="slug-articol-exemplu">
+              <button class="btn btn-secondary" onclick="autoGenerateSlug()" title="Regenerează din Titlu">Auto</button>
+            </div>
+          </div>
+
+          <div class="form-group col-3">
+            <label>Data Publicării</label>
+            <input type="text" id="field-date" placeholder="ex: 11 Aug 2026">
+          </div>
+
+          <div class="form-group col-3">
+            <label>Timp Citire</label>
+            <div class="input-with-btn">
+              <input type="text" id="field-readTime" placeholder="ex: 5 min citire">
+              <button class="btn btn-secondary" onclick="autoCalculateReadTime()" title="Recalculează din Conținut">Calc</button>
+            </div>
+          </div>
+
+          <div class="form-group col-6">
+            <label>Autor</label>
+            <input type="text" id="field-author" placeholder="ex: Radu - Lead Architect" oninput="updateAvatarPreview()">
+          </div>
+
+          <div class="form-group col-6">
+            <label>Avatar URL</label>
+            <div class="avatar-preview-box">
+              <input type="text" id="field-avatar" placeholder="https://api.dicebear.com/7.x/..." oninput="updateAvatarPreview()">
+              <img id="avatar-preview" src="" class="avatar-preview-img" alt="Avatar Preview">
+            </div>
+          </div>
+
+          <div class="form-group col-12">
+            <label>Rezumat (Summary)</label>
+            <input type="text" id="field-summary" placeholder="Scurtă descriere a articolului ce apare pe card...">
+          </div>
+
+          <div class="form-group col-12">
+            <label>Tag-uri (separate prin virgulă)</label>
+            <input type="text" id="field-tags" placeholder="ex: React, CSS Layout, Performance">
+          </div>
+        </div>
+      </div>
+
+      <!-- Editor & Live Preview Panel -->
+      <div class="editor-container">
+        <!-- Editor Pane -->
+        <div class="split-pane">
+          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Editor Conținut (Markdown)</span>
+            <div class="editor-toolbar">
+              <button class="tool-btn" onclick="insertMarkdown('**', '**')">B</button>
+              <button class="tool-btn" onclick="insertMarkdown('*', '*')">I</button>
+              <button class="tool-btn" onclick="insertMarkdown('# ', '')">H1</button>
+              <button class="tool-btn" onclick="insertMarkdown('## ', '')">H2</button>
+              <button class="tool-btn" onclick="insertMarkdown('### ', '')">H3</button>
+              <button class="tool-btn" onclick="insertMarkdown('```javascript\n', '\n```')">Code</button>
+              <button class="tool-btn" onclick="insertMarkdown('> ', '')">Quote</button>
+              <button class="tool-btn" onclick="insertMarkdown('- ', '')">List</button>
+            </div>
+          </div>
+          <textarea id="field-content" class="code-editor" placeholder="Scrie conținutul articolului în format Markdown..." oninput="updateLivePreview()"></textarea>
+        </div>
+
+        <!-- Rudimentary Preview Pane -->
+        <div class="split-pane">
+          <div class="pane-header">Previzualizare Live (Layout Rudimentar)</div>
+          <div id="preview-container" class="preview-body"></div>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <div>
+          <button class="btn btn-danger" id="btn-delete" onclick="deleteCurrentArticle()" style="display:none;">Șterge Articolul</button>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <input type="file" id="file-import-md" accept=".md,.markdown" style="display:none" onchange="importMdFile(event)">
+          <button class="btn btn-secondary" onclick="document.getElementById('file-import-md').click()" title="Importă un fișier Markdown (.md)">Importă .md</button>
+          <button class="btn btn-secondary" onclick="exportCurrentArticleMd()" title="Exportă articolul curent în format Markdown (.md) cu linie nouă păstrată">Exportă .md</button>
+          <button class="btn btn-secondary" onclick="resetForm()">Anulează / Reset</button>
+          <button class="btn btn-success" onclick="saveArticle()">Salvează în blogData.js (Ctrl+S)</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <span id="toast-message">Notificare</span>
+  </div>
+
+  <script>
+    let articles = [];
+    let categories = [];
+    let activeArticleId = null;
+    let selectedCategoryFilter = 'all';
+
+    // Fetch Initial Data
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/articles');
+        const data = await res.json();
+        if (data.success) {
+          articles = data.articles;
+          categories = data.categories;
+          updateStats();
+          renderCategoryFilter();
+          renderArticleList();
+          
+          if (articles.length > 0 && !activeArticleId) {
+            selectArticle(articles[0].id);
+          }
+        }
+      } catch (err) {
+        showToast('Eroare la încărcarea articolelor: ' + err.message, 'error');
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('stats-badge').innerText = `${articles.length} Articole | ${categories.length} Categorii`;
+    }
+
+    function renderCategoryFilter() {
+      const container = document.getElementById('category-filter-list');
+      container.innerHTML = categories.map(c => `
+        <div class="cat-chip ${selectedCategoryFilter === c.id ? 'active' : ''}" onclick="filterCategory('${c.id}')">
+          ${c.name} (${c.count})
+        </div>
+      `).join('');
+    }
+
+    function filterCategory(catId) {
+      selectedCategoryFilter = catId;
+      renderCategoryFilter();
+      renderArticleList();
+    }
+
+    function renderArticleList() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const container = document.getElementById('article-list');
+
+      const filtered = articles.filter(a => {
+        const matchesCat = selectedCategoryFilter === 'all' || a.category === selectedCategoryFilter;
+        const matchesSearch = a.title.toLowerCase().includes(search) || (a.summary && a.summary.toLowerCase().includes(search));
+        return matchesCat && matchesSearch;
+      });
+
+      container.innerHTML = filtered.map(a => `
+        <div class="article-card ${a.id === activeArticleId ? 'active' : ''}" onclick="selectArticle('${a.id}')">
+          <div class="card-title">${escapeHtml(a.title)}</div>
+          <div class="card-meta">
+            <span class="card-tag">${a.categoryName || a.category}</span>
+            <span>${a.date || ''}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectArticle(id) {
+      activeArticleId = id;
+      const article = articles.find(a => a.id === id);
+      if (!article) return;
+
+      document.getElementById('form-heading').innerText = 'Editează Articol';
+      document.getElementById('article-id-badge').innerText = `[${article.id}]`;
+      document.getElementById('field-title').value = article.title || '';
+      document.getElementById('field-category').value = article.category || 'cv-preview';
+      document.getElementById('field-slug').value = article.id || '';
+      document.getElementById('field-date').value = article.date || '';
+      document.getElementById('field-readTime').value = article.readTime || '';
+      document.getElementById('field-author').value = article.author || '';
+      document.getElementById('field-avatar').value = article.avatar || '';
+      document.getElementById('field-summary').value = article.summary || '';
+      document.getElementById('field-tags').value = (article.tags || []).join(', ');
+      document.getElementById('field-content').value = article.content || '';
+
+      document.getElementById('btn-delete').style.display = 'inline-block';
+
+      updateAvatarPreview();
+      updateLivePreview();
+      renderArticleList();
+    }
+
+    function initNewArticle() {
+      activeArticleId = null;
+      document.getElementById('form-heading').innerText = 'Articol Nou';
+      document.getElementById('article-id-badge').innerText = '[NOU]';
+      document.getElementById('field-title').value = '';
+      document.getElementById('field-category').value = 'cv-preview';
+      document.getElementById('field-slug').value = '';
+      document.getElementById('field-date').value = getFormattedDate();
+      document.getElementById('field-readTime').value = '';
+      document.getElementById('field-author').value = 'Echipa CVBuilder';
+      document.getElementById('field-avatar').value = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex';
+      document.getElementById('field-summary').value = '';
+      document.getElementById('field-tags').value = '';
+      document.getElementById('field-content').value = '# Titlu Articol Nou\n\nScrie conținutul aici...';
+
+      document.getElementById('btn-delete').style.display = 'none';
+
+      updateAvatarPreview();
+      updateLivePreview();
+      renderArticleList();
+    }
+
+    function onTitleInput() {
+      if (!activeArticleId) {
+        autoGenerateSlug();
+      }
+    }
+
+    async function autoGenerateSlug() {
+      const title = document.getElementById('field-title').value;
+      if (!title) return;
+      const res = await fetch('/api/utils/slugify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: title })
+      });
+      const data = await res.json();
+      document.getElementById('field-slug').value = data.slug;
+    }
+
+    async function autoCalculateReadTime() {
+      const content = document.getElementById('field-content').value;
+      const res = await fetch('/api/utils/readtime', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      });
+      const data = await res.json();
+      document.getElementById('field-readTime').value = data.readTime;
+    }
+
+    function updateAvatarPreview() {
+      const author = document.getElementById('field-author').value || 'User';
+      let avatar = document.getElementById('field-avatar').value;
+      if (!avatar) {
+        avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(author)}`;
+      }
+      document.getElementById('avatar-preview').src = avatar;
+    }
+
+    function updateLivePreview() {
+      const text = document.getElementById('field-content').value;
+      document.getElementById('preview-container').innerHTML = simpleMarkdownParse(text);
+    }
+
+    // Simple Rudimentary Markdown Parser
+    function simpleMarkdownParse(md) {
+      if (!md) return '<em>Fără conținut...</em>';
+      let html = md;
+      
+      // Escape script tags
+      html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
+      // Code blocks
+      html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, function(match, lang, code) {
+        return `<pre><code class="language-${lang}">${escapeHtml(code.trim())}</code></pre>`;
+      });
+
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+      // Headings
+      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^## (.*$)/gim, '2>$1</h2>').replace(/^2>/gim, '<h2>');
+      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+      // Blockquotes
+      html = html.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+      // Bold & Italic
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+      // Lists
+      html = html.replace(/^\- (.*$)/gim, '<ul><li>$1</li></ul>');
+      html = html.replace(/<\/ul>\s*<ul>/g, '');
+
+      // Paragraphs
+      html = html.replace(/\n\n/g, '</p><p>');
+
+      return '<p>' + html + '</p>';
+    }
+
+    function insertMarkdown(prefix, suffix) {
+      const textarea = document.getElementById('field-content');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const selected = text.substring(start, end);
+      const replacement = prefix + selected + suffix;
+      textarea.value = text.substring(0, start) + replacement + text.substring(end);
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+      updateLivePreview();
+    }
+
+    async function saveArticle() {
+      const title = document.getElementById('field-title').value.trim();
+      const category = document.getElementById('field-category').value;
+      const slug = document.getElementById('field-slug').value.trim();
+      const date = document.getElementById('field-date').value.trim();
+      const readTime = document.getElementById('field-readTime').value.trim();
+      const author = document.getElementById('field-author').value.trim();
+      const avatar = document.getElementById('field-avatar').value.trim();
+      const summary = document.getElementById('field-summary').value.trim();
+      const tagsStr = document.getElementById('field-tags').value;
+      const content = document.getElementById('field-content').value;
+
+      if (!title) {
+        showToast('Titlul articolului este obligatoriu!', 'error');
+        return;
+      }
+
+      const payload = {
+        title,
+        category,
+        id: slug,
+        date,
+        readTime,
+        author,
+        avatar,
+        summary,
+        tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
+        content
+      };
+
+      try {
+        let res;
+        if (activeArticleId) {
+          res = await fetch(`/api/articles/${activeArticleId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          res = await fetch('/api/articles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(activeArticleId ? 'Articol salvat cu succes în blogData.js!' : 'Articol nou creat cu succes!', 'success');
+          articles = data.articles;
+          categories = data.categories;
+          updateStats();
+          renderCategoryFilter();
+          selectArticle(data.article.id);
+        } else {
+          showToast('Eroare: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Eroare de salvare: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteCurrentArticle() {
+      if (!activeArticleId) return;
+      if (!confirm(`Ești sigur că vrei să ștergi articolul "${activeArticleId}" din blogData.js?`)) return;
+
+      try {
+        const res = await fetch(`/api/articles/${activeArticleId}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Articol șters cu succes.', 'success');
+          articles = data.articles;
+          categories = data.categories;
+          activeArticleId = null;
+          updateStats();
+          renderCategoryFilter();
+          if (articles.length > 0) {
+            selectArticle(articles[0].id);
+          } else {
+            initNewArticle();
+          }
+        } else {
+          showToast('Eroare la ștergere: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Eroare la ștergere: ' + err.message, 'error');
+      }
+    }
+
+    function resetForm() {
+      if (activeArticleId) {
+        selectArticle(activeArticleId);
+      } else {
+        initNewArticle();
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-message');
+      toast.className = `toast show ${type}`;
+      text.innerText = msg;
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function getFormattedDate() {
+      const months = ['Ian', 'Feb', 'Mar', 'Apr', 'Mai', 'Iun', 'Iul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const d = new Date();
+      return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    const CATEGORY_NAMES = {
+      'cv-preview': 'CV Preview',
+      'cv-as-code': 'CV-as-Code',
+      'ai-agent': 'AI Agent',
+      'social': 'Social',
+      'misc': 'Misc'
+    };
+
+    function normalizeNewlines(str) {
+      if (!str) return '';
+      let result = str.replace(/\r\n/g, '\n');
+      if (!result.includes('\n') && result.includes('\\n')) {
+        result = result.replace(/\\n/g, '\n');
+      }
+      return result;
+    }
+
+    function exportCurrentArticleMd() {
+      const title = document.getElementById('field-title').value.trim();
+      const category = document.getElementById('field-category').value;
+      const slug = document.getElementById('field-slug').value.trim() || 'articol';
+      const date = document.getElementById('field-date').value.trim();
+      const readTime = document.getElementById('field-readTime').value.trim();
+      const author = document.getElementById('field-author').value.trim();
+      const avatar = document.getElementById('field-avatar').value.trim();
+      const summary = document.getElementById('field-summary').value.trim();
+      const tagsStr = document.getElementById('field-tags').value;
+      const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
+      const rawContent = document.getElementById('field-content').value;
+
+      if (!title && !rawContent) {
+        showToast('Nu există conținut de exportat!', 'error');
+        return;
+      }
+
+      const cleanContent = normalizeNewlines(rawContent);
+
+      const formattedTags = tags.length > 0
+        ? 'tags:\n' + tags.map(t => `  - ${t}`).join('\n')
+        : 'tags: []';
+
+      const mdText = `---
+id: ${JSON.stringify(slug)}
+title: ${JSON.stringify(title)}
+category: ${JSON.stringify(category)}
+categoryName: ${JSON.stringify(CATEGORY_NAMES[category] || category)}
+date: ${JSON.stringify(date)}
+readTime: ${JSON.stringify(readTime)}
+author: ${JSON.stringify(author)}
+avatar: ${JSON.stringify(avatar)}
+summary: ${JSON.stringify(summary)}
+${formattedTags}
+---
+
+${cleanContent}
+`;
+
+      const blob = new Blob([mdText], { type: 'text/markdown;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slug}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast(`Fișierul ${slug}.md a fost exportat cu succes cu linii noi păstrate!`, 'success');
+    }
+
+    function importMdFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const rawText = evt.target.result;
+        parseAndLoadMd(rawText);
+        e.target.value = '';
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function parseAndLoadMd(rawText) {
+      let content = rawText;
+      let metadata = {};
+
+      if (rawText.startsWith('---')) {
+        const parts = rawText.split(/^---$/m);
+        if (parts.length >= 3) {
+          const yamlHeader = parts[1];
+          content = parts.slice(2).join('---').trim();
+
+          yamlHeader.split('\n').forEach(line => {
+            const colonIdx = line.indexOf(':');
+            if (colonIdx > 0 && !line.trim().startsWith('-')) {
+              const key = line.substring(0, colonIdx).trim();
+              let val = line.substring(colonIdx + 1).trim();
+              if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                val = val.slice(1, -1);
+              }
+              metadata[key] = val;
+            }
+          });
+        }
+      }
+
+      if (metadata.title) document.getElementById('field-title').value = metadata.title;
+      if (metadata.category) document.getElementById('field-category').value = metadata.category;
+      if (metadata.id) document.getElementById('field-slug').value = metadata.id;
+      if (metadata.date) document.getElementById('field-date').value = metadata.date;
+      if (metadata.readTime) document.getElementById('field-readTime').value = metadata.readTime;
+      if (metadata.author) document.getElementById('field-author').value = metadata.author;
+      if (metadata.avatar) document.getElementById('field-avatar').value = metadata.avatar;
+      if (metadata.summary) document.getElementById('field-summary').value = metadata.summary;
+
+      document.getElementById('field-content').value = normalizeNewlines(content);
+
+      updateAvatarPreview();
+      updateLivePreview();
+      showToast('Fișierul .md a fost importat cu succes!', 'success');
+    }
+
+    // Keyboard Shortcut Ctrl+S / Cmd+S
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveArticle();
+      }
+    });
+
+    // Initialize
+    fetchData();
+  </script>
+</body>
+</html>

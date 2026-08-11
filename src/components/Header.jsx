@@ -92,8 +92,8 @@ export default function Header({
           title="Git-style Snapshot Versioning"
         >
           <GitCommit size={14} style={{ color: '#c084fc' }} />
-          <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>{latestCommit.tag}</span>
-          <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>({latestCommit.hash})</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>{latestCommit?.tag || 'v1.4'}</span>
+          <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>({latestCommit?.hash || 'a7f3b91'})</span>
         </button>
 
         {/* Real-time Collaborators stack */}
