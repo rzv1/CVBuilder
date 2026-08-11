@@ -1,18 +1,50 @@
-import React, { useState } from 'react';
-import Editor from '@monaco-editor/react';
-import { 
-  User, 
-  Briefcase, 
-  GraduationCap, 
-  Globe2, 
+import React, { useState, useRef, useEffect } from 'react';
+import Editor, { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+import { configureMonacoYaml } from "monaco-yaml";
+import mySchema from '../../../schema.json';
+import EditorWorker from '../../editor.worker?worker';
+import YamlWorker from '../../yaml.worker?worker';
+
+self.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === 'yaml') {
+      return new YamlWorker();
+    }
+    return new EditorWorker();
+  }
+};
+
+// Configure Monaco YAML support globally on the monaco instance
+configureMonacoYaml(monaco, {
+  enableSchemaRequest: false,
+  validate: true,
+  format: true,
+  hover: true,
+  completion: true,
+  schemas: [
+    {
+      uri: 'https://raw.githubusercontent.com/cvbuilder-ai/cvbuilder-ai-studio/main/src/schemas/content.yaml',
+      fileMatch: ['*'],
+      schema: mySchema
+    }
+  ]
+});
+
+// Use local bundled Monaco instance rather than downloading from CDN
+loader.config({ monaco });
+
+import {
+  User,
+  Briefcase,
+  GraduationCap,
+  Globe2,
   Award,
   Wrench,
-  Plus, 
-  Trash2, 
-  GripVertical, 
-  Sparkles, 
-  Tag, 
-  Check, 
+  Plus,
+  Trash2,
+  GripVertical,
+  Tag,
   FolderPlus,
   AlertCircle,
   ChevronDown,
@@ -23,7 +55,6 @@ import {
   Play,
   FileText,
   Sliders,
-  AlertTriangle,
   CheckCircle2
 } from '../Icons';
 
@@ -37,7 +68,6 @@ export default function ContentEditorTab({ cvData, setCvData, isDevMode }) {
   const [autoRun, setAutoRun] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [syntaxError, setSyntaxError] = useState(null);
-  const [hasMockError, setHasMockError] = useState(false);
 
   // Pre-populated clean YAML sample data
   const [contentYaml, setContentYaml] = useState(`# ==========================================
@@ -116,13 +146,29 @@ features:
   compactMode: false
 `);
 
-  // Monaco Ultra-Minimalist Configuration
+  const debounceTimerRef = useRef(null);
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+
+  // Monaco Ultra-Minimalist Configuration with Quick Suggestions disabled for strings
   const monacoOptions = {
     automaticLayout: true,
+    quickSuggestions: {
+      other: true,
+      comments: false,
+      strings: true
+    },
+    completion: true,
+    suggestOnTriggerCharacters: true,
+    suggest: {
+      showWords: false
+    },
+    wordWrap: true,
+    formatOnType: true,
     minimap: { enabled: false },
-    glyphMargin: false,
+    glyphMargin: true,
     folding: true,
-    lineNumbers: 'on',
+    lineNumbers: 'off',
     lineDecorationsWidth: 8,
     lineNumbersMinChars: 3,
     renderLineHighlight: 'all',
@@ -134,52 +180,111 @@ features:
       horizontalScrollbarSize: 8
     },
     fontFamily: "'JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', monospace",
-    fontSize: 12.5,
+    fontSize: 13.5,
     lineHeight: 20,
     padding: { top: 12, bottom: 24 },
     smoothScrolling: true,
     cursorBlinking: 'smooth',
     cursorSmoothCaretAnimation: 'on',
+    mouseWheelZoom: true,
     scrollBeyondLastLine: false,
     overviewRulerBorder: false,
     hideCursorInOverviewRuler: true,
     tabSize: 2
   };
 
+  // Sync monaco-yaml error markers with React syntaxError state for bottom status bar display
+  const checkMarkers = (editor, monaco) => {
+    if (!editor || !monaco) return;
+    const model = editor.getModel();
+    if (!model) return;
+
+    const markers = monaco.editor.getModelMarkers({ resource: model.uri });
+    const errorMarker = markers.find(m => m.severity === monaco.MarkerSeverity.Error);
+
+    if (errorMarker) {
+      setSyntaxError({
+        line: errorMarker.startLineNumber,
+        column: errorMarker.startColumn,
+        message: errorMarker.message
+      });
+    } else {
+      setSyntaxError(null);
+    }
+  };
+
+  const handleEditorMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+
+    const disposable = monaco.editor.onDidChangeMarkers(() => {
+      checkMarkers(editor, monaco);
+    });
+
+    setTimeout(() => {
+      checkMarkers(editor, monaco);
+    }, 200);
+
+    return () => {
+      disposable.dispose();
+    };
+  };
+
   const handleRunCode = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
     setIsRunning(true);
     setTimeout(() => {
       setIsRunning(false);
-      if (hasMockError) {
-        setSyntaxError({
-          line: 18,
-          column: 5,
-          message: "YAML SyntaxError: Bad indentation mapping at line 18, col 5 (expected 2 spaces, found 3)"
-        });
-      } else {
-        setSyntaxError(null);
-      }
+      checkMarkers(editorRef.current, monacoRef.current);
     }, 350);
   };
 
+  // Debounced auto-run mechanism (runs 500ms after last consecutive key press)
   const handleContentChange = (value) => {
     setContentYaml(value || '');
-    if (autoRun && !hasMockError) {
-      setSyntaxError(null);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (autoRun) {
+      debounceTimerRef.current = setTimeout(() => {
+        if (editorRef.current && monacoRef.current) {
+          checkMarkers(editorRef.current, monacoRef.current);
+        }
+      }, 500);
     }
   };
 
   const handleStyleChange = (value) => {
     setStyleYaml(value || '');
-    if (autoRun && !hasMockError) {
-      setSyntaxError(null);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (autoRun) {
+      debounceTimerRef.current = setTimeout(() => {
+        if (editorRef.current && monacoRef.current) {
+          checkMarkers(editorRef.current, monacoRef.current);
+        }
+      }, 500);
     }
   };
 
-  // Interactive XYZ bullet formula assistant state
-  const [activeXyzExpId, setActiveXyzExpId] = useState(null);
-  const [activeXyzBulletIdx, setActiveXyzBulletIdx] = useState(null);
-  const [xyzForm, setXyzForm] = useState({ x: '', y: '', z: '' });
+  const handleBeforeMount = () => {
+    // Monaco YAML is configured globally at module initialization
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   // Drag & drop state for reordering items within sections
   const [draggedItem, setDraggedItem] = useState(null); // { sectionKey, index, customSecIdx }
@@ -321,25 +426,6 @@ features:
       ...prev,
       experience: prev.experience.filter((_, i) => i !== idx)
     }));
-  };
-
-  // Google XYZ Metric Bullet Builder
-  const openXyzAssistant = (expId, bulletIdx, currentText) => {
-    setActiveXyzExpId(expId);
-    setActiveXyzBulletIdx(bulletIdx);
-    setXyzForm({
-      x: "increased page load speed by 45%",
-      y: "Core Web Vitals Lighthouse score",
-      z: "implementing server-side rendering and static page caching"
-    });
-  };
-
-  const applyXyzFormula = (expIdx) => {
-    if (activeXyzBulletIdx === null) return;
-    const generatedBullet = `Accomplished ${xyzForm.x} as measured by ${xyzForm.y}, by doing ${xyzForm.z}.`;
-    handleBulletChange(expIdx, activeXyzBulletIdx, generatedBullet);
-    setActiveXyzExpId(null);
-    setActiveXyzBulletIdx(null);
   };
 
   // Handlers for Education
@@ -548,29 +634,27 @@ features:
         <div className="dev-toolbar">
           {/* Left Side: File Tabs Selector */}
           <div className="dev-file-tabs">
-            <button 
+            <button
               className={`dev-file-tab ${activeDevFile === 'content' && !isSplitView ? 'active' : ''} ${isSplitView ? 'split-active' : ''}`}
               onClick={() => setActiveDevFile('content')}
             >
               <FileText size={14} style={{ color: '#60a5fa' }} />
               <span>content.yaml</span>
-              <span className="file-badge">YAML</span>
             </button>
 
-            <button 
+            <button
               className={`dev-file-tab ${activeDevFile === 'style' && !isSplitView ? 'active' : ''} ${isSplitView ? 'split-active' : ''}`}
               onClick={() => setActiveDevFile('style')}
             >
               <Sliders size={14} style={{ color: '#c084fc' }} />
               <span>style.yaml</span>
-              <span className="file-badge purple">YAML</span>
             </button>
           </div>
 
-          {/* Center/Right Controls: Split View, Auto-Run, Run Button, Mock Error Tester */}
+          {/* Center/Right Controls: Split View, Auto-Run, Run Button */}
           <div className="dev-toolbar-actions">
             {/* Split View Toggle */}
-            <button 
+            <button
               className={`dev-action-btn ${isSplitView ? 'active' : ''}`}
               onClick={() => setIsSplitView(prev => !prev)}
               title="Split view side-by-side"
@@ -579,43 +663,21 @@ features:
               <span>Split View</span>
             </button>
 
-            {/* Toggle Syntax Error Test Mode */}
-            <button 
-              className={`dev-action-btn ${hasMockError ? 'warning' : ''}`}
-              onClick={() => {
-                const nextErrState = !hasMockError;
-                setHasMockError(nextErrState);
-                if (nextErrState) {
-                  setSyntaxError({
-                    line: 18,
-                    column: 5,
-                    message: "YAML SyntaxError: Bad indentation mapping at line 18, col 5 (expected 2 spaces, found 3)"
-                  });
-                } else {
-                  setSyntaxError(null);
-                }
-              }}
-              title="Simulează o eroare de sintaxă pentru testare UX"
-            >
-              <AlertTriangle size={13} style={{ color: hasMockError ? '#f87171' : '#9ca3af' }} />
-              <span style={{ fontSize: '0.72rem' }}>{hasMockError ? 'Error Simulated' : 'Test Error'}</span>
-            </button>
-
             {/* Auto-Run Toggle Switch */}
             <div className="auto-run-switch" title="Auto-run pe fiecare modificare">
               <span className="switch-label">Auto-Run</span>
               <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={autoRun} 
-                  onChange={(e) => setAutoRun(e.target.checked)} 
+                <input
+                  type="checkbox"
+                  checked={autoRun}
+                  onChange={(e) => setAutoRun(e.target.checked)}
                 />
                 <span className="slider round"></span>
               </label>
             </div>
 
             {/* Run Code Button */}
-            <button 
+            <button
               className={`dev-run-btn ${isRunning ? 'running' : ''}`}
               onClick={handleRunCode}
               disabled={isRunning}
@@ -640,7 +702,10 @@ features:
               <div className="monaco-editor-wrapper">
                 <Editor
                   height="100%"
-                  defaultLanguage="yaml"
+                  language="yaml"
+                  path="content.yaml"
+                  beforeMount={handleBeforeMount}
+                  onMount={handleEditorMount}
                   theme="vs-dark"
                   value={contentYaml}
                   onChange={handleContentChange}
@@ -661,7 +726,10 @@ features:
               <div className="monaco-editor-wrapper">
                 <Editor
                   height="100%"
-                  defaultLanguage="yaml"
+                  language="yaml"
+                  path="style.yaml"
+                  beforeMount={handleBeforeMount}
+                  onMount={handleEditorMount}
                   theme="vs-dark"
                   value={styleYaml}
                   onChange={handleStyleChange}
@@ -708,7 +776,7 @@ features:
 
       {/* 1. PERSONAL DETAILS */}
       <div className="accordion-section">
-        <button 
+        <button
           className={`accordion-header ${activeSection === 'personal' ? 'active' : ''}`}
           onClick={() => toggleSection('personal')}
         >
@@ -725,34 +793,34 @@ features:
           <div className="accordion-body">
             <div className="form-group">
               <label>Full Name</label>
-              <input 
-                type="text" 
-                className="input-field" 
+              <input
+                type="text"
+                className="input-field"
                 placeholder="e.g. Alexandru Popescu"
-                value={cvData.personal?.name || ''} 
-                onChange={(e) => handlePersonalChange('name', e.target.value)} 
+                value={cvData.personal?.name || ''}
+                onChange={(e) => handlePersonalChange('name', e.target.value)}
               />
             </div>
 
             <div className="form-row-2">
               <div className="form-group">
                 <label>Professional Title</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
+                <input
+                  type="text"
+                  className="input-field"
                   placeholder="e.g. Senior Full Stack Engineer"
-                  value={cvData.personal?.title || ''} 
-                  onChange={(e) => handlePersonalChange('title', e.target.value)} 
+                  value={cvData.personal?.title || ''}
+                  onChange={(e) => handlePersonalChange('title', e.target.value)}
                 />
               </div>
               <div className="form-group">
                 <label>Email Address</label>
-                <input 
-                  type="email" 
-                  className="input-field" 
+                <input
+                  type="email"
+                  className="input-field"
                   placeholder="e.g. alex@techdev.io"
-                  value={cvData.personal?.email || ''} 
-                  onChange={(e) => handlePersonalChange('email', e.target.value)} 
+                  value={cvData.personal?.email || ''}
+                  onChange={(e) => handlePersonalChange('email', e.target.value)}
                 />
               </div>
             </div>
@@ -760,34 +828,34 @@ features:
             <div className="form-row-2">
               <div className="form-group">
                 <label>Phone Number</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
+                <input
+                  type="text"
+                  className="input-field"
                   placeholder="e.g. +40 722 123 456"
-                  value={cvData.personal?.phone || ''} 
-                  onChange={(e) => handlePersonalChange('phone', e.target.value)} 
+                  value={cvData.personal?.phone || ''}
+                  onChange={(e) => handlePersonalChange('phone', e.target.value)}
                 />
               </div>
               <div className="form-group">
                 <label>Location</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
+                <input
+                  type="text"
+                  className="input-field"
                   placeholder="e.g. Bucharest, Romania"
-                  value={cvData.personal?.address || ''} 
-                  onChange={(e) => handlePersonalChange('address', e.target.value)} 
+                  value={cvData.personal?.address || ''}
+                  onChange={(e) => handlePersonalChange('address', e.target.value)}
                 />
               </div>
             </div>
 
             <div className="form-group">
               <label>Professional Summary</label>
-              <textarea 
-                className="input-field" 
+              <textarea
+                className="input-field"
                 rows={3}
                 placeholder="Write a concise overview of your technical experience, domain expertise, and core strengths..."
-                value={cvData.personal?.summary || ''} 
-                onChange={(e) => handlePersonalChange('summary', e.target.value)} 
+                value={cvData.personal?.summary || ''}
+                onChange={(e) => handlePersonalChange('summary', e.target.value)}
               />
             </div>
           </div>
@@ -796,7 +864,7 @@ features:
 
       {/* 2. WORK EXPERIENCE */}
       <div className="accordion-section">
-        <button 
+        <button
           className={`accordion-header ${activeSection === 'experience' ? 'active' : ''}`}
           onClick={() => toggleSection('experience')}
         >
@@ -820,8 +888,8 @@ features:
             </div>
 
             {(cvData.experience || []).map((exp, expIdx) => (
-              <div 
-                key={exp.id} 
+              <div
+                key={exp.id}
                 className={`item-card ${draggedItem?.sectionKey === 'experience' && draggedItem?.index === expIdx ? 'is-dragging' : ''}`}
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, 'experience', expIdx)}
@@ -832,18 +900,18 @@ features:
                   <div className="item-card-title-group">
                     <span className="drag-handle" title="Drag to reorder"><GripVertical size={16} /></span>
                     <div className="reorder-controls">
-                      <button 
-                        disabled={expIdx === 0} 
-                        onClick={() => moveItem('experience', expIdx, -1)} 
-                        title="Move Up" 
+                      <button
+                        disabled={expIdx === 0}
+                        onClick={() => moveItem('experience', expIdx, -1)}
+                        title="Move Up"
                         className="btn-icon"
                       >
                         <ArrowUp size={12} />
                       </button>
-                      <button 
-                        disabled={expIdx === cvData.experience.length - 1} 
-                        onClick={() => moveItem('experience', expIdx, 1)} 
-                        title="Move Down" 
+                      <button
+                        disabled={expIdx === cvData.experience.length - 1}
+                        onClick={() => moveItem('experience', expIdx, 1)}
+                        title="Move Down"
                         className="btn-icon"
                       >
                         <ArrowDown size={12} />
@@ -855,7 +923,7 @@ features:
                     <span className={`badge ${exp.variant === 'frontend' ? 'badge-blue' : exp.variant === 'backend' ? 'badge-purple' : 'badge-green'}`}>
                       <Tag size={10} /> {(exp.variant || 'all').toUpperCase()}
                     </span>
-                    <button 
+                    <button
                       onClick={() => deleteExperience(expIdx)}
                       className="btn-delete"
                       title="Delete Experience"
@@ -887,7 +955,7 @@ features:
                   </div>
                   <div className="form-group">
                     <label>Target Profile Variant</label>
-                    <select 
+                    <select
                       className="input-field"
                       value={exp.variant || 'all'}
                       onChange={(e) => handleExpChange(expIdx, 'variant', e.target.value)}
@@ -904,36 +972,25 @@ features:
                   <input type="text" className="input-field" placeholder="Brief summary of primary responsibilities..." value={exp.description || ''} onChange={(e) => handleExpChange(expIdx, 'description', e.target.value)} />
                 </div>
 
-                {/* Bullet Points with Google XYZ Metric Formula */}
+                {/* Bullet Points */}
                 <div className="form-group">
                   <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>Quantifiable Bullet Achievements</span>
-                    <span className="badge badge-purple" style={{ fontSize: '0.65rem' }}>
-                      <Sparkles size={10} /> Google XYZ Metric Formula
-                    </span>
                   </label>
 
                   {(exp.bullets || []).map((bullet, bIdx) => {
-                    const hasMetric = /\b(\d+%|\$\d+|\d+k|\d+ms|\d+x|\d+ req\/sec|\d+M|\d+)\b/i.test(bullet);
 
                     return (
                       <div key={bIdx} style={{ marginBottom: '0.75rem' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                          <textarea 
-                            className="input-field" 
-                            rows={2} 
-                            value={bullet} 
+                          <textarea
+                            className="input-field"
+                            rows={2}
+                            value={bullet}
                             onChange={(e) => handleBulletChange(expIdx, bIdx, e.target.value)}
                           />
-                          <button 
-                            className="action-btn" 
-                            style={{ padding: '0.5rem', background: '#2e1065', color: '#c084fc', border: '1px solid #7e22ce' }}
-                            onClick={() => openXyzAssistant(exp.id, bIdx, bullet)}
-                            title="Format bullet using Google XYZ Formula: Accomplished [X] as measured by [Y], by doing [Z]"
-                          >
-                            <Sparkles size={14} />
-                          </button>
-                          <button 
+
+                          <button
                             className="btn-delete"
                             style={{ marginTop: '0.4rem' }}
                             onClick={() => removeBulletPoint(expIdx, bIdx)}
@@ -942,59 +999,6 @@ features:
                           </button>
                         </div>
 
-                        {!hasMetric && (
-                          <div style={{ fontSize: '0.7rem', color: '#fbbf24', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <AlertCircle size={12} /> Recommendation: Include metrics (e.g. %, numbers, or time saved) for maximum ATS impact.
-                          </div>
-                        )}
-
-                        {activeXyzExpId === exp.id && activeXyzBulletIdx === bIdx && (
-                          <div className="xyz-assistant-card">
-                            <div className="xyz-title">
-                              <Sparkles size={14} /> Google XYZ Formula Bullet Rewriter
-                            </div>
-                            <div className="xyz-inputs">
-                              <div className="xyz-row">
-                                <span className="xyz-label">X (Accomplished):</span>
-                                <input 
-                                  type="text" 
-                                  className="input-field" 
-                                  style={{ fontSize: '0.75rem', padding: '0.35rem' }} 
-                                  value={xyzForm.x} 
-                                  onChange={(e) => setXyzForm(prev => ({ ...prev, x: e.target.value }))}
-                                />
-                              </div>
-                              <div className="xyz-row">
-                                <span className="xyz-label">Y (Measured by):</span>
-                                <input 
-                                  type="text" 
-                                  className="input-field" 
-                                  style={{ fontSize: '0.75rem', padding: '0.35rem' }} 
-                                  value={xyzForm.y} 
-                                  onChange={(e) => setXyzForm(prev => ({ ...prev, y: e.target.value }))}
-                                />
-                              </div>
-                              <div className="xyz-row">
-                                <span className="xyz-label">Z (By doing):</span>
-                                <input 
-                                  type="text" 
-                                  className="input-field" 
-                                  style={{ fontSize: '0.75rem', padding: '0.35rem' }} 
-                                  value={xyzForm.z} 
-                                  onChange={(e) => setXyzForm(prev => ({ ...prev, z: e.target.value }))}
-                                />
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                <button className="action-btn" style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }} onClick={() => setActiveXyzExpId(null)}>
-                                  Cancel
-                                </button>
-                                <button className="action-btn action-btn-primary" style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }} onClick={() => applyXyzFormula(expIdx)}>
-                                  <Check size={12} /> Apply Bullet Formula
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     );
                   })}
@@ -1011,7 +1015,7 @@ features:
 
       {/* 3. EDUCATION */}
       <div className="accordion-section">
-        <button 
+        <button
           className={`accordion-header ${activeSection === 'education' ? 'active' : ''}`}
           onClick={() => toggleSection('education')}
         >
@@ -1035,8 +1039,8 @@ features:
             </div>
 
             {(cvData.education || []).map((edu, eduIdx) => (
-              <div 
-                key={edu.id} 
+              <div
+                key={edu.id}
                 className={`item-card ${draggedItem?.sectionKey === 'education' && draggedItem?.index === eduIdx ? 'is-dragging' : ''}`}
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, 'education', eduIdx)}
@@ -1100,7 +1104,7 @@ features:
 
       {/* 4. SKILLS */}
       <div className="accordion-section">
-        <button 
+        <button
           className={`accordion-header ${activeSection === 'skills' ? 'active' : ''}`}
           onClick={() => toggleSection('skills')}
         >
@@ -1124,8 +1128,8 @@ features:
             </div>
 
             {(cvData.skills || []).map((skillGroup, skIdx) => (
-              <div 
-                key={skillGroup.id} 
+              <div
+                key={skillGroup.id}
                 className={`item-card ${draggedItem?.sectionKey === 'skills' && draggedItem?.index === skIdx ? 'is-dragging' : ''}`}
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, 'skills', skIdx)}
@@ -1152,23 +1156,23 @@ features:
 
                 <div className="form-group">
                   <label>Skill Category Title</label>
-                  <input 
-                    type="text" 
-                    className="input-field" 
+                  <input
+                    type="text"
+                    className="input-field"
                     placeholder="e.g. Frontend Development, Databases, Cloud"
-                    value={skillGroup.category || ''} 
-                    onChange={(e) => handleSkillGroupChange(skIdx, 'category', e.target.value)} 
+                    value={skillGroup.category || ''}
+                    onChange={(e) => handleSkillGroupChange(skIdx, 'category', e.target.value)}
                   />
                 </div>
 
                 <div className="form-group">
                   <label>Skills List (comma-separated)</label>
-                  <input 
-                    type="text" 
-                    className="input-field" 
+                  <input
+                    type="text"
+                    className="input-field"
                     placeholder="e.g. React, TypeScript, Next.js, Redux"
-                    value={skillGroup.rawInput !== undefined ? skillGroup.rawInput : (skillGroup.items || []).join(', ')} 
-                    onChange={(e) => handleSkillItemsChange(skIdx, e.target.value)} 
+                    value={skillGroup.rawInput !== undefined ? skillGroup.rawInput : (skillGroup.items || []).join(', ')}
+                    onChange={(e) => handleSkillItemsChange(skIdx, e.target.value)}
                   />
                 </div>
 
@@ -1185,7 +1189,7 @@ features:
 
       {/* 5. LANGUAGES */}
       <div className="accordion-section">
-        <button 
+        <button
           className={`accordion-header ${activeSection === 'languages' ? 'active' : ''}`}
           onClick={() => toggleSection('languages')}
         >
@@ -1209,8 +1213,8 @@ features:
             </div>
 
             {(cvData.languages || []).map((lang, langIdx) => (
-              <div 
-                key={lang.id} 
+              <div
+                key={lang.id}
                 className={`item-card ${draggedItem?.sectionKey === 'languages' && draggedItem?.index === langIdx ? 'is-dragging' : ''}`}
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, 'languages', langIdx)}
@@ -1238,22 +1242,22 @@ features:
                 <div className="form-row-2">
                   <div className="form-group">
                     <label>Language Name</label>
-                    <input 
-                      type="text" 
-                      className="input-field" 
+                    <input
+                      type="text"
+                      className="input-field"
                       placeholder="e.g. English, French"
-                      value={lang.name || ''} 
-                      onChange={(e) => handleLanguageChange(langIdx, 'name', e.target.value)} 
+                      value={lang.name || ''}
+                      onChange={(e) => handleLanguageChange(langIdx, 'name', e.target.value)}
                     />
                   </div>
                   <div className="form-group">
                     <label>Proficiency Level</label>
-                    <input 
-                      type="text" 
-                      className="input-field" 
+                    <input
+                      type="text"
+                      className="input-field"
                       placeholder="e.g. Native / Full Professional / C2"
-                      value={lang.level || ''} 
-                      onChange={(e) => handleLanguageChange(langIdx, 'level', e.target.value)} 
+                      value={lang.level || ''}
+                      onChange={(e) => handleLanguageChange(langIdx, 'level', e.target.value)}
                     />
                   </div>
                 </div>
@@ -1265,7 +1269,7 @@ features:
 
       {/* 6. AWARDS */}
       <div className="accordion-section">
-        <button 
+        <button
           className={`accordion-header ${activeSection === 'awards' ? 'active' : ''}`}
           onClick={() => toggleSection('awards')}
         >
@@ -1289,8 +1293,8 @@ features:
             </div>
 
             {(cvData.awards || []).map((award, awdIdx) => (
-              <div 
-                key={award.id} 
+              <div
+                key={award.id}
                 className={`item-card ${draggedItem?.sectionKey === 'awards' && draggedItem?.index === awdIdx ? 'is-dragging' : ''}`}
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, 'awards', awdIdx)}
@@ -1346,7 +1350,7 @@ features:
         const customSecKey = `custom-${sec.id}`;
         return (
           <div key={sec.id} className="accordion-section custom-accordion">
-            <button 
+            <button
               className={`accordion-header ${activeSection === customSecKey ? 'active' : ''}`}
               onClick={() => toggleSection(customSecKey)}
             >
@@ -1356,7 +1360,7 @@ features:
                 <span className="section-badge">{(sec.items || []).length} items</span>
               </div>
               <div className="accordion-header-right">
-                <button 
+                <button
                   className="btn-delete"
                   style={{ marginRight: '0.5rem' }}
                   onClick={(e) => {
@@ -1375,11 +1379,11 @@ features:
               <div className="accordion-body">
                 <div className="form-group" style={{ marginBottom: '1rem' }}>
                   <label>Section Title (as shown in CV)</label>
-                  <input 
-                    type="text" 
-                    className="input-field" 
+                  <input
+                    type="text"
+                    className="input-field"
                     style={{ fontWeight: 700, color: '#c084fc' }}
-                    value={sec.title} 
+                    value={sec.title}
                     onChange={(e) => {
                       const val = e.target.value;
                       setCvData(prev => {
@@ -1399,8 +1403,8 @@ features:
                 </div>
 
                 {(sec.items || []).map((item, itemIdx) => (
-                  <div 
-                    key={item.id} 
+                  <div
+                    key={item.id}
                     className={`item-card ${draggedItem?.sectionKey === 'custom' && draggedItem?.customSecIdx === secIdx && draggedItem?.index === itemIdx ? 'is-dragging' : ''}`}
                     draggable={true}
                     onDragStart={(e) => handleDragStart(e, 'custom', itemIdx, secIdx)}
@@ -1428,21 +1432,21 @@ features:
                     <div className="form-row-2">
                       <div className="form-group">
                         <label>Heading / Title</label>
-                        <input 
-                          type="text" 
-                          className="input-field" 
+                        <input
+                          type="text"
+                          className="input-field"
                           placeholder="e.g. React-Fast-Grid / Open Source Project"
-                          value={item.heading || ''} 
+                          value={item.heading || ''}
                           onChange={(e) => handleCustomItemChange(secIdx, itemIdx, 'heading', e.target.value)}
                         />
                       </div>
                       <div className="form-group">
                         <label>Subheading / Role</label>
-                        <input 
-                          type="text" 
-                          className="input-field" 
+                        <input
+                          type="text"
+                          className="input-field"
                           placeholder="e.g. Lead Developer / Keynote Speaker"
-                          value={item.subheading || ''} 
+                          value={item.subheading || ''}
                           onChange={(e) => handleCustomItemChange(secIdx, itemIdx, 'subheading', e.target.value)}
                         />
                       </div>
@@ -1451,21 +1455,21 @@ features:
                     <div className="form-row-2">
                       <div className="form-group">
                         <label>Start Date</label>
-                        <input 
-                          type="text" 
-                          className="input-field" 
+                        <input
+                          type="text"
+                          className="input-field"
                           placeholder="e.g. 2023 / Jan 2024"
-                          value={item.start || ''} 
+                          value={item.start || ''}
                           onChange={(e) => handleCustomItemChange(secIdx, itemIdx, 'start', e.target.value)}
                         />
                       </div>
                       <div className="form-group">
                         <label>End Date</label>
-                        <input 
-                          type="text" 
-                          className="input-field" 
+                        <input
+                          type="text"
+                          className="input-field"
                           placeholder="e.g. Present / Dec 2024"
-                          value={item.end || ''} 
+                          value={item.end || ''}
                           onChange={(e) => handleCustomItemChange(secIdx, itemIdx, 'end', e.target.value)}
                         />
                       </div>
@@ -1473,11 +1477,11 @@ features:
 
                     <div className="form-group">
                       <label>Description / Details</label>
-                      <textarea 
-                        className="input-field" 
+                      <textarea
+                        className="input-field"
                         rows={2}
                         placeholder="Detail key accomplishments, technologies used, or impact..."
-                        value={item.detail || ''} 
+                        value={item.detail || ''}
                         onChange={(e) => handleCustomItemChange(secIdx, itemIdx, 'detail', e.target.value)}
                       />
                     </div>
@@ -1491,14 +1495,14 @@ features:
 
       {/* BOTTOM ANCHORED "NEW SECTION" BUTTON */}
       <div className="new-section-bottom-container">
-        <button 
+        <button
           className={`btn-add-section-bottom ${isMaxCustomSectionsReached ? 'disabled' : ''}`}
           onClick={addCustomSection}
           disabled={isMaxCustomSectionsReached}
         >
-          <FolderPlus size={18} /> 
-          {isMaxCustomSectionsReached 
-            ? "Maximum 3 Custom Sections Reached" 
+          <FolderPlus size={18} />
+          {isMaxCustomSectionsReached
+            ? "Maximum 3 Custom Sections Reached"
             : `Add Custom Section (${customSectionsList.length}/3)`}
         </button>
         {isMaxCustomSectionsReached && (

@@ -3,22 +3,19 @@ import {
   ZoomIn, 
   ZoomOut, 
   Layers, 
-  Printer, 
   Sparkles, 
-  Globe, 
-  QrCode, 
   Eye,
-  ChevronLeft,
-  ChevronRight,
   CheckCircle,
   XCircle,
   Check,
-  X
+  X,
+  FileCode
 } from './Icons';
 import { MOCK_ANALYTICS } from '../mockData';
 
 export default function PreviewPanel({ 
   cvData, 
+  styleData,
   activeVariant, 
   pendingProposal, 
   proposalViewMode, 
@@ -33,12 +30,19 @@ export default function PreviewPanel({
   const [totalPages, setTotalPages] = useState(1);
   const cvContentRef = useRef(null);
 
-  // Auto calculate total pages based on content scrollHeight
+  // Determine active display state based on proposal view mode
+  const activeCv = pendingProposal 
+    ? (proposalViewMode === 'before' ? (pendingProposal.beforeContent || cvData) : (pendingProposal.afterContent || cvData))
+    : cvData;
+
+  const activeStyle = pendingProposal
+    ? (proposalViewMode === 'before' ? (pendingProposal.beforeStyle || styleData) : (pendingProposal.afterStyle || styleData))
+    : styleData;
+
   useEffect(() => {
     const updateTotalPages = () => {
       if (cvContentRef.current) {
         const height = cvContentRef.current.scrollHeight;
-        // 1123px is standard A4 height @ 96 DPI
         const pages = Math.max(1, Math.ceil(height / 1123));
         setTotalPages(pages);
         if (currentPage > pages) {
@@ -50,9 +54,8 @@ export default function PreviewPanel({
     updateTotalPages();
     const timer = setTimeout(updateTotalPages, 100);
     return () => clearTimeout(timer);
-  }, [cvData, activeVariant, proposalViewMode, currentPage]);
+  }, [activeCv, activeStyle, activeVariant, proposalViewMode, currentPage]);
 
-  // New profile inline input state in top bar
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
 
@@ -64,11 +67,22 @@ export default function PreviewPanel({
     setNewProfileName('');
   };
 
-  // Filter experience based on active Dynamic Tailoring variant
-  const filteredExperience = cvData.experience.filter(exp => {
+  const filteredExperience = (activeCv.experience || []).filter(exp => {
     if (activeVariant === 'all') return true;
     return exp.variant === 'all' || exp.variant === activeVariant;
   });
+
+  // Helper to check if path is in JSON patch contentPaths
+  const isPathModified = (pathStr) => {
+    if (!pendingProposal || !pendingProposal.contentPaths) return false;
+    if (pendingProposal.contentPaths.has(pathStr)) return true;
+    for (const p of pendingProposal.contentPaths) {
+      if (p.startsWith(pathStr) || pathStr.startsWith(p)) return true;
+    }
+    return false;
+  };
+
+  const sectionTitleFontSize = activeStyle?.typography?.sectionTitleSize || '1.1rem';
 
   return (
     <div className="right-panel">
@@ -97,56 +111,39 @@ export default function PreviewPanel({
                 justifyContent: 'center',
                 padding: '2px',
                 border: 'none',
-                opacity: currentPage === 1 ? 0.4 : 1,
-                transition: 'all 0.15s ease'
+                opacity: currentPage === 1 ? 0.4 : 1
               }}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              title="Pagina Anterioară"
             >
-              <ChevronLeft size={16} />
+              ◀
             </button>
-            
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, minWidth: '85px', textAlign: 'center', color: '#f3f4f6', userSelect: 'none' }}>
-              Pagină {currentPage} din {totalPages}
+
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#e2e8f0', minWidth: '42px', textAlign: 'center' }}>
+              {currentPage} / {totalPages}
             </span>
 
             <button 
               type="button"
               style={{ 
                 background: 'transparent', 
-                color: currentPage === totalPages ? '#475569' : '#38bdf8', 
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                color: currentPage >= totalPages ? '#475569' : '#38bdf8', 
+                cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: '2px',
                 border: 'none',
-                opacity: currentPage === totalPages ? 0.4 : 1,
-                transition: 'all 0.15s ease'
+                opacity: currentPage >= totalPages ? 0.4 : 1
               }}
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              title="Pagina Următoare"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
             >
-              <ChevronRight size={16} />
+              ▶
             </button>
           </div>
 
-          {/* Template Switcher */}
-          <select 
-            className="variant-select"
-            style={{ background: '#1e293b', border: '1px solid var(--border-color)', padding: '0.35rem 0.5rem', borderRadius: '6px' }}
-            value={themeTemplate}
-            onChange={(e) => setThemeTemplate(e.target.value)}
-          >
-            <option value="modern">Theme: Modern SaaS (Tech)</option>
-            <option value="executive">Theme: Executive Serif</option>
-            <option value="minimal">Theme: Minimalist Clean</option>
-          </select>
-
-          {/* Zoom Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: '#1e293b', padding: '0.25rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#1e293b', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
             <button style={{ background: 'transparent', color: '#9ca3af' }} onClick={() => setZoomLevel(Math.max(60, zoomLevel - 10))}>
               <ZoomOut size={14} />
             </button>
@@ -160,7 +157,7 @@ export default function PreviewPanel({
         </div>
       </div>
 
-      {/* Floating AI Proposal Bar (Stacked right controls, multiline AI explanation on left) */}
+      {/* Floating AI Proposal Bar */}
       {pendingProposal && (
         <div style={{
           background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
@@ -173,17 +170,17 @@ export default function PreviewPanel({
           zIndex: 10,
           boxShadow: '0 6px 16px rgba(0,0,0,0.35)'
         }}>
-          {/* Left Side: Detailed AI Message & Optimization Explanation with Text Wrap */}
+          {/* Left Side: AI Explanation & Token Savings Indicator */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
               <div style={{ background: '#7c3aed', padding: '0.3rem', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Sparkles size={16} style={{ color: '#ffffff' }} />
               </div>
               <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f3f4f6' }}>
-                {pendingProposal.sectionTitle || 'Propunere de Optimizare AI'}
+                Propunere de Optimizare AI (JSON Patch RFC 6902)
               </span>
-              <span className="badge badge-purple" style={{ fontSize: '0.68rem', fontWeight: 700 }}>
-                ATS GAIN +{pendingProposal.atsGain || 12}%
+              <span className="badge badge-purple" style={{ fontSize: '0.68rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <FileCode size={12} /> ~85% TOKEN SAVINGS
               </span>
             </div>
 
@@ -198,16 +195,16 @@ export default function PreviewPanel({
               wordBreak: 'break-word',
               whiteSpace: 'normal'
             }}>
-              <strong>Explicație AI:</strong> {pendingProposal.reason || "Am reformulat această intrare conform formulei Google XYZ, adăugând metrici de performanță cuantificabile și cuvinte cheie specifice pentru îmbunătățirea scorului ATS."}
+              <strong>Explicație AI:</strong> {pendingProposal.explanation || "Am generat patch-uri JSON restrânse conform schemelor din schema.json."}
             </div>
           </div>
 
-          {/* Right Side: Stacked Controls (Top: BEFORE/AFTER Toggle, Bottom: 3 Action Options) */}
+          {/* Right Side: Stacked Controls (BEFORE/AFTER Toggle + Action Buttons) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.6rem', flexShrink: 0 }}>
             {/* Top Right: Before / After Toggle Buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Preview Mode:
+                Mod Diferențe:
               </span>
               <div style={{ display: 'flex', background: '#090d16', padding: '3px', borderRadius: '8px', border: '1px solid #334155' }}>
                 <button
@@ -248,7 +245,7 @@ export default function PreviewPanel({
               </div>
             </div>
 
-            {/* Bottom Right: 3 Decision Action Buttons */}
+            {/* Bottom Right: Action Buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {isCreatingProfile ? (
                 <form onSubmit={handleCreateProfileSubmit} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -270,35 +267,32 @@ export default function PreviewPanel({
                 </form>
               ) : (
                 <>
-                  {/* 1. Accept Current Profile */}
                   <button
                     type="button"
                     className="action-btn action-btn-primary"
                     style={{ padding: '0.38rem 0.75rem', fontSize: '0.75rem', background: '#10b981', borderColor: '#059669' }}
                     onClick={() => onAcceptCurrent(pendingProposal)}
-                    title="Aplică modificarea pe profilul curent"
+                    title="Aplică patch-ul pe profilul curent"
                   >
                     <CheckCircle size={14} /> Acceptă pe Profil Curent
                   </button>
 
-                  {/* 2. Accept & Create New Profile */}
                   <button
                     type="button"
                     className="action-btn"
                     style={{ padding: '0.38rem 0.75rem', fontSize: '0.75rem', background: '#4c1d95', color: '#e9d5ff', borderColor: '#7e22ce' }}
                     onClick={() => setIsCreatingProfile(true)}
-                    title="Aplică modificarea și salvează ca o variantă nouă de profil"
+                    title="Aplică patch-ul și salvează ca un profil nou"
                   >
                     <Layers size={14} style={{ color: '#c084fc' }} /> Acceptă & Profil Nou
                   </button>
 
-                  {/* 3. Reject */}
                   <button
                     type="button"
                     className="action-btn"
                     style={{ padding: '0.38rem 0.65rem', fontSize: '0.75rem', color: '#ef4444', borderColor: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }}
                     onClick={onRejectProposal}
-                    title="Anulează propunerea AI"
+                    title="Anulează propunerea"
                   >
                     <XCircle size={14} /> Respinge
                   </button>
@@ -315,10 +309,9 @@ export default function PreviewPanel({
           className="a4-single-page-viewport"
           style={{ 
             transform: `scale(${zoomLevel / 100})`,
-            fontFamily: themeTemplate === 'executive' ? 'Georgia, serif' : 'Inter, sans-serif'
+            fontFamily: themeTemplate === 'executive' ? 'Georgia, serif' : (activeStyle?.theme?.fontFamily || 'Inter, sans-serif')
           }}
         >
-          {/* Sliding Page Content Wrapper */}
           <div 
             ref={cvContentRef}
             className="a4-content-wrapper"
@@ -327,21 +320,20 @@ export default function PreviewPanel({
               transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
-            {/* CV HEADER (With Integrated Dynamic QR Code) */}
+            {/* CV HEADER */}
             <div className="cv-header-layout">
               <div>
-                <h1 className="cv-name">{cvData.personal.name || "Your Full Name"}</h1>
-                <div className="cv-title">{cvData.personal.title || "Professional Title"}</div>
+                <h1 className="cv-name">{activeCv.personal?.name || "Your Full Name"}</h1>
+                <div className="cv-title">{activeCv.personal?.title || "Professional Title"}</div>
                 <div className="cv-contacts">
-                  <span>{cvData.personal.email}</span>
+                  <span>{activeCv.personal?.email}</span>
                   <span>•</span>
-                  <span>{cvData.personal.phone}</span>
+                  <span>{activeCv.personal?.phone}</span>
                   <span>•</span>
-                  <span>{cvData.personal.address}</span>
+                  <span>{activeCv.personal?.address}</span>
                 </div>
               </div>
 
-              {/* Dynamic QR Code Header Integration */}
               <div className="cv-qr-code">
                 <img src={MOCK_ANALYTICS.qrCodeUrl} alt="CV QR Link" />
                 <span style={{ marginTop: '2px', fontWeight: 600 }}>Scan for Live CV</span>
@@ -349,18 +341,39 @@ export default function PreviewPanel({
             </div>
 
             {/* PROFESSIONAL SUMMARY */}
-            {cvData.personal.summary && (
+            {activeCv.personal?.summary && (
               <div className="cv-section">
-                <div className="cv-section-title">Professional Summary</div>
-                <p style={{ fontSize: '0.85rem', color: '#334155', lineHeight: 1.5 }}>
-                  {cvData.personal.summary}
-                </p>
+                <div className="cv-section-title" style={{ fontSize: sectionTitleFontSize }}>
+                  Professional Summary
+                </div>
+                {isPathModified('/personal/summary') ? (
+                  <div style={{
+                    background: proposalViewMode === 'before' ? '#fee2e2' : '#dcfce7',
+                    color: proposalViewMode === 'before' ? '#991b1b' : '#166534',
+                    border: proposalViewMode === 'before' ? '2px dashed #ef4444' : '2px solid #22c55e',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    margin: '4px 0',
+                    boxShadow: proposalViewMode === 'after' ? '0 0 12px rgba(34,197,94,0.3)' : 'none'
+                  }}>
+                    <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '3px', color: proposalViewMode === 'before' ? '#ef4444' : '#15803d' }}>
+                      {proposalViewMode === 'before' ? '✖ VERSIUNE ANTERIOARĂ (BEFORE)' : '✓ MODIFICAT PRIN JSON PATCH (RFC 6902)'}
+                    </div>
+                    <p style={{ fontSize: '0.85rem', lineHeight: 1.5, textDecoration: proposalViewMode === 'before' ? 'line-through' : 'none' }}>
+                      {activeCv.personal.summary}
+                    </p>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: '#334155', lineHeight: 1.5 }}>
+                    {activeCv.personal.summary}
+                  </p>
+                )}
               </div>
             )}
 
             {/* WORK EXPERIENCE */}
             <div className="cv-section">
-              <div className="cv-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="cv-section-title" style={{ fontSize: sectionTitleFontSize, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Work Experience</span>
                 {activeVariant !== 'all' && (
                   <span style={{ fontSize: '0.65rem', textTransform: 'none', color: '#2563eb', fontWeight: 600 }}>
@@ -381,46 +394,32 @@ export default function PreviewPanel({
                     {exp.description}
                   </div>
                   <ul className="cv-bullets">
-                    {exp.bullets.map((b, i) => {
-                      const isTargetedByProposal = pendingProposal && (pendingProposal.expId === exp.id || expIdx === 0) && i === (pendingProposal.bulletIndex || 0);
+                    {(exp.bullets || []).map((b, i) => {
+                      const pathKey = `/experience/${expIdx}/bullets/${i}`;
+                      const isBulletModified = isPathModified(pathKey) || (pendingProposal && (pendingProposal.expId === exp.id || expIdx === 0) && i === (pendingProposal.bulletIndex || 0));
 
-                      if (isTargetedByProposal) {
-                        if (proposalViewMode === 'before') {
-                          return (
-                            <li key={i} style={{ margin: '4px 0' }}>
-                              <span style={{
-                                background: '#fee2e2',
-                                color: '#991b1b',
-                                border: '1.5px dashed #ef4444',
-                                borderRadius: '4px',
-                                padding: '2px 6px',
-                                fontSize: '0.8rem',
-                                lineHeight: 1.4,
-                                display: 'inline-block'
-                              }}>
-                                {b}
+                      if (isBulletModified) {
+                        return (
+                          <li key={i} style={{ margin: '6px 0' }}>
+                            <span style={{
+                              background: proposalViewMode === 'before' ? '#fee2e2' : '#dcfce7',
+                              color: proposalViewMode === 'before' ? '#991b1b' : '#166534',
+                              border: proposalViewMode === 'before' ? '2px dashed #ef4444' : '2px solid #22c55e',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '0.82rem',
+                              lineHeight: 1.45,
+                              display: 'inline-block',
+                              textDecoration: proposalViewMode === 'before' ? 'line-through' : 'none',
+                              boxShadow: proposalViewMode === 'after' ? '0 0 10px rgba(34,197,94,0.25)' : 'none'
+                            }}>
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', marginRight: '6px', color: proposalViewMode === 'before' ? '#ef4444' : '#15803d' }}>
+                                {proposalViewMode === 'before' ? '[BEFORE]' : '[RFC 6902 PATCH]'}
                               </span>
-                            </li>
-                          );
-                        } else {
-                          return (
-                            <li key={i} style={{ margin: '4px 0' }}>
-                              <span style={{
-                                background: '#dcfce7',
-                                color: '#166534',
-                                border: '1.5px solid #22c55e',
-                                borderRadius: '4px',
-                                padding: '2px 6px',
-                                fontSize: '0.82rem',
-                                fontWeight: 600,
-                                lineHeight: 1.4,
-                                display: 'inline-block'
-                              }}>
-                                {pendingProposal.proposedText}
-                              </span>
-                            </li>
-                          );
-                        }
+                              {b}
+                            </span>
+                          </li>
+                        );
                       }
 
                       return <li key={i}>{b}</li>;
@@ -438,10 +437,10 @@ export default function PreviewPanel({
             </div>
 
             {/* EDUCATION */}
-            {cvData.education && cvData.education.length > 0 && (
+            {activeCv.education && activeCv.education.length > 0 && (
               <div className="cv-section">
-                <div className="cv-section-title">Education</div>
-                {cvData.education.map((edu) => (
+                <div className="cv-section-title" style={{ fontSize: sectionTitleFontSize }}>Education</div>
+                {activeCv.education.map((edu) => (
                   <div key={edu.id} className="cv-item">
                     <div className="cv-item-head">
                       <div>
@@ -460,30 +459,51 @@ export default function PreviewPanel({
             )}
 
             {/* SKILLS */}
-            {cvData.skills && cvData.skills.length > 0 && (
+            {activeCv.skills && activeCv.skills.length > 0 && (
               <div className="cv-section">
-                <div className="cv-section-title">Skills & Competencies</div>
-                {cvData.skills.map((skillGroup) => (
-                  <div key={skillGroup.id} style={{ marginBottom: '0.5rem' }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.2rem' }}>
-                      {skillGroup.category}:
+                <div className="cv-section-title" style={{ fontSize: sectionTitleFontSize }}>Skills & Competencies</div>
+                {activeCv.skills.map((skillGroup, sIdx) => {
+                  const isSkillGroupModified = isPathModified(`/skills/${sIdx}`);
+
+                  return (
+                    <div 
+                      key={skillGroup.id || sIdx} 
+                      style={{ 
+                        marginBottom: '0.5rem',
+                        ...(isSkillGroupModified ? {
+                          background: proposalViewMode === 'before' ? '#fee2e2' : '#dcfce7',
+                          border: proposalViewMode === 'before' ? '2px dashed #ef4444' : '2px solid #22c55e',
+                          borderRadius: '6px',
+                          padding: '6px 10px'
+                        } : {})
+                      }}
+                    >
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.2rem' }}>
+                        {skillGroup.category}:
+                      </div>
+                      <div className="cv-tags">
+                        {(skillGroup.items || []).map((sk, idx) => (
+                          <span key={idx} className="cv-tag" style={{
+                            ...(sk === 'Kubernetes' && proposalViewMode === 'after' ? {
+                              background: '#22c55e',
+                              color: '#ffffff',
+                              fontWeight: 700
+                            } : {})
+                          }}>{sk}</span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="cv-tags">
-                      {(skillGroup.items || []).map((sk, idx) => (
-                        <span key={idx} className="cv-tag">{sk}</span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
             {/* LANGUAGES */}
-            {cvData.languages && cvData.languages.length > 0 && (
+            {activeCv.languages && activeCv.languages.length > 0 && (
               <div className="cv-section">
-                <div className="cv-section-title">Languages</div>
+                <div className="cv-section-title" style={{ fontSize: sectionTitleFontSize }}>Languages</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', fontSize: '0.82rem' }}>
-                  {cvData.languages.map(lang => (
+                  {activeCv.languages.map(lang => (
                     <span key={lang.id}>
                       <strong>{lang.name}:</strong> {lang.level}
                     </span>
@@ -493,10 +513,10 @@ export default function PreviewPanel({
             )}
 
             {/* AWARDS */}
-            {cvData.awards && cvData.awards.length > 0 && (
+            {activeCv.awards && activeCv.awards.length > 0 && (
               <div className="cv-section">
-                <div className="cv-section-title">Honors & Awards</div>
-                {cvData.awards.map((awd) => (
+                <div className="cv-section-title" style={{ fontSize: sectionTitleFontSize }}>Honors & Awards</div>
+                {activeCv.awards.map((awd) => (
                   <div key={awd.id} className="cv-item">
                     <div className="cv-item-head">
                       <div>
@@ -515,9 +535,9 @@ export default function PreviewPanel({
             )}
 
             {/* CUSTOM MODULAR SECTIONS */}
-            {(cvData.customSections || []).map(sec => (
+            {(activeCv.customSections || []).map(sec => (
               <div key={sec.id} className="cv-section">
-                <div className="cv-section-title">{sec.title}</div>
+                <div className="cv-section-title" style={{ fontSize: sectionTitleFontSize }}>{sec.title}</div>
                 {(sec.items || []).map(item => (
                   <div key={item.id} className="cv-item">
                     <div className="cv-item-head">
@@ -539,7 +559,6 @@ export default function PreviewPanel({
             ))}
           </div>
 
-          {/* Single Page Footer Watermark Indicator */}
           <div className="a4-single-page-footer">
             <span>CV Document • Pagină {currentPage} din {totalPages}</span>
           </div>

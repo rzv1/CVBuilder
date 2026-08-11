@@ -17,12 +17,16 @@ import AnalyticsModal from './components/modals/AnalyticsModal';
 import ShareQrModal from './components/modals/ShareQrModal';
 import AiChatDrawer from './components/ai/AiChatDrawer';
 
-import { INITIAL_CV_DATA, MOCK_GIT_COMMITS } from './mockData';
+import INITIAL_CONTENT from './data/content.json';
+import INITIAL_STYLE from './data/style.json';
+import { applySmartPatches, getAffectedPaths } from './utils/jsonPatch';
 import { Edit3, Target, GitBranch, Users, BarChart3, GripVertical, Sparkles } from './components/Icons';
 
 export default function App() {
-  const [cvData, setCvData] = useState(INITIAL_CV_DATA);
+  const [cvData, setCvData] = useState(INITIAL_CONTENT);
+  const [styleData, setStyleData] = useState(INITIAL_STYLE);
   const [viewMode, setViewMode] = useState('app'); // 'app' | 'blog'
+
   const [isDevMode, setIsDevMode] = useState(false);
   const [activeTab, setActiveTab] = useState('editor'); // 'editor' | 'ats' | 'git' | 'collab' | 'analytics'
   const [activeVariant, setActiveVariant] = useState('all'); // 'all' | 'frontend' | 'backend'
@@ -33,29 +37,57 @@ export default function App() {
   ]);
   const [isAiChatOpen, setIsAiChatOpen] = useState(true);
 
-  // AI Proposal Approval Mockup State
+  // AI JSON Patch Proposal State
   const [pendingProposal, setPendingProposal] = useState(null);
   const [proposalViewMode, setProposalViewMode] = useState('after'); // 'before' | 'after'
 
+  const handleApplyPatches = ({ explanation, patches }) => {
+    if (!Array.isArray(patches) || patches.length === 0) return;
+    const { newContent, newStyle } = applySmartPatches(cvData, styleData, patches);
+    const { contentPaths, stylePaths } = getAffectedPaths(patches);
+
+    setPendingProposal({
+      explanation,
+      patches,
+      contentPaths,
+      stylePaths,
+      beforeContent: cvData,
+      beforeStyle: styleData,
+      afterContent: newContent,
+      afterStyle: newStyle
+    });
+    setProposalViewMode('after');
+  };
+
   const handleTriggerMockProposal = (proposal) => {
-    setPendingProposal(proposal);
+    setPendingProposal({
+      explanation: proposal.reason || 'Propunere de optimizare AI',
+      expId: proposal.expId,
+      bulletIndex: proposal.bulletIndex,
+      proposedText: proposal.proposedText,
+      atsGain: proposal.atsGain || 12,
+      beforeContent: cvData,
+      afterContent: {
+        ...cvData,
+        experience: cvData.experience.map(exp => {
+          if (exp.id === proposal.expId || exp.id === 'exp-1') {
+            const updatedBullets = [...exp.bullets];
+            updatedBullets[proposal.bulletIndex || 0] = proposal.proposedText;
+            return { ...exp, bullets: updatedBullets };
+          }
+          return exp;
+        })
+      }
+    });
     setProposalViewMode('after');
   };
 
   const handleAcceptCurrent = (proposal) => {
     if (!proposal) return;
-    setCvData(prevData => {
-      const updatedExp = prevData.experience.map(exp => {
-        if (exp.id === proposal.expId || exp.id === '1') {
-          const updatedBullets = [...exp.bullets];
-          updatedBullets[proposal.bulletIndex || 0] = proposal.proposedText;
-          return { ...exp, bullets: updatedBullets };
-        }
-        return exp;
-      });
-      return { ...prevData, experience: updatedExp };
-    });
-
+    if (proposal.afterContent) {
+      setCvData(proposal.afterContent);
+      if (proposal.afterStyle) setStyleData(proposal.afterStyle);
+    }
     setPendingProposal(null);
   };
 
@@ -68,21 +100,10 @@ export default function App() {
       { id: newVariantId, label: profileName }
     ]);
 
-    setCvData(prevData => {
-      const updatedExp = prevData.experience.map(exp => {
-        if (exp.id === proposal.expId || exp.id === '1') {
-          const updatedBullets = [...exp.bullets];
-          updatedBullets[proposal.bulletIndex || 0] = proposal.proposedText;
-          return { 
-            ...exp, 
-            bullets: updatedBullets,
-            variant: newVariantId 
-          };
-        }
-        return exp;
-      });
-      return { ...prevData, experience: updatedExp };
-    });
+    if (proposal.afterContent) {
+      setCvData(proposal.afterContent);
+      if (proposal.afterStyle) setStyleData(proposal.afterStyle);
+    }
 
     setActiveVariant(newVariantId);
     setPendingProposal(null);
@@ -91,6 +112,7 @@ export default function App() {
   const handleRejectProposal = () => {
     setPendingProposal(null);
   };
+
 
   // Resizable Left Panel State
   const [leftPanelWidth, setLeftPanelWidth] = useState(520);
@@ -311,6 +333,7 @@ export default function App() {
           {/* Center: Live A4 Paper Preview Engine */}
           <PreviewPanel 
             cvData={cvData} 
+            styleData={styleData}
             activeVariant={activeVariant}
             pendingProposal={pendingProposal}
             proposalViewMode={proposalViewMode}
@@ -335,11 +358,14 @@ export default function App() {
 
               <AiChatDrawer 
                 cvData={cvData}
+                styleData={styleData}
                 isOpen={isAiChatOpen}
                 setIsOpen={setIsAiChatOpen}
+                onApplyPatches={handleApplyPatches}
               />
             </>
           )}
+
         </div>
       )}
 

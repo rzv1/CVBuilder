@@ -5,13 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "cms": "node scripts/cms-server.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@monaco-editor/react": "^4.7.0",
+    "fast-json-patch": "^3.1.1",
+    "ai": "^4.1.0",
+    "@ai-sdk/google": "^1.1.0",
     "lucide-react": "^1.16.0",
+    "monaco-editor": "^0.34.1",
+    "monaco-yaml": "^5.5.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "yaml": "^2.9.0"
