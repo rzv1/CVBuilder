@@ -17,14 +17,17 @@ router.post('/slugify', (req, res) => {
   return res.json({ slug: slugify(text || '') });
 });
 
-// POST /api/export-md
-router.post('/export-md', (req, res) => {
+const handleExportMd = (req, res) => {
   const body = req.body || {};
   const isDoc = body.type === 'docs' || body.sectionTitle !== undefined || body.subtitle !== undefined;
   const mdContent = isDoc ? formatDocToMarkdown(body) : formatArticleToMarkdown(body);
   
   res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
   return res.send(mdContent);
-});
+};
+
+// POST /api/export-md or /api/utils/export-md
+router.post('/export-md', handleExportMd);
+router.post('/', handleExportMd);
 
 export default router;

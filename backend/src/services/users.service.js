@@ -45,7 +45,7 @@ export async function getUserById(userId) {
         where: {
           OR: [
             { id: userId },
-            { name: { equals: decodeURIComponent(userId), mode: 'insensitive' } }
+            { name: decodeURIComponent(userId) }
           ]
         }
       });
@@ -115,7 +115,7 @@ export async function updateUser(userId, data) {
   if (prisma) {
     try {
       const existing = await prisma.user.findFirst({
-        where: { OR: [{ id: userId }, { name: { equals: decodeURIComponent(userId), mode: 'insensitive' } }] }
+        where: { OR: [{ id: userId }, { name: decodeURIComponent(userId) }] }
       });
       if (existing) {
         const updateData = { lastActive: now };
@@ -161,7 +161,7 @@ export async function deleteUser(userId) {
   if (prisma) {
     try {
       const existing = await prisma.user.findFirst({
-        where: { OR: [{ id: userId }, { name: { equals: decodeURIComponent(userId), mode: 'insensitive' } }] }
+        where: { OR: [{ id: userId }, { name: decodeURIComponent(userId) }] }
       });
       if (existing) {
         await prisma.user.delete({ where: { id: existing.id } });
