@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CVBuilder CMS Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --bg-card: #111827;
+      --bg-input: #1f2937;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Navbar */
+    header {
+      height: 60px;
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .btn-primary:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--accent-green), #059669);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-success:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: #374151;
+    }
+
+    /* Mode Switcher Tabs */
+    .mode-tabs {
+      display: flex;
+      background: var(--bg-input);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      gap: 2px;
+    }
+    .mode-tab {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .mode-tab:hover {
+      color: var(--text-main);
+    }
+    .mode-tab.active {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: white;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    }
+
+    .blog-only-field { display: flex; }
+    .docs-only-field { display: none; }
+
+    body.mode-docs .blog-only-field { display: none !important; }
+    body.mode-docs .docs-only-field { display: flex !important; }
+
+    /* Main Container */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    aside {
+      width: 320px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 0.875rem;
+    }
+
+    .category-filter {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .category-filter::-webkit-scrollbar {
+      height: 4px;
+    }
+    .category-filter::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+    }
+
+    .cat-chip {
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      background: var(--bg-input);
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .cat-chip:hover {
+      color: var(--text-main);
+    }
+    .cat-chip.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .article-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .article-card {
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .article-card:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateX(2px);
+    }
+    .article-card.active {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .card-tag {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 0.7rem;
+    }
+
+    /* Main Content Area */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 20px 24px;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .col-12 { grid-column: span 12; }
+    .col-8 { grid-column: span 8; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+    .col-3 { grid-column: span 3; }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: border-color 0.2s ease;
+    }
+
+    input[type="text"]:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    .input-with-btn {
+      display: flex;
+      gap: 8px;
+    }
+    .input-with-btn input {
+      flex: 1;
+    }
+
+    .avatar-preview-box {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .avatar-preview-box input {
+      flex: 1;
+    }
+    .avatar-preview-img {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: #1f2937;
+      object-fit: cover;
+    }
+
+    /* Editor Split Container */
+    .editor-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      min-height: 420px;
+      flex: 1;
+    }
+
+    .split-pane {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .pane-header {
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .code-editor {
+      flex: 1;
+      padding: 16px;
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      border: none;
+      resize: none;
+      outline: none;
+      border-radius: 0;
+    }
+
+    .preview-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      line-height: 1.7;
+      color: #d1d5db;
+      font-size: 0.95rem;
+    }
+
+    .preview-body h1 {
+      font-size: 1.5rem;
+      color: white;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+    .preview-body h2 {
+      font-size: 1.25rem;
+      color: #f3f4f6;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    .preview-body h3 {
+      font-size: 1.1rem;
+      color: #e5e7eb;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+    .preview-body p {
+      margin-bottom: 12px;
+    }
+    .preview-body code {
+      font-family: 'Fira Code', monospace;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #60a5fa;
+    }
+    .preview-body pre {
+      background: #161b22;
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 14px 0;
+      border: 1px solid var(--border-color);
+    }
+    .preview-body pre code {
+      background: transparent;
+      padding: 0;
+      color: #e6edf3;
+    }
+    .preview-body blockquote {
+      border-left: 4px solid var(--accent-blue);
+      padding-left: 14px;
+      color: var(--text-muted);
+      margin: 12px 0;
+      font-style: italic;
+    }
+    .preview-body ul {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      gap: 4px;
+    }
+    .tool-btn {
+      padding: 4px 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-family: 'Fira Code', monospace;
+    }
+    .tool-btn:hover {
+      background: #374151;
+    }
+
+    /* Action Bar */
+    .action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+
+    /* Toast Notifications */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .toast.success { border-color: var(--accent-green); }
+    .toast.error { border-color: var(--accent-red); }
+
+    /* API Inspector Styles */
+    body.mode-api aside,
+    body.mode-api main:not(#api-workspace) {
+      display: none !important;
+    }
+    body.mode-api #api-workspace {
+      display: flex !important;
+    }
+    body.mode-api #btn-new-resource {
+      display: none !important;
+    }
+
+    /* Users & AI Credits Workspace Styles */
+    body.mode-users aside,
+    body.mode-users main:not(#users-workspace) {
+      display: none !important;
+    }
+    body.mode-users #users-workspace {
+      display: flex !important;
+    }
+    body.mode-users #btn-new-resource {
+      display: none !important;
+    }
+
+    .users-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .user-avatar-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-right: 10px;
+    }
+
+    .credits-input-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .credits-input-group input {
+      width: 70px;
+      padding: 4px 8px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #f8fafc;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .btn-quick-credit {
+      padding: 3px 7px;
+      font-size: 0.72rem;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .btn-quick-credit:hover {
+      background: rgba(99, 102, 241, 0.35);
+      color: #ffffff;
+    }
+
+
+    .api-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .metric-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .metric-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .api-controls-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .api-controls-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .api-controls-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .api-inspector-layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+      flex: 1;
+      min-height: 500px;
+    }
+
+    .api-logs-list {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 270px);
+    }
+
+    .api-log-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .api-log-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .api-log-item.active {
+      background: rgba(59, 130, 246, 0.12);
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    .api-log-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .method-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+      text-transform: uppercase;
+    }
+    .method-badge.GET { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .method-badge.POST { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .method-badge.PUT { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .method-badge.DELETE { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .status-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+    }
+    .status-badge.s-2xx { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .status-badge.s-4xx { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-badge.s-5xx { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    .api-log-path {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      word-break: break-all;
+    }
+
+    .api-log-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .api-detail-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-height: calc(100vh - 270px);
+    }
+
+    .json-code-box {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.82rem;
+      color: #e5e7eb;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-x: auto;
+      max-height: 280px;
+    }
+
+    .params-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .params-table th, .params-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .params-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+    .params-table td.key {
+      font-family: 'Fira Code', monospace;
+      color: #60a5fa;
+      width: 30%;
+    }
+    .params-table td.val {
+      font-family: 'Fira Code', monospace;
+      color: #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">CV</div>
+      <div class="brand-title">CVBuilder CMS</div>
+      <div class="brand-badge">blogData.js Manager</div>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-mode-blog" onclick="switchMode('blog')">Articole Blog</button>
+      <button class="mode-tab" id="tab-mode-docs" onclick="switchMode('docs')">Documentație</button>
+      <button class="mode-tab" id="tab-mode-users" onclick="switchMode('users')">Utilizatori & Credite AI</button>
+      <button class="mode-tab" id="tab-mode-api" onclick="switchMode('api')">Cereri API</button>
+    </div>
+
+    <div class="header-actions">
+      <span id="stats-badge" style="font-size:0.8rem; color:var(--text-muted);">Incarcare...</span>
+      <button class="btn btn-primary" id="btn-new-resource" onclick="initNewResource()">+ Articol Nou</button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- Sidebar -->
+    <aside>
+      <div class="sidebar-header">
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Caută..." oninput="renderResourceList()">
+        </div>
+        <div class="category-filter blog-only-field" id="category-filter-list">
+          <!-- Rendered dynamically for Blog -->
+        </div>
+      </div>
+      <div class="article-list" id="article-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main>
+      <!-- Metadate Form -->
+      <div class="panel">
+        <div class="panel-title">
+          <span id="form-heading">Editează Articol</span>
+          <span id="article-id-badge" style="font-size:0.75rem; font-family:'Fira Code', monospace; color:var(--accent-blue);"></span>
+        </div>
+
+        <div class="form-grid">
+          <!-- Docs Only: Titlu Secțiune Sidebar -->
+          <div class="form-group col-6 docs-only-field">
+            <label>Titlu Secțiune (Sidebar) *</label>
+            <input type="text" id="field-doc-sectionTitle" placeholder="ex: Modul de Funcționare (Arhitectură)" oninput="onSectionTitleInput()">
+          </div>
+
+          <!-- Docs Only: Icon Lucide -->
+          <div class="form-group col-6 docs-only-field">
+            <label>Icon Lucide *</label>
+            <select id="field-doc-icon">
+              <option value="Cpu">Cpu (Arhitectură / Core)</option>
+              <option value="Terminal">Terminal (DSL / Code)</option>
+              <option value="Printer">Printer (PDF / Print)</option>
+              <option value="Target">Target (ATS / Scoring)</option>
+              <option value="BookOpen">BookOpen (Ghid)</option>
+              <option value="FileText">FileText (General)</option>
+              <option value="Zap">Zap (Performanță / AI)</option>
+              <option value="Sliders">Sliders (Setări)</option>
+            </select>
+          </div>
+
+          <!-- Shared: Titlu Principal -->
+          <div class="form-group col-8 blog-only-field">
+            <label>Titlu Articol *</label>
+            <input type="text" id="field-title" placeholder="ex: Cum funcționează Motorul de Previziune A4" oninput="onTitleInput()">
+          </div>
+
+          <!-- Docs Only: Titlu Articol Documentație -->
+          <div class="form-group col-12 docs-only-field">
+            <label>Titlu Principal Documentație *</label>
+            <input type="text" id="field-doc-title" placeholder="ex: Modul de Funcționare al Aplicației">
+          </div>
+
+          <!-- Docs Only: Subtitlu Documentație -->
+          <div class="form-group col-12 docs-only-field">
+            <label>Subtitlu Documentație</label>
+            <input type="text" id="field-doc-subtitle" placeholder="ex: Arhitectura de nivel înalt a CVBuilder AI Studio">
+          </div>
+
+          <!-- Blog Only: Categorie -->
+          <div class="form-group col-4 blog-only-field">
+            <label>Categorie *</label>
+            <select id="field-category">
+              <option value="cv-preview">CV Preview</option>
+              <option value="cv-as-code">CV-as-Code</option>
+              <option value="ai-agent">AI Agent</option>
+              <option value="social">Social</option>
+              <option value="misc">Misc</option>
+            </select>
+          </div>
+
+          <!-- Shared: ID / Slug -->
+          <div class="form-group col-6">
+            <label>ID / Slug URL *</label>
+            <div class="input-with-btn">
+              <input type="text" id="field-slug" placeholder="slug-articol-exemplu">
+              <button class="btn btn-secondary" onclick="autoGenerateSlug()" title="Regenerează din Titlu">Auto</button>
+            </div>
+          </div>
+
+          <!-- Blog Only: Data -->
+          <div class="form-group col-3 blog-only-field">
+            <label>Data Publicării</label>
+            <input type="text" id="field-date" placeholder="ex: 11 Aug 2026">
+          </div>
+
+          <!-- Blog Only: Timp Citire -->
+          <div class="form-group col-3 blog-only-field">
+            <label>Timp Citire</label>
+            <div class="input-with-btn">
+              <input type="text" id="field-readTime" placeholder="ex: 5 min citire">
+              <button class="btn btn-secondary" onclick="autoCalculateReadTime()" title="Recalculează din Conținut">Calc</button>
+            </div>
+          </div>
+
+          <!-- Blog Only: Autor -->
+          <div class="form-group col-6 blog-only-field">
+            <label>Autor</label>
+            <input type="text" id="field-author" placeholder="ex: Radu - Lead Architect" oninput="updateAvatarPreview()">
+          </div>
+
+          <!-- Blog Only: Avatar -->
+          <div class="form-group col-6 blog-only-field">
+            <label>Avatar URL</label>
+            <div class="avatar-preview-box">
+              <input type="text" id="field-avatar" placeholder="https://api.dicebear.com/7.x/..." oninput="updateAvatarPreview()">
+              <img id="avatar-preview" src="" class="avatar-preview-img" alt="Avatar Preview">
+            </div>
+          </div>
+
+          <!-- Blog Only: Summary -->
+          <div class="form-group col-12 blog-only-field">
+            <label>Rezumat (Summary)</label>
+            <input type="text" id="field-summary" placeholder="Scurtă descriere a articolului ce apare pe card...">
+          </div>
+
+          <!-- Blog Only: Tags -->
+          <div class="form-group col-12 blog-only-field">
+            <label>Tag-uri (separate prin virgulă)</label>
+            <input type="text" id="field-tags" placeholder="ex: React, CSS Layout, Performance">
+          </div>
+        </div>
+      </div>
+
+      <!-- Editor & Live Preview Panel -->
+      <div class="editor-container">
+        <!-- Editor Pane -->
+        <div class="split-pane">
+          <div class="pane-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Editor Conținut (Markdown)</span>
+            <div class="editor-toolbar">
+              <button class="tool-btn" onclick="insertMarkdown('**', '**')">B</button>
+              <button class="tool-btn" onclick="insertMarkdown('*', '*')">I</button>
+              <button class="tool-btn" onclick="insertMarkdown('# ', '')">H1</button>
+              <button class="tool-btn" onclick="insertMarkdown('## ', '')">H2</button>
+              <button class="tool-btn" onclick="insertMarkdown('### ', '')">H3</button>
+              <button class="tool-btn" onclick="insertMarkdown('```javascript\n', '\n```')">Code</button>
+              <button class="tool-btn" onclick="insertMarkdown('> ', '')">Quote</button>
+              <button class="tool-btn" onclick="insertMarkdown('- ', '')">List</button>
+            </div>
+          </div>
+          <textarea id="field-content" class="code-editor" placeholder="Scrie conținutul articolului în format Markdown..." oninput="updateLivePreview()"></textarea>
+        </div>
+
+        <!-- Rudimentary Preview Pane -->
+        <div class="split-pane">
+          <div class="pane-header">Previzualizare Live</div>
+          <div id="preview-container" class="preview-body"></div>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <div>
+          <button class="btn btn-danger" id="btn-delete" onclick="deleteCurrentResource()" style="display:none;">Șterge Resursa</button>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <input type="file" id="file-import-md" accept=".md,.markdown" style="display:none" onchange="importMdFile(event)">
+          <button class="btn btn-secondary" onclick="document.getElementById('file-import-md').click()" title="Importă un fișier Markdown (.md)">Importă .md</button>
+          <button class="btn btn-secondary" onclick="exportCurrentMd()" title="Exportă resursa curentă în format Markdown (.md)">Exportă .md</button>
+          <button class="btn btn-secondary" onclick="resetForm()">Anulează / Reset</button>
+          <button class="btn btn-success" onclick="saveResource()">Salvează în blogData.js (Ctrl+S)</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Main Workspace for API Traffic Inspector -->
+    <main id="api-workspace" style="display:none; flex:1; flex-direction:column; gap:16px; overflow-y:auto; padding:20px 24px;">
+      <!-- Metrici Sumar -->
+      <div class="api-metrics-grid">
+        <div class="metric-card">
+          <span class="metric-title">Total Cereri Monitorizate</span>
+          <span class="metric-value" id="api-stat-total">0</span>
+          <span class="metric-sub">Păstrate în memoria RAM</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Cereri Cu Succes (2xx)</span>
+          <span class="metric-value" style="color:#10b981;" id="api-stat-success">0</span>
+          <span class="metric-sub">Răspunsuri 200 OK</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Erori HTTP (4xx/5xx)</span>
+          <span class="metric-value" style="color:#ef4444;" id="api-stat-errors">0</span>
+          <span class="metric-sub">Client sau Server Errors</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Latență Medie Backend</span>
+          <span class="metric-value" style="color:#a78bfa;" id="api-stat-latency">0 ms</span>
+          <span class="metric-sub">Timp mediu de procesare</span>
+        </div>
+      </div>
+
+      <!-- Controls & Search Bar -->
+      <div class="api-controls-bar">
+        <div class="api-controls-left">
+          <input type="text" id="api-search-input" placeholder="Caută după cale, parametru sau body..." style="max-width:320px;" oninput="onApiSearchInput()">
+          <select id="api-method-filter" style="width:140px;" onchange="onApiFilterChange()">
+            <option value="ALL">Toate Metodele</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+          <select id="api-status-filter" style="width:150px;" onchange="onApiFilterChange()">
+            <option value="ALL">Toate Statusurile</option>
+            <option value="2xx">Succes (2xx)</option>
+            <option value="4xx">Erori Client (4xx)</option>
+            <option value="5xx">Erori Server (5xx)</option>
+          </select>
+        </div>
+        <div class="api-controls-right">
+          <button class="btn btn-secondary" id="btn-auto-refresh" onclick="toggleAutoRefresh()">
+            <span id="auto-refresh-dot" style="width:8px; height:8px; border-radius:50%; background:#9ca3af; display:inline-block;"></span>
+            <span id="auto-refresh-text">Auto-Refresh: OFF</span>
+          </button>
+          <button class="btn btn-secondary" onclick="fetchApiLogs()">Reîmprospătează</button>
+          <button class="btn btn-danger" onclick="clearApiLogs()">Șterge Log-uri</button>
+        </div>
+      </div>
+
+      <!-- Layout 2 Coloane: Lista Cereri vs Detalii Cerere Selectată -->
+      <div class="api-inspector-layout">
+        <div class="api-logs-list" id="api-logs-list-container">
+          <!-- Rendered dynamically -->
+        </div>
+        <div class="api-detail-panel" id="api-log-detail-container">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </main>
+
+    <!-- Main Workspace for Users & AI Credits Manager -->
+    <main id="users-workspace" style="display:none; flex:1; flex-direction:column; gap:16px; overflow-y:auto; padding:20px 24px;">
+      <!-- Metrici Sumar -->
+      <div class="users-metrics-grid">
+        <div class="metric-card">
+          <span class="metric-title">Total Utilizatori</span>
+          <span class="metric-value" style="color:#60a5fa;" id="users-stat-total">0</span>
+          <span class="metric-sub">Înregistrați pe platformă</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Utilizatori Activi</span>
+          <span class="metric-value" style="color:#10b981;" id="users-stat-active">0</span>
+          <span class="metric-sub">Conturi active</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-title">Total Credite AI Alocate</span>
+          <span class="metric-value" style="color:#fbbf24;" id="users-stat-credits">0 ⚡</span>
+          <span class="metric-sub">Sold înregistrat în sistem</span>
+        </div>
+      </div>
+
+      <!-- Controls & Search Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-secondary); padding:12px 16px; border-radius:8px; border:1px solid var(--border-color);">
+        <div style="display:flex; align-items:center; gap:12px; flex:1; max-width:450px;">
+          <input type="text" id="users-search-input" placeholder="Caută utilizator după nume sau ID..." oninput="renderUsersTable()" style="width:100%; padding:8px 12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; color:var(--text-color); font-size:0.85rem;">
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-secondary" onclick="fetchUsersList()">🔄 Reîmprospătează Listă</button>
+          <button class="btn btn-primary" onclick="promptCreateUser()">+ Înregistrează Utilizator Nou</button>
+        </div>
+      </div>
+
+      <!-- Users Table Container -->
+      <div style="background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border-color); overflow:hidden;">
+        <table class="params-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th style="width:220px;">Utilizator</th>
+              <th style="width:180px;">ID Cont</th>
+              <th style="width:230px;">Credite AI</th>
+              <th>Status</th>
+              <th>Data Înregistrării</th>
+              <th>Ultimul Acces</th>
+              <th style="text-align:right;">Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body">
+            <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Se încarcă lista utilizatorilor...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <span id="toast-message">Notificare</span>
+  </div>
+
+  <script>
+    let currentMode = 'blog'; // 'blog' | 'docs' | 'api'
+    let articles = [];
+    let categories = [];
+    let docsSections = [];
+    let docsContent = {};
+    let activeResourceId = null;
+    let selectedCategoryFilter = 'all';
+
+    // API Inspector State
+    let apiLogs = [];
+    let selectedLogId = null;
+    let autoRefreshInterval = null;
+    let isAutoRefreshOn = false;
+    let searchApiQuery = '';
+    let methodFilter = 'ALL';
+    let statusFilter = 'ALL';
+
+    // Fetch All Initial Data
+    async function fetchData() {
+      try {
+        const [blogRes, docsRes] = await Promise.all([
+          fetch('/api/resources?type=blog'),
+          fetch('/api/resources?type=docs')
+        ]);
+        const blogData = await blogRes.json();
+        const docsData = await docsRes.json();
+
+        if (blogData.success) {
+          articles = blogData.articles;
+          categories = blogData.categories;
+        }
+        if (docsData.success) {
+          docsSections = docsData.docsSections;
+          docsContent = docsData.docsContent;
+        }
+
+        updateStats();
+        renderCategoryFilter();
+        renderResourceList();
+
+        if (currentMode === 'blog' && articles.length > 0) {
+          selectResource(articles[0].id);
+        } else if (currentMode === 'docs' && docsSections.length > 0) {
+          selectResource(docsSections[0].id);
+        }
+      } catch (err) {
+        showToast('Eroare la încărcarea datelor: ' + err.message, 'error');
+      }
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.body.className = mode === 'docs' ? 'mode-docs' : (mode === 'api' ? 'mode-api' : (mode === 'users' ? 'mode-users' : ''));
+
+      document.getElementById('tab-mode-blog').className = `mode-tab ${mode === 'blog' ? 'active' : ''}`;
+      document.getElementById('tab-mode-docs').className = `mode-tab ${mode === 'docs' ? 'active' : ''}`;
+      document.getElementById('tab-mode-users').className = `mode-tab ${mode === 'users' ? 'active' : ''}`;
+      document.getElementById('tab-mode-api').className = `mode-tab ${mode === 'api' ? 'active' : ''}`;
+
+      if (mode === 'api') {
+        updateStats();
+        fetchApiLogs();
+        return;
+      }
+
+      if (mode === 'users') {
+        fetchUsersList();
+        return;
+      }
+
+      document.getElementById('btn-new-resource').innerText = mode === 'docs' ? '+ Secțiune Doc Nouă' : '+ Articol Nou';
+      document.getElementById('search-input').placeholder = mode === 'docs' ? 'Caută în documentație...' : 'Caută articole...';
+
+      activeResourceId = null;
+      updateStats();
+      renderResourceList();
+
+      if (mode === 'blog' && articles.length > 0) {
+        selectResource(articles[0].id);
+      } else if (mode === 'docs' && docsSections.length > 0) {
+        selectResource(docsSections[0].id);
+      } else {
+        initNewResource();
+      }
+    }
+
+    function updateStats() {
+      if (currentMode === 'blog') {
+        document.getElementById('stats-badge').innerText = `${articles.length} Articole Blog | ${categories.length} Categorii`;
+      } else if (currentMode === 'docs') {
+        document.getElementById('stats-badge').innerText = `${docsSections.length} Secțiuni Documentație`;
+      } else if (currentMode === 'api') {
+        document.getElementById('stats-badge').innerText = `API Traffic Inspector Activ`;
+      } else if (currentMode === 'users') {
+        updateUsersStats();
+      }
+    }
+
+    /* Users & AI Credits Functions */
+    let usersList = [];
+
+    async function fetchUsersList() {
+      try {
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.users)) {
+          usersList = data.users;
+          renderUsersTable();
+          updateUsersStats();
+        }
+      } catch (err) {
+        showToast('Eroare la preluarea utilizatorilor: ' + err.message, 'error');
+      }
+    }
+
+    function updateUsersStats() {
+      document.getElementById('users-stat-total').innerText = usersList.length;
+      document.getElementById('users-stat-active').innerText = usersList.filter(u => u.status === 'active').length;
+      const totalCredits = usersList.reduce((acc, u) => acc + (u.credits || 0), 0);
+      document.getElementById('users-stat-credits').innerText = `${totalCredits} ⚡`;
+      if (currentMode === 'users') {
+        document.getElementById('stats-badge').innerText = `${usersList.length} Utilizatori | ${totalCredits} Credite AI`;
+      }
+    }
+
+    function renderUsersTable() {
+      const tbody = document.getElementById('users-table-body');
+      if (!tbody) return;
+
+      const query = (document.getElementById('users-search-input')?.value || '').toLowerCase().trim();
+      const filtered = usersList.filter(u => 
+        (u.name || '').toLowerCase().includes(query) || 
+        (u.id || '').toLowerCase().includes(query)
+      );
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Niciun utilizator găsit.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(u => {
+        const initial = u.name ? u.name.charAt(0).toUpperCase() : 'U';
+        const formattedCreated = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+        const formattedActive = u.lastActive ? new Date(u.lastActive).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+        return `
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center;">
+                <span class="user-avatar-badge">${initial}</span>
+                <span style="font-weight:700; color:#f8fafc;">${escapeHtml(u.name)}</span>
+              </div>
+            </td>
+            <td class="key" style="font-family:monospace; font-size:0.8rem; color:#94a3b8;">${escapeHtml(u.id)}</td>
+            <td>
+              <div class="credits-input-group">
+                <span style="color:#fbbf24; font-weight:700;">⚡</span>
+                <input type="number" id="input-credits-${u.id}" value="${u.credits}" min="0" onchange="saveUserCredits('${u.id}', this.value)">
+                <button class="btn-quick-credit" onclick="quickAddCredits('${u.id}', 10)" title="Adaugă 10 credite">+10</button>
+                <button class="btn-quick-credit" onclick="quickAddCredits('${u.id}', 50)" title="Adaugă 50 credite">+50</button>
+              </div>
+            </td>
+            <td>
+              <span class="badge ${u.status === 'active' ? 'badge-green' : 'badge-orange'}">
+                ${u.status === 'active' ? 'Activ' : 'Inactiv'}
+              </span>
+            </td>
+            <td style="font-size:0.8rem; color:#94a3b8;">${formattedCreated}</td>
+            <td style="font-size:0.8rem; color:#94a3b8;">${formattedActive}</td>
+            <td style="text-align:right;">
+              <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="saveUserCredits('${u.id}', document.getElementById('input-credits-${u.id}').value)">💾 Salvează</button>
+              <button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem; margin-left:4px;" onclick="deleteUser('${u.id}', '${escapeHtml(u.name)}')">Șterge</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function saveUserCredits(userId, newCredits) {
+      const creditsNum = parseInt(newCredits, 10);
+      if (isNaN(creditsNum) || creditsNum < 0) {
+        showToast('Numărul de credite trebuie să fie un număr pozitiv.', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credits: creditsNum })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Credite actualizate! Noul sold este: ${creditsNum} ⚡`, 'success');
+          if (data.users) {
+            usersList = data.users;
+            renderUsersTable();
+            updateUsersStats();
+          } else {
+            fetchUsersList();
+          }
+        } else {
+          showToast('Eroare: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Eroare la salvare credite: ' + err.message, 'error');
+      }
+    }
+
+    function quickAddCredits(userId, addAmount) {
+      const user = usersList.find(u => u.id === userId);
+      if (!user) return;
+      const nextCredits = (user.credits || 0) + addAmount;
+      saveUserCredits(userId, nextCredits);
+    }
+
+    async function promptCreateUser() {
+      const name = prompt('Introdu numele noului utilizator:');
+      if (!name || !name.trim()) return;
+
+      try {
+        const res = await fetch('/api/users/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name.trim() })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || 'Utilizator înregistrat cu succes!', 'success');
+          fetchUsersList();
+        } else {
+          showToast('Eroare la creare: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Eroare de rețea: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteUser(userId, userName) {
+      if (!confirm(`Sigur dorești să ștergi utilizatorul "${userName}"?`)) return;
+
+      try {
+        const res = await fetch(`/api/users/${userId}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Utilizatorul "${userName}" a fost șters.`, 'success');
+          if (data.users) {
+            usersList = data.users;
+            renderUsersTable();
+            updateUsersStats();
+          } else {
+            fetchUsersList();
+          }
+        } else {
+          showToast('Eroare la ștergere: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Eroare de rețea: ' + err.message, 'error');
+      }
+    }
+
+    /* API Traffic Inspector Functions */
+    async function fetchApiLogs() {
+      try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        if (data.success) {
+          apiLogs = data.logs || [];
+          const stats = data.stats || {};
+          document.getElementById('api-stat-total').innerText = stats.total || 0;
+          document.getElementById('api-stat-success').innerText = stats.successCount || 0;
+          document.getElementById('api-stat-errors').innerText = stats.errorCount || 0;
+          document.getElementById('api-stat-latency').innerText = `${stats.avgDuration || 0} ms`;
+
+          renderApiLogsList();
+          renderApiLogDetail();
+        }
+      } catch (err) {
+        console.error('Eroare la preluarea log-urilor API:', err);
+      }
+    }
+
+    function toggleAutoRefresh() {
+      isAutoRefreshOn = !isAutoRefreshOn;
+      const dot = document.getElementById('auto-refresh-dot');
+      const txt = document.getElementById('auto-refresh-text');
+      if (isAutoRefreshOn) {
+        dot.style.background = '#10b981';
+        txt.innerText = 'Auto-Refresh: ON (2s)';
+        autoRefreshInterval = setInterval(fetchApiLogs, 2000);
+      } else {
+        dot.style.background = '#9ca3af';
+        txt.innerText = 'Auto-Refresh: OFF';
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+      }
+    }
+
+    async function clearApiLogs() {
+      if (!confirm('Ești sigur că vrei să ștergi toate log-urile cererilor API?')) return;
+      try {
+        const res = await fetch('/api/logs', { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          selectedLogId = null;
+          fetchApiLogs();
+        }
+      } catch (err) {
+        showToast('Eroare la ștergerea log-urilor: ' + err.message, 'error');
+      }
+    }
+
+    function onApiSearchInput() {
+      searchApiQuery = document.getElementById('api-search-input').value.toLowerCase().trim();
+      renderApiLogsList();
+    }
+
+    function onApiFilterChange() {
+      methodFilter = document.getElementById('api-method-filter').value;
+      statusFilter = document.getElementById('api-status-filter').value;
+      renderApiLogsList();
+    }
+
+    function selectApiLog(id) {
+      selectedLogId = id;
+      renderApiLogsList();
+      renderApiLogDetail();
+    }
+
+    function getFilteredApiLogs() {
+      return apiLogs.filter(log => {
+        if (methodFilter !== 'ALL' && log.method !== methodFilter) return false;
+        if (statusFilter === '2xx' && (log.statusCode < 200 || log.statusCode >= 300)) return false;
+        if (statusFilter === '4xx' && (log.statusCode < 400 || log.statusCode >= 500)) return false;
+        if (statusFilter === '5xx' && log.statusCode < 500) return false;
+
+        if (searchApiQuery) {
+          const pathMatch = (log.pathname || '').toLowerCase().includes(searchApiQuery);
+          const queryMatch = JSON.stringify(log.queryParams || {}).toLowerCase().includes(searchApiQuery);
+          const bodyMatch = JSON.stringify(log.body || {}).toLowerCase().includes(searchApiQuery);
+          const respMatch = JSON.stringify(log.responseBody || '').toLowerCase().includes(searchApiQuery);
+          return pathMatch || queryMatch || bodyMatch || respMatch;
+        }
+
+        return true;
+      });
+    }
+
+    function renderApiLogsList() {
+      const container = document.getElementById('api-logs-list-container');
+      const filtered = getFilteredApiLogs();
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="padding:24px; text-align:center; color:var(--text-muted); font-size:0.85rem;">Nicio cerere API nu corespunde filtrelor selectate.</div>`;
+        return;
+      }
+
+      if (!selectedLogId || !filtered.some(l => l.id === selectedLogId)) {
+        selectedLogId = filtered[0].id;
+      }
+
+      container.innerHTML = filtered.map(log => {
+        const isSelected = log.id === selectedLogId;
+        const statusClass = log.statusCode >= 500 ? 's-5xx' : (log.statusCode >= 400 ? 's-4xx' : 's-2xx');
+        const formattedTime = new Date(log.timestamp).toLocaleTimeString();
+        const hasParams = Object.keys(log.queryParams || {}).length > 0 || (log.body && Object.keys(log.body).length > 0);
+
+        return `
+          <div class="api-log-item ${isSelected ? 'active' : ''}" onclick="selectApiLog('${log.id}')">
+            <div class="api-log-top">
+              <div style="display:flex; gap:6px; align-items:center;">
+                <span class="method-badge ${log.method}">${log.method}</span>
+                <span class="status-badge ${statusClass}">${log.statusCode} ${log.statusMessage || ''}</span>
+              </div>
+              <span style="font-family:'Fira Code', monospace; font-size:0.72rem; color:var(--accent-purple);">${log.durationMs} ms</span>
+            </div>
+            <div class="api-log-path">${log.pathname}</div>
+            <div class="api-log-meta">
+              <span>${formattedTime}</span>
+              ${hasParams ? `<span style="color:#60a5fa;">+ parametri</span>` : `<span style="color:var(--text-muted);">fără payload</span>`}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderApiLogDetail() {
+      const container = document.getElementById('api-log-detail-container');
+      const log = apiLogs.find(l => l.id === selectedLogId);
+
+      if (!log) {
+        container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-muted);">Selectează o cerere din lista din stânga pentru a inspecta toți parametrii.</div>`;
+        return;
+      }
+
+      const queryKeys = Object.keys(log.queryParams || {});
+      const hasQuery = queryKeys.length > 0;
+      const statusClass = log.statusCode >= 500 ? 's-5xx' : (log.statusCode >= 400 ? 's-4xx' : 's-2xx');
+
+      let queryHtml = '';
+      if (hasQuery) {
+        queryHtml = `
+          <table class="params-table">
+            <thead><tr><th>Cheie Parametru</th><th>Valoare</th></tr></thead>
+            <tbody>
+              ${queryKeys.map(k => `<tr><td class="key">${k}</td><td class="val">${escapeHtml(log.queryParams[k])}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        `;
+      } else {
+        queryHtml = `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic;">Niciun parametru Query furnizat în URL.</div>`;
+      }
+
+      let bodyHtml = '';
+      if (log.body && Object.keys(log.body).length > 0) {
+        bodyHtml = `<div class="json-code-box">${escapeHtml(JSON.stringify(log.body, null, 2))}</div>`;
+      } else {
+        bodyHtml = `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic;">Niciun payload transmis în Request Body.</div>`;
+      }
+
+      let responseBodyHtml = '';
+      if (log.responseBody !== undefined && log.responseBody !== null && log.responseBody !== '') {
+        const respContent = typeof log.responseBody === 'object' ? JSON.stringify(log.responseBody, null, 2) : String(log.responseBody);
+        responseBodyHtml = `<div class="json-code-box" style="border-color:rgba(16,185,129,0.35);">${escapeHtml(respContent)}</div>`;
+      } else {
+        responseBodyHtml = `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic;">Niciun conținut de răspuns înregistrat.</div>`;
+      }
+
+      const headerKeys = Object.keys(log.headers || {});
+      let headersHtml = `
+        <table class="params-table">
+          <thead><tr><th>Header</th><th>Valoare</th></tr></thead>
+          <tbody>
+            ${headerKeys.map(k => `<tr><td class="key">${k}</td><td class="val">${escapeHtml(log.headers[k])}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:14px;">
+          <div>
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+              <span class="method-badge ${log.method}" style="font-size:0.85rem; padding:4px 10px;">${log.method}</span>
+              <span class="status-badge ${statusClass}" style="font-size:0.85rem; padding:4px 10px;">${log.statusCode} ${log.statusMessage || ''}</span>
+              <span style="font-size:0.8rem; color:var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</span>
+            </div>
+            <div style="font-family:'Fira Code', monospace; font-size:1rem; font-weight:600; color:#fff;">${log.url}</div>
+          </div>
+          <button class="btn btn-secondary" onclick="copyLogJson('${log.id}')" title="Copiază cererea în format JSON">Copiază JSON</button>
+        </div>
+
+        <div>
+          <div style="font-size:0.85rem; font-weight:700; color:var(--text-main); margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span>🔍 Parametri Query (URL Search Params)</span>
+            ${hasQuery ? `<span style="font-size:0.75rem; color:#60a5fa;">(${queryKeys.length})</span>` : ''}
+          </div>
+          ${queryHtml}
+        </div>
+
+        <div>
+          <div style="font-size:0.85rem; font-weight:700; color:var(--text-main); margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span>📦 Parametri Request Body (Payload POST/PUT)</span>
+          </div>
+          ${bodyHtml}
+        </div>
+
+        <div>
+          <div style="font-size:0.85rem; font-weight:700; color:var(--text-main); margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+            <span>📤 Răspuns Server (Response Payload)</span>
+          </div>
+          ${responseBodyHtml}
+        </div>
+
+        <div>
+          <div style="font-size:0.85rem; font-weight:700; color:var(--text-main); margin-bottom:10px;">
+            <span>🌐 Headere HTTP</span>
+          </div>
+          ${headersHtml}
+        </div>
+
+        <div style="background:var(--bg-input); padding:12px 16px; border-radius:8px; border:1px solid var(--border-color); display:flex; justify-content:space-between; font-size:0.8rem;">
+          <span style="color:var(--text-muted);">Durată Execuție Node Server:</span>
+          <span style="font-family:'Fira Code', monospace; font-weight:600; color:#a78bfa;">${log.durationMs} ms</span>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      if (typeof str !== 'string') str = JSON.stringify(str);
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function copyLogJson(id) {
+      const log = apiLogs.find(l => l.id === id);
+      if (!log) return;
+      navigator.clipboard.writeText(JSON.stringify(log, null, 2));
+      showToast('Cererea API a fost copiată în clipboard!', 'success');
+    }
+
+    function renderCategoryFilter() {
+      const container = document.getElementById('category-filter-list');
+      container.innerHTML = categories.map(c => `
+        <div class="cat-chip ${selectedCategoryFilter === c.id ? 'active' : ''}" onclick="filterCategory('${c.id}')">
+          ${c.name} (${c.count})
+        </div>
+      `).join('');
+    }
+
+    function filterCategory(catId) {
+      selectedCategoryFilter = catId;
+      renderCategoryFilter();
+      renderResourceList();
+    }
+
+    function renderResourceList() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const container = document.getElementById('article-list');
+
+      if (currentMode === 'blog') {
+        const filtered = articles.filter(a => {
+          const matchesCat = selectedCategoryFilter === 'all' || a.category === selectedCategoryFilter;
+          const matchesSearch = (a.title && a.title.toLowerCase().includes(search)) || (a.summary && a.summary.toLowerCase().includes(search));
+          return matchesCat && matchesSearch;
+        });
+
+        container.innerHTML = filtered.map(a => `
+          <div class="article-card ${a.id === activeResourceId ? 'active' : ''}" onclick="selectResource('${a.id}')">
+            <div class="card-title">${escapeHtml(a.title)}</div>
+            <div class="card-meta">
+              <span class="card-tag">${escapeHtml(a.categoryName || a.category)}</span>
+              <span>${escapeHtml(a.date || '')}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        const filtered = docsSections.filter(s => {
+          const doc = docsContent[s.id] || {};
+          return (s.title && s.title.toLowerCase().includes(search)) ||
+                 (doc.title && doc.title.toLowerCase().includes(search)) ||
+                 (doc.subtitle && doc.subtitle.toLowerCase().includes(search));
+        });
+
+        container.innerHTML = filtered.map(s => {
+          const doc = docsContent[s.id] || {};
+          return `
+            <div class="article-card ${s.id === activeResourceId ? 'active' : ''}" onclick="selectResource('${s.id}')">
+              <div class="card-title">${escapeHtml(s.title || doc.title)}</div>
+              <div class="card-meta">
+                <span class="card-tag">Icon: ${escapeHtml(s.icon || 'Doc')}</span>
+                <span>ID: ${escapeHtml(s.id)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function selectResource(id) {
+      activeResourceId = id;
+
+      if (currentMode === 'blog') {
+        const article = articles.find(a => a.id === id);
+        if (!article) return;
+
+        document.getElementById('form-heading').innerText = 'Editează Articol Blog';
+        document.getElementById('article-id-badge').innerText = `[${article.id}]`;
+        document.getElementById('field-title').value = article.title || '';
+        document.getElementById('field-category').value = article.category || 'cv-preview';
+        document.getElementById('field-slug').value = article.id || '';
+        document.getElementById('field-date').value = article.date || '';
+        document.getElementById('field-readTime').value = article.readTime || '';
+        document.getElementById('field-author').value = article.author || '';
+        document.getElementById('field-avatar').value = article.avatar || '';
+        document.getElementById('field-summary').value = article.summary || '';
+        document.getElementById('field-tags').value = (article.tags || []).join(', ');
+        document.getElementById('field-content').value = article.content || '';
+
+        updateAvatarPreview();
+      } else {
+        const section = docsSections.find(s => s.id === id);
+        const doc = docsContent[id] || {};
+
+        document.getElementById('form-heading').innerText = 'Editează Secțiune Documentație';
+        document.getElementById('article-id-badge').innerText = `[${id}]`;
+        document.getElementById('field-doc-sectionTitle').value = section?.title || '';
+        document.getElementById('field-doc-icon').value = section?.icon || 'Cpu';
+        document.getElementById('field-doc-title').value = doc.title || '';
+        document.getElementById('field-doc-subtitle').value = doc.subtitle || '';
+        document.getElementById('field-slug').value = id;
+        document.getElementById('field-content').value = doc.content || '';
+      }
+
+      document.getElementById('btn-delete').style.display = 'inline-block';
+      document.getElementById('btn-delete').innerText = currentMode === 'docs' ? 'Șterge Secțiunea Doc' : 'Șterge Articolul';
+
+      updateLivePreview();
+      renderResourceList();
+    }
+
+    function initNewResource() {
+      activeResourceId = null;
+
+      if (currentMode === 'blog') {
+        document.getElementById('form-heading').innerText = 'Articol Nou Blog';
+        document.getElementById('article-id-badge').innerText = '[NOU]';
+        document.getElementById('field-title').value = '';
+        document.getElementById('field-category').value = 'cv-preview';
+        document.getElementById('field-slug').value = '';
+        document.getElementById('field-date').value = getFormattedDate();
+        document.getElementById('field-readTime').value = '';
+        document.getElementById('field-author').value = 'Echipa CVBuilder';
+        document.getElementById('field-avatar').value = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex';
+        document.getElementById('field-summary').value = '';
+        document.getElementById('field-tags').value = '';
+        document.getElementById('field-content').value = '# Titlu Articol Nou\n\nScrie conținutul aici...';
+
+        updateAvatarPreview();
+      } else {
+        document.getElementById('form-heading').innerText = 'Secțiune Nouă Documentație';
+        document.getElementById('article-id-badge').innerText = '[NOU]';
+        document.getElementById('field-doc-sectionTitle').value = '';
+        document.getElementById('field-doc-icon').value = 'FileText';
+        document.getElementById('field-doc-title').value = '';
+        document.getElementById('field-doc-subtitle').value = '';
+        document.getElementById('field-slug').value = '';
+        document.getElementById('field-content').value = '# Titlu Nou Documentație\n\nScrie explicațiile de documentație aici...';
+      }
+
+      document.getElementById('btn-delete').style.display = 'none';
+
+      updateLivePreview();
+      renderResourceList();
+    }
+
+    function onTitleInput() {
+      if (!activeResourceId && currentMode === 'blog') {
+        autoGenerateSlug();
+      }
+    }
+
+    function onSectionTitleInput() {
+      if (!activeResourceId && currentMode === 'docs') {
+        autoGenerateSlug();
+      }
+    }
+
+    async function autoGenerateSlug() {
+      const sourceText = currentMode === 'docs'
+        ? (document.getElementById('field-doc-sectionTitle').value || document.getElementById('field-doc-title').value)
+        : document.getElementById('field-title').value;
+      if (!sourceText) return;
+
+      const res = await fetch('/api/utils/slugify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: sourceText })
+      });
+      const data = await res.json();
+      document.getElementById('field-slug').value = data.slug;
+    }
+
+    async function autoCalculateReadTime() {
+      const content = document.getElementById('field-content').value;
+      const res = await fetch('/api/utils/readtime', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      });
+      const data = await res.json();
+      document.getElementById('field-readTime').value = data.readTime;
+    }
+
+    function updateAvatarPreview() {
+      const author = document.getElementById('field-author').value || 'User';
+      let avatar = document.getElementById('field-avatar').value;
+      if (!avatar) {
+        avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(author)}`;
+      }
+      document.getElementById('avatar-preview').src = avatar;
+    }
+
+    function updateLivePreview() {
+      const text = document.getElementById('field-content').value;
+      document.getElementById('preview-container').innerHTML = simpleMarkdownParse(text);
+    }
+
+    function simpleMarkdownParse(md) {
+      if (!md) return '<em>Fără conținut...</em>';
+      let html = md;
+      html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, function(match, lang, code) {
+        return `<pre><code class="language-${lang}">${escapeHtml(code.trim())}</code></pre>`;
+      });
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^## (.*$)/gim, '2>$1</h2>').replace(/^2>/gim, '<h2>');
+      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+      html = html.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      html = html.replace(/^\- (.*$)/gim, '<ul><li>$1</li></ul>');
+      html = html.replace(/<\/ul>\s*<ul>/g, '');
+      html = html.replace(/\n\n/g, '</p><p>');
+      return '<p>' + html + '</p>';
+    }
+
+    function insertMarkdown(prefix, suffix) {
+      const textarea = document.getElementById('field-content');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const selected = text.substring(start, end);
+      const replacement = prefix + selected + suffix;
+      textarea.value = text.substring(0, start) + replacement + text.substring(end);
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+      updateLivePreview();
+    }
+
+    async function saveResource() {
+      const slug = document.getElementById('field-slug').value.trim();
+      const content = document.getElementById('field-content').value;
+
+      let payload = {};
+
+      if (currentMode === 'blog') {
+        const title = document.getElementById('field-title').value.trim();
+        const category = document.getElementById('field-category').value;
+        const date = document.getElementById('field-date').value.trim();
+        const readTime = document.getElementById('field-readTime').value.trim();
+        const author = document.getElementById('field-author').value.trim();
+        const avatar = document.getElementById('field-avatar').value.trim();
+        const summary = document.getElementById('field-summary').value.trim();
+        const tagsStr = document.getElementById('field-tags').value;
+
+        if (!title) {
+          showToast('Titlul articolului este obligatoriu!', 'error');
+          return;
+        }
+
+        payload = {
+          id: slug,
+          title,
+          category,
+          date,
+          readTime,
+          author,
+          avatar,
+          summary,
+          tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
+          content
+        };
+      } else {
+        const sectionTitle = document.getElementById('field-doc-sectionTitle').value.trim();
+        const icon = document.getElementById('field-doc-icon').value;
+        const title = document.getElementById('field-doc-title').value.trim();
+        const subtitle = document.getElementById('field-doc-subtitle').value.trim();
+
+        if (!sectionTitle && !title) {
+          showToast('Titlul secțiunii sau titlul documentației este obligatoriu!', 'error');
+          return;
+        }
+
+        payload = {
+          id: slug,
+          sectionTitle: sectionTitle || title,
+          icon,
+          title: title || sectionTitle,
+          subtitle,
+          content
+        };
+      }
+
+      try {
+        let res;
+        const url = activeResourceId
+          ? `/api/resources/${activeResourceId}?type=${currentMode}`
+          : `/api/resources?type=${currentMode}`;
+        const method = activeResourceId ? 'PUT' : 'POST';
+
+        res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(activeResourceId ? 'Resursă salvată cu succes în blogData.js!' : 'Resursă nouă creată cu succes!', 'success');
+
+          if (currentMode === 'blog') {
+            articles = data.articles;
+            categories = data.categories;
+            selectResource(data.article ? data.article.id : slug);
+          } else {
+            docsSections = data.docsSections;
+            docsContent = data.docsContent;
+            selectResource(data.activeId || slug);
+          }
+
+          updateStats();
+          renderCategoryFilter();
+        } else {
+          showToast('Eroare: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Eroare de salvare: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteCurrentResource() {
+      if (!activeResourceId) return;
+      const resName = currentMode === 'docs' ? 'secțiunea de documentație' : 'articolul';
+      if (!confirm(`Ești sigur că vrei să ștergi ${resName} "${activeResourceId}" din blogData.js?`)) return;
+
+      try {
+        const res = await fetch(`/api/resources/${activeResourceId}?type=${currentMode}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Ștergere efectuată cu succes.', 'success');
+          activeResourceId = null;
+
+          if (currentMode === 'blog') {
+            articles = data.articles;
+            categories = data.categories;
+            if (articles.length > 0) selectResource(articles[0].id);
+            else initNewResource();
+          } else {
+            docsSections = data.docsSections;
+            docsContent = data.docsContent;
+            if (docsSections.length > 0) selectResource(docsSections[0].id);
+            else initNewResource();
+          }
+
+          updateStats();
+          renderCategoryFilter();
+        } else {
+          showToast('Eroare la ștergere: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Eroare la ștergere: ' + err.message, 'error');
+      }
+    }
+
+    function resetForm() {
+      if (activeResourceId) {
+        selectResource(activeResourceId);
+      } else {
+        initNewResource();
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-message');
+      toast.className = `toast show ${type}`;
+      text.innerText = msg;
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function getFormattedDate() {
+      const months = ['Ian', 'Feb', 'Mar', 'Apr', 'Mai', 'Iun', 'Iul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const d = new Date();
+      return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    const CATEGORY_NAMES = {
+      'cv-preview': 'CV Preview',
+      'cv-as-code': 'CV-as-Code',
+      'ai-agent': 'AI Agent',
+      'social': 'Social',
+      'misc': 'Misc'
+    };
+
+    function normalizeNewlines(str) {
+      if (!str) return '';
+      let result = str.replace(/\r\n/g, '\n');
+      if (!result.includes('\n') && result.includes('\\n')) {
+        result = result.replace(/\\n/g, '\n');
+      }
+      return result;
+    }
+
+    function exportCurrentMd() {
+      const slug = document.getElementById('field-slug').value.trim() || 'resursa';
+      const rawContent = document.getElementById('field-content').value;
+      const cleanContent = normalizeNewlines(rawContent);
+
+      let mdText = '';
+
+      if (currentMode === 'blog') {
+        const title = document.getElementById('field-title').value.trim();
+        const category = document.getElementById('field-category').value;
+        const date = document.getElementById('field-date').value.trim();
+        const readTime = document.getElementById('field-readTime').value.trim();
+        const author = document.getElementById('field-author').value.trim();
+        const avatar = document.getElementById('field-avatar').value.trim();
+        const summary = document.getElementById('field-summary').value.trim();
+        const tagsStr = document.getElementById('field-tags').value;
+        const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
+
+        const formattedTags = tags.length > 0
+          ? 'tags:\n' + tags.map(t => `  - ${t}`).join('\n')
+          : 'tags: []';
+
+        mdText = `---
+id: ${JSON.stringify(slug)}
+title: ${JSON.stringify(title)}
+category: ${JSON.stringify(category)}
+categoryName: ${JSON.stringify(CATEGORY_NAMES[category] || category)}
+date: ${JSON.stringify(date)}
+readTime: ${JSON.stringify(readTime)}
+author: ${JSON.stringify(author)}
+avatar: ${JSON.stringify(avatar)}
+summary: ${JSON.stringify(summary)}
+${formattedTags}
+---
+
+${cleanContent}
+`;
+      } else {
+        const sectionTitle = document.getElementById('field-doc-sectionTitle').value.trim();
+        const icon = document.getElementById('field-doc-icon').value;
+        const title = document.getElementById('field-doc-title').value.trim();
+        const subtitle = document.getElementById('field-doc-subtitle').value.trim();
+
+        mdText = `---
+id: ${JSON.stringify(slug)}
+sectionTitle: ${JSON.stringify(sectionTitle || title)}
+icon: ${JSON.stringify(icon || 'BookOpen')}
+title: ${JSON.stringify(title || sectionTitle)}
+subtitle: ${JSON.stringify(subtitle)}
+---
+
+${cleanContent}
+`;
+      }
+
+      const blob = new Blob([mdText], { type: 'text/markdown;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slug}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast(`Fișierul ${slug}.md a fost exportat cu succes!`, 'success');
+    }
+
+    function importMdFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const rawText = evt.target.result;
+        parseAndLoadMd(rawText);
+        e.target.value = '';
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function parseAndLoadMd(rawText) {
+      let content = rawText;
+      let metadata = {};
+
+      if (rawText.startsWith('---')) {
+        const parts = rawText.split(/^---$/m);
+        if (parts.length >= 3) {
+          const yamlHeader = parts[1];
+          content = parts.slice(2).join('---').trim();
+
+          yamlHeader.split('\n').forEach(line => {
+            const colonIdx = line.indexOf(':');
+            if (colonIdx > 0 && !line.trim().startsWith('-')) {
+              const key = line.substring(0, colonIdx).trim();
+              let val = line.substring(colonIdx + 1).trim();
+              if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                val = val.slice(1, -1);
+              }
+              metadata[key] = val;
+            }
+          });
+        }
+      }
+
+      const isDocImport = metadata.sectionTitle !== undefined || metadata.subtitle !== undefined;
+      if (isDocImport && currentMode !== 'docs') {
+        switchMode('docs');
+      } else if (!isDocImport && currentMode !== 'blog' && metadata.category !== undefined) {
+        switchMode('blog');
+      }
+
+      if (currentMode === 'blog') {
+        if (metadata.title) document.getElementById('field-title').value = metadata.title;
+        if (metadata.category) document.getElementById('field-category').value = metadata.category;
+        if (metadata.id) document.getElementById('field-slug').value = metadata.id;
+        if (metadata.date) document.getElementById('field-date').value = metadata.date;
+        if (metadata.readTime) document.getElementById('field-readTime').value = metadata.readTime;
+        if (metadata.author) document.getElementById('field-author').value = metadata.author;
+        if (metadata.avatar) document.getElementById('field-avatar').value = metadata.avatar;
+        if (metadata.summary) document.getElementById('field-summary').value = metadata.summary;
+        updateAvatarPreview();
+      } else {
+        if (metadata.sectionTitle) document.getElementById('field-doc-sectionTitle').value = metadata.sectionTitle;
+        if (metadata.icon) document.getElementById('field-doc-icon').value = metadata.icon;
+        if (metadata.title) document.getElementById('field-doc-title').value = metadata.title;
+        if (metadata.subtitle) document.getElementById('field-doc-subtitle').value = metadata.subtitle;
+        if (metadata.id) document.getElementById('field-slug').value = metadata.id;
+      }
+
+      document.getElementById('field-content').value = normalizeNewlines(content);
+      updateLivePreview();
+      showToast('Fișierul .md a fost importat cu succes!', 'success');
+    }
+
+    // Keyboard Shortcut Ctrl+S / Cmd+S
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveResource();
+      }
+    });
+
+    // Initialize
+    fetchData();
+  </script>
+</body>
+</html>
