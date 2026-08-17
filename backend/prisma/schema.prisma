@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  credits    Int      @default(100)
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+  lastActive DateTime @default(now())
+}
+
+model BlogArticle {
+  id           String   @id
+  title        String
+  category     String
+  categoryName String
+  date         String
+  readTime     String
+  author       String
+  avatar       String
+  summary      String
+  tags         String   // JSON stringified array of tags
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model DocsSection {
+  id        String        @id
+  title     String
+  icon      String        @default("FileText")
+  order     Int           @default(0)
+  contents  DocsContent[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model DocsContent {
+  id          String      @id
+  sectionId   String
+  section     DocsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  title       String
+  subtitle    String?
+  content     String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model CvData {
+  id        String   @id @default("default")
+  variantId String   @default("master")
+  content   String   // JSON stringified CV content
+  style     String   // JSON stringified CV style
+  updatedAt DateTime @updatedAt
+}
+
+model ApiLog {
+  id           String   @id @default(uuid())
+  timestamp    DateTime @default(now())
+  method       String
+  url          String
+  pathname     String
+  queryParams  String?  // JSON stringified
+  headers      String?  // JSON stringified
+  body         String?  // JSON stringified
+  responseBody String?  // JSON stringified
+  statusCode   Int
+  statusMessage String?
+  durationMs   Int
+}

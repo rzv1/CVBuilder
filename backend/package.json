@@ -1,0 +1,24 @@
+{
+  "name": "cvbuilder-backend",
+  "version": "1.0.0",
+  "description": "CVBuilder Backend Server refactored with Clean Architecture, Express and Prisma ORM",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^1.1.9",
+    "@prisma/client": "^5.22.0",
+    "ai": "^4.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}
