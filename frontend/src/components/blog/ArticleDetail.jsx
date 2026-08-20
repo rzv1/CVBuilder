@@ -1,120 +1,164 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Clock, Copy, Check, Tag, Share2 } from '../Icons.jsx';
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { ArrowLeft, Clock, Tag, Calendar } from 'lucide-react';
+import { Card } from '@/frontend/components/ui/card';
+import { Button } from '@/frontend/components/ui/button';
+import { Badge } from '@/frontend/components/ui/badge';
+import CodeBlock from './CodeBlock.jsx';
 
 export default function ArticleDetail({ article, onBack }) {
-  const [copiedSnippetIndex, setCopiedSnippetIndex] = useState(null);
-
-  const handleCopyCode = (codeText, index) => {
-    navigator.clipboard.writeText(codeText);
-    setCopiedSnippetIndex(index);
-    setTimeout(() => setCopiedSnippetIndex(null), 2000);
-  };
-
-  // Helper to render content with interactive code blocks and copy buttons
-  const renderArticleContent = (rawContent) => {
-    const parts = rawContent.split('```');
-    
-    return parts.map((part, index) => {
-      if (index % 2 === 1) {
-        // Code snippet block
-        const firstLineEnd = part.indexOf('\n');
-        const language = part.substring(0, firstLineEnd).trim() || 'javascript';
-        const codeText = part.substring(firstLineEnd + 1).trim();
-
-        return (
-          <div key={index} className="article-code-block glass-panel">
-            <div className="code-block-header">
-              <span className="code-lang-label">{language}</span>
-              <button 
-                className="copy-snippet-btn"
-                onClick={() => handleCopyCode(codeText, index)}
-                title="Copiază fragmentul de cod"
-              >
-                {copiedSnippetIndex === index ? (
-                  <>
-                    <Check size={13} style={{ color: '#10b981' }} />
-                    <span style={{ color: '#10b981' }}>Copiat!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={13} />
-                    <span>Copy Snippet</span>
-                  </>
-                )}
-              </button>
-            </div>
-            <pre className="code-pre">
-              <code>{codeText}</code>
-            </pre>
-          </div>
-        );
-      } else {
-        // Normal text / markdown formatting
-        const paragraphs = part.split('\n\n').filter(Boolean);
-        return (
-          <div key={index} className="article-text-block">
-            {paragraphs.map((p, pIdx) => {
-              if (p.startsWith('# ')) {
-                return <h1 key={pIdx} className="article-heading-1">{p.replace('# ', '')}</h1>;
-              } else if (p.startsWith('### ')) {
-                return <h3 key={pIdx} className="article-heading-3">{p.replace('### ', '')}</h3>;
-              } else if (p.startsWith('- ')) {
-                const items = p.split('\n- ');
-                return (
-                  <ul key={pIdx} className="article-list">
-                    {items.map((item, iIdx) => (
-                      <li key={iIdx}>{item.replace('- ', '')}</li>
-                    ))}
-                  </ul>
-                );
-              }
-              return <p key={pIdx} className="article-paragraph">{p}</p>;
-            })}
-          </div>
-        );
-      }
-    });
-  };
+  if (!article) return null;
 
   return (
-    <div className="article-detail-container glass-panel">
-      <div className="article-header-nav">
-        <button className="back-btn" onClick={onBack}>
-          <ArrowLeft size={16} />
+    <Card className="w-full max-w-4xl mx-auto bg-slate-900 border-slate-800 p-6 sm:p-8 shadow-2xl text-slate-100 space-y-6">
+      {/* Back Navigation & Meta Top Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBack}
+          className="gap-2 text-xs font-semibold hover:bg-slate-800 text-slate-300"
+        >
+          <ArrowLeft className="size-4" />
           <span>Înapoi la Articole</span>
-        </button>
+        </Button>
 
-        <div className="article-header-meta">
-          <span className="category-pill">{article.categoryName}</span>
-          <span className="read-time">
-            <Clock size={12} /> {article.readTime}
-          </span>
-        </div>
-      </div>
-
-      <div className="article-main-header">
-        <h1 className="article-title-large">{article.title}</h1>
-
-        <div className="article-author-bar">
-          <img src={article.avatar} alt={article.author} className="author-avatar-lg" />
-          <div className="author-details">
-            <div className="author-name-lg">{article.author}</div>
-            <div className="article-pub-date">Publicat pe {article.date}</div>
-          </div>
-        </div>
-
-        <div className="article-tags-bar">
-          {article.tags.map((tag, idx) => (
-            <span key={idx} className="tag-chip">
-              <Tag size={11} /> {tag}
+        <div className="flex items-center gap-3 text-xs">
+          {article.categoryName && (
+            <Badge variant="purple" className="px-2.5 py-0.5 font-bold">
+              {article.categoryName}
+            </Badge>
+          )}
+          {article.readTime && (
+            <span className="flex items-center gap-1.5 text-slate-400">
+              <Clock className="size-3.5" /> {article.readTime}
             </span>
-          ))}
+          )}
         </div>
       </div>
 
-      <div className="article-body-content">
-        {renderArticleContent(article.content)}
+      {/* Main Header / Title & Author */}
+      <div className="space-y-4">
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-100 leading-tight tracking-tight">
+          {article.title}
+        </h1>
+
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+          {/* Author Bar */}
+          <div className="flex items-center gap-3">
+            {article.avatar ? (
+              <img
+                src={article.avatar}
+                alt={article.author || 'Author'}
+                className="size-10 rounded-full border border-indigo-500/30 object-cover shadow-sm"
+              />
+            ) : (
+              <div className="size-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-sm">
+                {(article.author || 'A').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <div className="text-sm font-bold text-slate-200">{article.author}</div>
+              {article.date && (
+                <div className="text-xs text-slate-400 flex items-center gap-1">
+                  <Calendar className="size-3" /> Publicat pe {article.date}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Tags Bar */}
+          {Array.isArray(article.tags) && article.tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {article.tags.map((tag, idx) => (
+                <Badge key={idx} variant="secondary" className="gap-1 text-[11px] text-slate-400 bg-slate-950 border border-slate-800">
+                  <Tag className="size-3 text-sky-400" /> {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      <hr className="border-slate-800" />
+
+      {/* Markdown Body Content with Syntax Highlighting */}
+      <div className="prose prose-invert max-w-none text-slate-300">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            code: CodeBlock,
+            h1: ({ children }) => (
+              <h1 className="text-2xl font-extrabold text-slate-100 mt-8 mb-4 border-b border-slate-800 pb-2">
+                {children}
+              </h1>
+            ),
+            h2: ({ children }) => (
+              <h2 className="text-xl font-bold text-slate-100 mt-6 mb-3">
+                {children}
+              </h2>
+            ),
+            h3: ({ children }) => (
+              <h3 className="text-lg font-bold text-slate-200 mt-5 mb-2">
+                {children}
+              </h3>
+            ),
+            p: ({ children }) => (
+              <p className="text-slate-300 leading-relaxed my-3 text-sm sm:text-base">
+                {children}
+              </p>
+            ),
+            ul: ({ children }) => (
+              <ul className="list-disc list-inside space-y-1.5 my-3 text-slate-300 text-sm sm:text-base">
+                {children}
+              </ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="list-decimal list-inside space-y-1.5 my-3 text-slate-300 text-sm sm:text-base">
+                {children}
+              </ol>
+            ),
+            li: ({ children }) => (
+              <li className="leading-relaxed">{children}</li>
+            ),
+            blockquote: ({ children }) => (
+              <blockquote className="border-l-4 border-indigo-500 bg-indigo-950/30 p-4 my-4 rounded-r-lg italic text-slate-300 text-sm">
+                {children}
+              </blockquote>
+            ),
+            a: ({ href, children }) => (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-400 underline hover:text-indigo-300 transition-colors"
+              >
+                {children}
+              </a>
+            ),
+            table: ({ children }) => (
+              <div className="overflow-x-auto my-4">
+                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                  {children}
+                </table>
+              </div>
+            ),
+            th: ({ children }) => (
+              <th className="border-b border-slate-800 bg-slate-950 p-2.5 font-bold text-slate-200">
+                {children}
+              </th>
+            ),
+            td: ({ children }) => (
+              <td className="border-b border-slate-800/60 p-2.5 text-slate-300">
+                {children}
+              </td>
+            ),
+          }}
+        >
+          {article.content || ''}
+        </ReactMarkdown>
+      </div>
+    </Card>
   );
 }

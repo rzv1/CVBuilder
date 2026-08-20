@@ -8,8 +8,12 @@ import {
   Wifi, 
   Radio,
   UserCheck
-} from '../Icons.jsx';
+} from 'lucide-react';
 import { MOCK_COLLABORATORS, MOCK_COMMENTS } from '../../mockData.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/frontend/components/ui/card';
+import { Button } from '@/frontend/components/ui/button';
+import { Badge } from '@/frontend/components/ui/badge';
+import { Input } from '@/frontend/components/ui/input';
 
 export default function CollaborationTab() {
   const [comments, setComments] = useState(MOCK_COMMENTS);
@@ -33,106 +37,177 @@ export default function CollaborationTab() {
     setNewCommentText('');
   };
 
+  const handleToggleResolve = (commentId) => {
+    setComments(comments.map(c => 
+      c.id === commentId ? { ...c, resolved: !c.resolved } : c
+    ));
+  };
+
   const handleCopyInvite = () => {
     navigator.clipboard.writeText("https://cvbuilder.live/room/crdt-78923-ws");
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const activeCollaboratorsCount = MOCK_COLLABORATORS.filter(c => c.active).length;
+
   return (
-    <div className="collaboration-tab">
-      {/* Room Status */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 800, color: '#f3f4f6' }}>
-          <Radio size={18} style={{ color: '#34d399' }} /> Real-time CRDT & WebSocket Session
+    <div className="w-full space-y-5">
+      {/* Room Status Header */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-base font-extrabold text-slate-100">
+          <div className="relative flex h-2.5 w-2.5 items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </div>
+          <Radio className="size-4 text-emerald-400 shrink-0" />
+          <span>Real-time CRDT & WebSocket Session</span>
         </div>
-        <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+        <p className="text-xs text-slate-400 leading-relaxed">
           Collaborate live with recruiters, peer reviewers, or mentors with active cursor tracking and conflict-free data replication.
         </p>
       </div>
 
       {/* Invite Share Link Card */}
-      <div className="item-card" style={{ background: '#1e293b' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#60a5fa' }}>
-              Active Room ID: crdt-78923-ws
+      <Card className="bg-slate-900 border-slate-800 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-sky-400">Active Room ID:</span>
+              <Badge variant="blue" className="text-[11px] font-mono font-bold">crdt-78923-ws</Badge>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.1rem' }}>
-              Yjs / Automerge WebSocket server connected (wss://sync.cvbuilder.io)
+            <div className="text-xs text-slate-400">
+              Yjs / Automerge WebSocket server connected (<span className="text-slate-300 font-mono text-[11px]">wss://sync.cvbuilder.io</span>)
             </div>
           </div>
-          <button className="action-btn action-btn-primary" onClick={handleCopyInvite}>
-            <Link size={14} /> {copiedLink ? "Copied!" : "Copy Invite Link"}
-          </button>
+          <Button 
+            size="sm" 
+            onClick={handleCopyInvite} 
+            className="gap-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0"
+          >
+            <Link className="size-3.5" />
+            {copiedLink ? "Copied!" : "Copy Invite Link"}
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Connected Collaborators */}
-      <div style={{ marginTop: '1.5rem' }}>
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f3f4f6', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <UserCheck size={14} /> Active Collaborators (2 Online)
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-100">
+            <UserCheck className="size-4 text-emerald-400 shrink-0" />
+            <span>Active Collaborators ({activeCollaboratorsCount} Online)</span>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="space-y-2">
           {MOCK_COLLABORATORS.map(collab => (
-            <div key={collab.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0f172a', padding: '0.6rem 0.8rem', borderRadius: '8px', borderLeft: `3px solid ${collab.color}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${collab.name.split(' ')[0]}`} alt={collab.name} style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+            <Card key={collab.id} className="bg-slate-950/80 border-slate-800 p-3 flex items-center justify-between hover:bg-slate-900/60 transition-colors">
+              <div className="flex items-center gap-3">
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${collab.name.split(' ')[0]}`} 
+                  alt={collab.name} 
+                  className="w-7 h-7 rounded-full ring-2 ring-indigo-500/40 shrink-0"
+                />
                 <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f3f4f6' }}>{collab.name}</div>
-                  <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{collab.status}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-100">{collab.name}</span>
+                    <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-slate-400 border-slate-800">
+                      {collab.role}
+                    </Badge>
+                  </div>
+                  <div className="text-[11px] text-slate-400">{collab.status}</div>
                 </div>
               </div>
-              <span className={`badge ${collab.active ? 'badge-green' : 'badge-danger'}`}>
-                <Wifi size={10} /> {collab.active ? 'Active' : 'Offline'}
-              </span>
-            </div>
+              <div className="shrink-0">
+                {collab.active ? (
+                  <Badge variant="success" className="gap-1 text-[10px] font-bold">
+                    <Wifi className="size-2.5 animate-pulse" /> Active
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1 text-[10px] font-bold">
+                    <Wifi className="size-2.5 opacity-40" /> Offline
+                  </Badge>
+                )}
+              </div>
+            </Card>
           ))}
         </div>
       </div>
 
       {/* Live Comments & Feedback Feed */}
-      <div style={{ marginTop: '1.5rem' }}>
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f3f4f6', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <MessageSquare size={14} /> Feedback & Comment Threads
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm font-bold text-slate-100">
+          <MessageSquare className="size-4 text-sky-400 shrink-0" />
+          <span>Feedback & Comment Threads</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <input 
+        {/* New Comment Input */}
+        <div className="flex items-center gap-2">
+          <Input 
             type="text" 
-            className="input-field" 
             placeholder="Add a comment or suggestion on current section..."
             value={newCommentText} 
             onChange={(e) => setNewCommentText(e.target.value)} 
+            onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
+            className="bg-slate-950/90 border-slate-800 text-xs text-slate-100 placeholder:text-slate-500 h-9"
           />
-          <button className="action-btn action-btn-primary" onClick={handleSendComment}>
-            <Send size={14} /> Post
-          </button>
+          <Button 
+            size="sm" 
+            onClick={handleSendComment} 
+            className="gap-1.5 h-9 font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 text-xs"
+          >
+            <Send className="size-3.5" />
+            Post
+          </Button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {/* Comment Cards List */}
+        <div className="space-y-3">
           {comments.map(cm => (
-            <div key={cm.id} style={{ background: '#1e293b', padding: '0.85rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <img src={cm.avatar} alt={cm.author} style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
-                  <strong style={{ fontSize: '0.8rem', color: '#f3f4f6' }}>{cm.author}</strong>
+            <Card 
+              key={cm.id} 
+              className={`p-3.5 space-y-2 border transition-all ${
+                cm.resolved 
+                  ? 'bg-slate-950/40 border-slate-800/60 opacity-60' 
+                  : 'bg-slate-900 border-slate-800 shadow-sm'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={cm.avatar} 
+                    alt={cm.author} 
+                    className="w-5 h-5 rounded-full shrink-0" 
+                  />
+                  <span className="text-xs font-bold text-slate-200">{cm.author}</span>
                 </div>
-                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{cm.timestamp}</span>
+                <span className="text-[11px] text-slate-500 font-medium">{cm.timestamp}</span>
               </div>
 
-              <div style={{ fontSize: '0.72rem', color: '#c084fc', marginTop: '0.2rem', fontWeight: 600 }}>
-                📍 {cm.section}
+              <div className="flex items-center justify-between gap-2">
+                <Badge variant="purple" className="text-[10px] font-semibold gap-1 py-0.5 px-2">
+                  📍 {cm.section}
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="xs" 
+                  onClick={() => handleToggleResolve(cm.id)}
+                  className="text-[11px] h-6 gap-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800/50"
+                >
+                  <CheckCircle className={`size-3 ${cm.resolved ? 'text-emerald-400' : ''}`} />
+                  {cm.resolved ? 'Resolved' : 'Mark Resolved'}
+                </Button>
               </div>
 
-              <p style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: '0.35rem' }}>
+              <p className="text-xs text-slate-300 leading-relaxed italic bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/60">
                 "{cm.text}"
               </p>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
     </div>
   );
 }
+

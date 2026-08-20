@@ -9,7 +9,7 @@ import {
   Check, 
   Sparkles,
   FileDiff
-} from '../Icons.jsx';
+} from 'lucide-react';
 import { MOCK_GIT_COMMITS } from '../../mockData.js';
 
 export default function GitVersioningTab({ onOpenDiffModal }) {
