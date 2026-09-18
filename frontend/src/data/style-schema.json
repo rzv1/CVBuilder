@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cvbuilder.ai/schemas/style.json",
+  "title": "CV Style Configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["light", "dark"],
+          "description": "Theme mode for presentation"
+        },
+        "primaryColor": {
+          "type": "string",
+          "description": "Primary accent color for header and main titles (hex format e.g. #0f172a)"
+        },
+        "accentColor": {
+          "type": "string",
+          "description": "Secondary color for subtitles, borders and highlights (hex format e.g. #2563eb)"
+        },
+        "secondaryAccent": {
+          "type": "string",
+          "description": "Accent color used in Modern layout for section titles (hex format e.g. #65a30d)"
+        },
+        "neutralColor": {
+          "type": "string",
+          "description": "Base neutral body text color (hex format e.g. #1e293b)"
+        },
+        "mutedColor": {
+          "type": "string",
+          "description": "Muted text color for dates and contact details (hex format e.g. #64748b)"
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "Page background color (hex format e.g. #ffffff)"
+        },
+        "cardBackgroundColor": {
+          "type": "string",
+          "description": "Header background card color in Modern layout (hex format e.g. #2b3446)"
+        },
+        "contactBarBg": {
+          "type": "string",
+          "description": "Background color for modern layout contact strip (hex format e.g. #1a202c)"
+        },
+        "fontFamily": {
+          "type": "string",
+          "enum": ["Helvetica", "Times-Roman", "Courier", "executive"],
+          "description": "PDF Document primary typography font family"
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "template": {
+          "type": "string",
+          "enum": ["classic", "modern"],
+          "description": "CV visual presentation template"
+        },
+        "pageSize": {
+          "type": "string",
+          "enum": ["A4", "LETTER"],
+          "description": "Standard PDF paper size"
+        },
+        "margins": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": { "type": "number", "description": "Top page padding margin in pt" },
+            "right": { "type": "number", "description": "Right page padding margin in pt" },
+            "bottom": { "type": "number", "description": "Bottom page padding margin in pt" },
+            "left": { "type": "number", "description": "Left page padding margin in pt" }
+          }
+        },
+        "columns": { "type": "number", "description": "Number of visual body columns" },
+        "sidebarWidth": { "type": "string", "description": "Sidebar percentage width in multi-column layout" }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "headerSize": { "type": "number", "description": "Candidate full name font size in pt" },
+        "titleSize": { "type": "number", "description": "Professional title font size in pt" },
+        "sectionTitleSize": { "type": "number", "description": "Section header font size in pt" },
+        "itemTitleSize": { "type": "number", "description": "Job position / degree title font size in pt" },
+        "itemSubSize": { "type": "number", "description": "Company / institution font size in pt" },
+        "bodySize": { "type": "number", "description": "Standard paragraph body font size in pt" },
+        "smallSize": { "type": "number", "description": "Muted dates and descriptions font size in pt" },
+        "microSize": { "type": "number", "description": "Tag pills and footer font size in pt" },
+        "lineHeight": { "type": "number", "description": "Typography line height factor" }
+      }
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "showQrCode": { "type": "boolean", "description": "Toggle top-right Live CV QR code visibility" },
+        "compactMode": { "type": "boolean", "description": "Scale down vertical margins and section spacing" },
+        "enableAtsScoring": { "type": "boolean", "description": "Enable automated ATS keyword parsing" }
+      }
+    }
+  }
+}

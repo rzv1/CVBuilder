@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "../node_modules/.bin/vite",
+    "dev": "node_modules/.bin/vite",
     "cms": "node --watch ../backend/src/index.js",
-    "build": "../node_modules/.bin/vite build",
-    "lint": "../node_modules/.bin/eslint .",
-    "preview": "../node_modules/.bin/vite preview"
+    "build": "node_modules/.bin/vite build",
+    "lint": "node_modules/.bin/eslint .",
+    "preview": "node_modules/.bin/vite preview"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",
@@ -20,16 +20,22 @@
     "@react-pdf/renderer": "^4.6.0",
     "@tailwindcss/vite": "^4.3.3",
     "ai": "^4.3.19",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fast-json-patch": "^3.1.1",
     "lucide-react": "^1.16.0",
+    "mammoth": "^1.12.1",
     "monaco-editor": "^0.34.1",
     "monaco-yaml": "^4.0.4",
     "pdfjs-dist": "^4.10.38",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.1",
+    "remark-gfm": "^4.0.1",
     "shadcn": "^4.18.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
@@ -46,6 +52,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "rollup-plugin-visualizer": "^7.1.1",
     "vite": "^7.2.4"
   }
 }

@@ -1,61 +1,28 @@
-import fs from 'fs';
-import { USERS_DATA_PATH } from '../config/paths.js';
 import { prisma } from '../config/db.js';
 import { slugify } from '../utils/slugify.js';
 
-// Disk fallback helpers
-function loadUsersFromDisk() {
-  try {
-    if (fs.existsSync(USERS_DATA_PATH)) {
-      const content = fs.readFileSync(USERS_DATA_PATH, 'utf-8');
-      return JSON.parse(content);
-    }
-  } catch (err) {
-    console.error('Eroare la citirea utilizatorilor din disc:', err.message);
-  }
-  return [];
-}
-
-function saveUsersToDisk(users) {
-  try {
-    fs.writeFileSync(USERS_DATA_PATH, JSON.stringify(users, null, 2), 'utf-8');
-    return true;
-  } catch (err) {
-    console.error('Eroare la salvarea utilizatorilor pe disc:', err.message);
-    return false;
-  }
-}
-
 export async function getUsers() {
-  if (prisma) {
-    try {
-      const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
-      if (users.length > 0) return users;
-    } catch (err) {
-      console.warn('Prisma getUsers error, fallback to disk:', err.message);
-    }
+  try {
+    return await prisma.user.findMany({ orderBy: { createdAt: 'desc' } });
+  } catch (err) {
+    throw new Error('Eroare la preluarea utilizatorilor din Prisma DB: ' + err.message);
   }
-  return loadUsersFromDisk();
 }
 
 export async function getUserById(userId) {
-  if (prisma) {
-    try {
-      const user = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { id: userId },
-            { name: decodeURIComponent(userId) }
-          ]
-        }
-      });
-      if (user) return user;
-    } catch (err) {
-      console.warn('Prisma getUserById error, fallback to disk:', err.message);
-    }
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: userId },
+          { name: decodeURIComponent(userId) }
+        ]
+      }
+    });
+    return user || null;
+  } catch (err) {
+    throw new Error('Eroare la căutarea utilizatorului în Prisma DB: ' + err.message);
   }
-  const users = loadUsersFromDisk();
-  return users.find(u => u.id === userId || u.name.toLowerCase() === decodeURIComponent(userId).toLowerCase()) || null;
 }
 
 export async function registerUser(name) {
@@ -72,113 +39,64 @@ export async function registerUser(name) {
   }
 
   const newId = 'usr_' + slugify(trimmedName) + '_' + Math.random().toString(36).substring(2, 7);
-  const newUser = {
-    id: newId,
-    name: trimmedName,
-    credits: 100,
-    status: 'active',
-    createdAt: now.toISOString(),
-    lastActive: now.toISOString()
-  };
 
-  if (prisma) {
-    try {
-      const created = await prisma.user.create({
-        data: {
-          id: newUser.id,
-          name: newUser.name,
-          credits: newUser.credits,
-          status: newUser.status,
-          createdAt: now,
-          lastActive: now
-        }
-      });
-      // Also update disk for sync
-      const diskUsers = loadUsersFromDisk();
-      diskUsers.unshift(newUser);
-      saveUsersToDisk(diskUsers);
-      return created;
-    } catch (err) {
-      console.warn('Prisma registerUser error, fallback to disk:', err.message);
-    }
+  try {
+    return await prisma.user.create({
+      data: {
+        id: newId,
+        name: trimmedName,
+        credits: 100,
+        status: 'active',
+        createdAt: now,
+        lastActive: now
+      }
+    });
+  } catch (err) {
+    throw new Error('Eroare la înregistrarea utilizatorului în Prisma DB: ' + err.message);
   }
-
-  const users = loadUsersFromDisk();
-  users.unshift(newUser);
-  saveUsersToDisk(users);
-  return newUser;
 }
 
 export async function updateUser(userId, data) {
   const now = new Date();
   
-  if (prisma) {
-    try {
-      const existing = await prisma.user.findFirst({
-        where: { OR: [{ id: userId }, { name: decodeURIComponent(userId) }] }
-      });
-      if (existing) {
-        const updateData = { lastActive: now };
-        if (data.credits !== undefined) updateData.credits = Math.max(0, parseInt(data.credits, 10) || 0);
-        if (data.name !== undefined && data.name.trim()) updateData.name = data.name.trim();
-        if (data.status !== undefined) updateData.status = data.status;
+  try {
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ id: userId }, { name: decodeURIComponent(userId) }] }
+    });
 
-        const updated = await prisma.user.update({
-          where: { id: existing.id },
-          data: updateData
-        });
-
-        // Sync disk
-        const users = loadUsersFromDisk();
-        const idx = users.findIndex(u => u.id === existing.id);
-        if (idx !== -1) {
-          users[idx] = { ...users[idx], ...data, lastActive: now.toISOString() };
-          saveUsersToDisk(users);
-        }
-        return updated;
-      }
-    } catch (err) {
-      console.warn('Prisma updateUser error, fallback to disk:', err.message);
+    if (!existing) {
+      throw new Error('Utilizatorul nu a fost găsit.');
     }
+
+    const updateData = { lastActive: now };
+    if (data.credits !== undefined) updateData.credits = Math.max(0, parseInt(data.credits, 10) || 0);
+    if (data.name !== undefined && data.name.trim()) updateData.name = data.name.trim();
+    if (data.status !== undefined) updateData.status = data.status;
+
+    return await prisma.user.update({
+      where: { id: existing.id },
+      data: updateData
+    });
+  } catch (err) {
+    throw new Error('Eroare la actualizarea utilizatorului în Prisma DB: ' + err.message);
   }
-
-  const users = loadUsersFromDisk();
-  const index = users.findIndex(u => u.id === userId || u.name.toLowerCase() === decodeURIComponent(userId).toLowerCase());
-  if (index === -1) {
-    throw new Error('Utilizatorul nu a fost găsit.');
-  }
-
-  if (data.credits !== undefined) users[index].credits = Math.max(0, parseInt(data.credits, 10) || 0);
-  if (data.name !== undefined && data.name.trim()) users[index].name = data.name.trim();
-  if (data.status !== undefined) users[index].status = data.status;
-  users[index].lastActive = now.toISOString();
-
-  saveUsersToDisk(users);
-  return users[index];
 }
 
 export async function deleteUser(userId) {
-  if (prisma) {
-    try {
-      const existing = await prisma.user.findFirst({
-        where: { OR: [{ id: userId }, { name: decodeURIComponent(userId) }] }
-      });
-      if (existing) {
-        await prisma.user.delete({ where: { id: existing.id } });
-      }
-    } catch (err) {
-      console.warn('Prisma deleteUser error, fallback to disk:', err.message);
-    }
-  }
+  try {
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ id: userId }, { name: decodeURIComponent(userId) }] }
+    });
 
-  let users = loadUsersFromDisk();
-  const initialLength = users.length;
-  users = users.filter(u => u.id !== userId && u.name.toLowerCase() !== decodeURIComponent(userId).toLowerCase());
-  if (users.length === initialLength) {
-    throw new Error('Utilizatorul nu a fost găsit.');
+    if (!existing) {
+      throw new Error('Utilizatorul nu a fost găsit.');
+    }
+
+    await prisma.user.delete({ where: { id: existing.id } });
+    return await getUsers();
+  } catch (err) {
+    throw new Error('Eroare la ștergerea utilizatorului din Prisma DB: ' + err.message);
   }
-  saveUsersToDisk(users);
-  return users;
 }
 
 export async function deductUserCredits(userId, amount = 1) {

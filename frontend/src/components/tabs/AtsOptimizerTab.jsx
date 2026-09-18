@@ -17,7 +17,13 @@ import {
   Building2,
   RefreshCw
 } from 'lucide-react';
-import { MOCK_ATS_JOB_DESCRIPTION } from '../../mockData.js';
+const DEFAULT_JOB_DESCRIPTION = `Senior Full Stack Software Engineer (React / Node.js)
+We are looking for a Senior Full Stack Engineer with strong experience building scalable microservices and real-time web applications.
+Key Requirements:
+- 5+ years of experience with React, TypeScript, Node.js, and Express
+- Cloud infrastructure experience with AWS, Docker, Kubernetes, and Redis
+- Strong knowledge of REST APIs, GraphQL, and microservice architectures
+- Demonstrated ability to optimize Core Web Vitals and frontend bundle performance`;
 import { Card } from '@/frontend/components/ui/card';
 import { Button } from '@/frontend/components/ui/button';
 import { Badge } from '@/frontend/components/ui/badge';
@@ -32,7 +38,7 @@ const INITIAL_TARGET_JOBS = [
     location: "Remote / USA",
     importedAt: "Extensie Web • Acum 10 min",
     iconSeed: "TechScale",
-    description: MOCK_ATS_JOB_DESCRIPTION,
+    description: "Căutăm un Frontend Architect cu experiență avansată în React 19, Next.js",
     currentScore: 84,
     potentialScore: 96,
     maxScoreAchieved: 84,
@@ -67,7 +73,7 @@ const INITIAL_TARGET_JOBS = [
 ];
 
 export default function AtsOptimizerTab({ cvData }) {
-  const [jobs, setJobs] = useState(INITIAL_TARGET_JOBS);
+  const [jobDesc, setJobDesc] = useState(DEFAULT_JOB_DESCRIPTION);
   const [selectedJobId, setSelectedJobId] = useState("job-1");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isJdModalOpen, setIsJdModalOpen] = useState(false);

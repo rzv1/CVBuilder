@@ -1,0 +1,42 @@
+{
+  "theme": {
+    "mode": "light",
+    "primaryColor": "#0f172a",
+    "accentColor": "#2563eb",
+    "secondaryAccent": "#4b543e",
+    "neutralColor": "#1e293b",
+    "mutedColor": "#64748b",
+    "backgroundColor": "#ffffff",
+    "cardBackgroundColor": "#2b3446",
+    "contactBarBg": "#1a202c",
+    "fontFamily": "Helvetica"
+  },
+  "layout": {
+    "template": "classic",
+    "pageSize": "A4",
+    "margins": {
+      "top": 24,
+      "right": 28,
+      "bottom": 36,
+      "left": 28
+    },
+    "columns": 1,
+    "sidebarWidth": "39%"
+  },
+  "typography": {
+    "headerSize": 20,
+    "titleSize": 11,
+    "sectionTitleSize": 13,
+    "itemTitleSize": 10,
+    "itemSubSize": 9.5,
+    "bodySize": 9.5,
+    "smallSize": 8.5,
+    "microSize": 7.5,
+    "lineHeight": 1.3
+  },
+  "features": {
+    "showQrCode": true,
+    "compactMode": false,
+    "enableAtsScoring": true
+  }
+}

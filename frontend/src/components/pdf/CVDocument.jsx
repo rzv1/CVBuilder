@@ -1,5 +1,4 @@
 import React from 'react';
-import { MOCK_ANALYTICS } from '../../mockData.js';
 import { createPDFStyles } from '../../utils/pdfStyles.js';
 import { DEFAULT_AVATAR, isItemInVariant } from './pdfHelpers.js';
 import ClassicTemplate from './templates/ClassicTemplate.jsx';
@@ -35,7 +34,7 @@ export default function CVDocument({
   const hobbies = (activeCv.hobbies || []).filter(hb => isItemInVariant(hb, activeVariant));
 
   const fontFamily = activeStyle?.theme?.fontFamily === 'executive' ? 'Times-Roman' : (activeStyle?.theme?.fontFamily || 'Helvetica');
-  const qrCodeUrl = personal.qrCodeUrl || MOCK_ANALYTICS.qrCodeUrl;
+  const qrCodeUrl = personal.qrCodeUrl || "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://cvbuilder.live/alex-popescu";
   const avatarUrl = personal.avatar || personal.photo || DEFAULT_AVATAR;
 
   const templateProps = {

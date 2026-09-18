@@ -8,6 +8,7 @@ import SkillsSection from './content-editor/SkillsSection.jsx';
 import LanguagesSection from './content-editor/LanguagesSection.jsx';
 import AwardsSection from './content-editor/AwardsSection.jsx';
 import CustomSections from './content-editor/CustomSections.jsx';
+import EmptyCvState from '../common/EmptyCvState.jsx';
 
 export default function ContentEditorTab(props) {
   const {
@@ -64,7 +65,11 @@ export default function ContentEditorTab(props) {
     isMaxCustomSectionsReached
   } = useContentEditor(props);
 
-  const { cvData, setCvData, isDevMode } = props;
+  const { cvData, setCvData, isDevMode, onOpenImportModal } = props;
+
+  if (!cvData || !cvData.personal) {
+    return <EmptyCvState onOpenImportModal={onOpenImportModal} />;
+  }
 
   if (isDevMode) {
     return (

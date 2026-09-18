@@ -4,7 +4,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/api/tests/**/*.test.js'],
-    setupFiles: ['src/api/tests/setup.js'],
     fileParallelism: false,
     maxConcurrency: 1,
     globals: true,

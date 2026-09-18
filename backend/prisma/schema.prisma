@@ -9,11 +9,102 @@ datasource db {
 
 model User {
   id         String   @id @default(uuid())
-  name       String
+  name       String   @unique
+  secret     String?
+  avatar     String?
   credits    Int      @default(100)
   status     String   @default("active")
   createdAt  DateTime @default(now())
   lastActive DateTime @default(now())
+
+  // Relations
+  cvDocuments  CvData[]
+  gitCommits   GitCommit[]
+  groupMembers GroupMember[]
+  comments     GroupComment[]
+}
+
+model CvData {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug          String   @unique
+  title         String   @default("master")
+  content       String // JSON stringified (date structurate CV)
+  style         String // JSON stringified (setari vizuale)
+  activeVariant String   @default("import")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  variants        CvVariant[]
+  gitCommits      GitCommit[]
+  groupMembers    GroupMember[]
+  comments        GroupComment[]
+  analyticsEvents AnalyticsEvent[]
+}
+
+model CvVariant {
+  id         String   @default(uuid())
+  variantKey String
+  cvDataId   String
+  cvData     CvData   @relation(fields: [cvDataId], references: [id], onDelete: Cascade)
+  label      String
+  createdAt  DateTime @default(now())
+
+  @@id([id])
+  @@unique([variantKey, cvDataId])
+}
+
+model GitCommit {
+  id             String   @id @default(uuid())
+  hash           String
+  cvDataId       String
+  cvData         CvData   @relation(fields: [cvDataId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  message        String
+  tag            String?
+  changesAdded   Int      @default(0)
+  changesDeleted Int      @default(0)
+  createdAt      DateTime @default(now())
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  cvDataId  String
+  cvData    CvData   @relation(fields: [cvDataId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("Editor") // "Owner" | "Editor"
+  color     String   @default("#3b82f6")
+  createdAt DateTime @default(now())
+
+  @@unique([cvDataId, userId])
+}
+
+model GroupComment {
+  id        String   @id @default(uuid())
+  cvDataId  String
+  cvData    CvData   @relation(fields: [cvDataId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  section   String
+  text      String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id              String   @id @default(uuid())
+  cvDataId        String
+  cvData          CvData   @relation(fields: [cvDataId], references: [id], onDelete: Cascade)
+  eventType       String // "view" | "download"
+  referrer        String? // e.g. "linkedin", "direct", "qr code"
+  durationSeconds Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([cvDataId, createdAt])
 }
 
 model BlogArticle {
@@ -21,12 +112,12 @@ model BlogArticle {
   title        String
   category     String
   categoryName String
-  date         String
-  readTime     String
+  publishedAt  DateTime @default(now())
+  readTimeMin  Int      @default(3)
   author       String
-  avatar       String
+  avatar       String?
   summary      String
-  tags         String   // JSON stringified array of tags
+  tags         String // JSON stringified tag array
   content      String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -43,35 +134,21 @@ model DocsSection {
 }
 
 model DocsContent {
-  id          String      @id
-  sectionId   String
-  section     DocsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  title       String
-  subtitle    String?
-  content     String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-}
-
-model CvData {
-  id        String   @id @default("default")
-  variantId String   @default("master")
-  content   String   // JSON stringified CV content
-  style     String   // JSON stringified CV style
-  updatedAt DateTime @updatedAt
+  id        String      @id
+  sectionId String
+  section   DocsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  title     String
+  subtitle  String?
+  content   String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
 
 model ApiLog {
-  id           String   @id @default(uuid())
-  timestamp    DateTime @default(now())
-  method       String
-  url          String
-  pathname     String
-  queryParams  String?  // JSON stringified
-  headers      String?  // JSON stringified
-  body         String?  // JSON stringified
-  responseBody String?  // JSON stringified
-  statusCode   Int
-  statusMessage String?
-  durationMs   Int
+  id         String   @id @default(uuid())
+  timestamp  DateTime @default(now())
+  method     String
+  pathname   String
+  statusCode Int
+  durationMs Int
 }

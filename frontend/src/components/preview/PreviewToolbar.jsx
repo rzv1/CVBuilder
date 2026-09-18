@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, ZoomIn, ZoomOut } from '../Icons.jsx';
+import { Eye, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/frontend/components/ui/button';
 
 export default function PreviewToolbar({

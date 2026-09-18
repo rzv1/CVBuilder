@@ -10,28 +10,19 @@ import {
   Sparkles,
   FileDiff
 } from 'lucide-react';
-import { MOCK_GIT_COMMITS } from '../../mockData.js';
 
-export default function GitVersioningTab({ onOpenDiffModal }) {
-  const [commits, setCommits] = useState(MOCK_GIT_COMMITS);
+export default function GitVersioningTab({ gitCommits = [], onAddCommit, onOpenDiffModal }) {
   const [snapshotMsg, setSnapshotMsg] = useState('');
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleCreateSnapshot = () => {
+  const handleCreateSnapshot = async () => {
     if (!snapshotMsg.trim()) return;
     
-    const newCommit = {
-      id: `c-${Date.now()}`,
-      hash: Math.random().toString(16).substring(2, 9),
-      author: "Alexandru Popescu (You)",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-      timestamp: "Just now",
-      tag: `v1.${commits.length + 1}`,
-      message: snapshotMsg,
-      changes: { added: 2, deleted: 0 }
-    };
+    if (onAddCommit) {
+      const tag = `v1.${gitCommits.length + 1}`;
+      await onAddCommit(snapshotMsg, tag);
+    }
 
-    setCommits([newCommit, ...commits]);
     setSnapshotMsg('');
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
@@ -45,7 +36,7 @@ export default function GitVersioningTab({ onOpenDiffModal }) {
           <GitBranch size={18} style={{ color: '#c084fc' }} /> Git-Style Versioning & Commit Snapshots
         </div>
         <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '0.25rem' }}>
-          Full revision history for your CV data store with instant visual side-by-side diffing.
+          Full revision history for your CV data store with instant visual side-by-side diffing, persisted in Prisma DB.
         </p>
       </div>
 
@@ -79,21 +70,21 @@ export default function GitVersioningTab({ onOpenDiffModal }) {
 
       {/* Timeline of Commits */}
       <div className="timeline" style={{ marginTop: '1.5rem' }}>
-        {commits.map(commit => (
+        {gitCommits.map(commit => (
           <div key={commit.id} className="timeline-item">
             <div className="timeline-dot" />
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <span className="badge badge-purple" style={{ marginRight: '0.4rem' }}>
-                  <GitCommit size={10} /> {commit.tag}
+                  <GitCommit size={10} /> {commit.tag || 'v1.0'}
                 </span>
                 <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#94a3b8' }}>
                   {commit.hash}
                 </span>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Clock size={12} /> {commit.timestamp}
+                <Clock size={12} /> {commit.createdAt ? new Date(commit.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
               </span>
             </div>
 
@@ -103,13 +94,13 @@ export default function GitVersioningTab({ onOpenDiffModal }) {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.6rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#9ca3af' }}>
-                <img src={commit.avatar} alt={commit.author} style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
-                <span>{commit.author}</span>
+                <img src={commit.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex'} alt={commit.author || 'User'} style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
+                <span>{commit.author || 'Alexandru Popescu'}</span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 700 }}>
-                  +{commit.changes.added} / -{commit.changes.deleted}
+                  +{commit.changesAdded ?? commit.changes?.added ?? 2} / -{commit.changesDeleted ?? commit.changes?.deleted ?? 0}
                 </span>
 
                 <button 

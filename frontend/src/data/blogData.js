@@ -3,7 +3,7 @@ export const BLOG_CATEGORIES = [
     "id": "all",
     "name": "Toate Articolele",
     "icon": "BookOpen",
-    "count": 6
+    "count": 7
   },
   {
     "id": "cv-preview",
@@ -33,7 +33,7 @@ export const BLOG_CATEGORIES = [
     "id": "misc",
     "name": "Misc",
     "icon": "Sliders",
-    "count": 2
+    "count": 3
   }
 ];
 
@@ -57,10 +57,108 @@ export const DOCS_SECTIONS = [
     "id": "ats-scoring",
     "title": "Algoritmul ATS & Prompting AI",
     "icon": "Target"
+  },
+  {
+    "id": "test-doc-section",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-1",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-2",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-3",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-4",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-5",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-6",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-7",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-8",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-9",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-10",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-11",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-12",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-13",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-14",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-15",
+    "title": "Test Doc Section",
+    "icon": "FileText"
+  },
+  {
+    "id": "test-doc-section-16",
+    "title": "Test Doc Section",
+    "icon": "FileText"
   }
 ];
 
 export const BLOG_ARTICLES = [
+  {
+    id: "exportable-article",
+    title: "Exportable Article",
+    category: "misc",
+    categoryName: "Misc",
+    date: "17 Aug 2026",
+    readTime: "1 min read",
+    author: "Echipa CVBuilder",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Author",
+    summary: "",
+    tags: [],
+    content: "Markdown content test"
+  },
   {
     id: "wysiwyg-preview",
     title: "WYSIWYG preview",
@@ -161,5 +259,90 @@ export const DOCS_CONTENT = {
     "title": "Algoritmul ATS & Prompting AI",
     "subtitle": "Cum evaluează agentul compatibilitatea rezumatului",
     "content": "\n# Scoring ATS & Optimizare Inteligentă\n\nSistemul nostru calculează automat potrivirea cu descrierea job-ului utilizând două componente principale:\n\n1. **TF-IDF Term Frequency**: Măsoară prezența termenilor critici menționați în fișa postului.\n2. **Action-Verb Checker**: Verifică dacă fiecare punct de experiență începe cu un verb de acțiune puternic (*Dezvoltat*, *Optimizat*, *Conduit*, *Implementat*).\n3. **Quantifiable Metrics Detector**: Identifică dacă există numere și procente care atestă rezultatele obținute (ex: `35%`, `10k+`, `2.5s`).\n    "
+  },
+  "test-doc-section": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-1": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-2": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-3": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-4": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-5": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-6": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-7": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-8": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-9": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-10": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-11": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-12": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-13": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-14": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-15": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
+  },
+  "test-doc-section-16": {
+    "title": "Test Doc Page",
+    "subtitle": "",
+    "content": "Doc content here."
   }
 };

@@ -9,38 +9,33 @@ import {
   Radio,
   UserCheck
 } from 'lucide-react';
-import { MOCK_COLLABORATORS, MOCK_COMMENTS } from '../../mockData.js';
-import { Card, CardHeader, CardTitle, CardContent } from '@/frontend/components/ui/card';
+import { Card } from '@/frontend/components/ui/card';
 import { Button } from '@/frontend/components/ui/button';
 import { Badge } from '@/frontend/components/ui/badge';
 import { Input } from '@/frontend/components/ui/input';
 
-export default function CollaborationTab() {
-  const [comments, setComments] = useState(MOCK_COMMENTS);
+export default function CollaborationTab({
+  groupMembers = [],
+  comments = [],
+  onAddComment,
+  onToggleComment
+}) {
   const [newCommentText, setNewCommentText] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const handleSendComment = () => {
+  const handleSendComment = async () => {
     if (!newCommentText.trim()) return;
 
-    const newCm = {
-      id: `cm-${Date.now()}`,
-      author: "Alexandru Popescu (You)",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
-      timestamp: "Just now",
-      section: "Work Experience - TechScale Solutions",
-      text: newCommentText,
-      resolved: false
-    };
-
-    setComments([newCm, ...comments]);
+    if (onAddComment) {
+      await onAddComment("Work Experience - TechScale Solutions", newCommentText);
+    }
     setNewCommentText('');
   };
 
-  const handleToggleResolve = (commentId) => {
-    setComments(comments.map(c => 
-      c.id === commentId ? { ...c, resolved: !c.resolved } : c
-    ));
+  const handleToggleResolve = async (commentId) => {
+    if (onToggleComment) {
+      await onToggleComment(commentId);
+    }
   };
 
   const handleCopyInvite = () => {
@@ -49,7 +44,7 @@ export default function CollaborationTab() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const activeCollaboratorsCount = MOCK_COLLABORATORS.filter(c => c.active).length;
+  const activeCollaboratorsCount = groupMembers.filter(c => c.active !== false).length;
 
   return (
     <div className="w-full space-y-5">
@@ -101,7 +96,7 @@ export default function CollaborationTab() {
         </div>
 
         <div className="space-y-2">
-          {MOCK_COLLABORATORS.map(collab => (
+          {groupMembers.map(collab => (
             <Card key={collab.id} className="bg-slate-950/80 border-slate-800 p-3 flex items-center justify-between hover:bg-slate-900/60 transition-colors">
               <div className="flex items-center gap-3">
                 <img 
@@ -116,11 +111,11 @@ export default function CollaborationTab() {
                       {collab.role}
                     </Badge>
                   </div>
-                  <div className="text-[11px] text-slate-400">{collab.status}</div>
+                  <div className="text-[11px] text-slate-400">{collab.status || 'Online'}</div>
                 </div>
               </div>
               <div className="shrink-0">
-                {collab.active ? (
+                {collab.active !== false ? (
                   <Badge variant="success" className="gap-1 text-[10px] font-bold">
                     <Wifi className="size-2.5 animate-pulse" /> Active
                   </Badge>
@@ -176,13 +171,15 @@ export default function CollaborationTab() {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <img 
-                    src={cm.avatar} 
-                    alt={cm.author} 
+                    src={cm.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Elena'} 
+                    alt={cm.author || 'User'} 
                     className="w-5 h-5 rounded-full shrink-0" 
                   />
-                  <span className="text-xs font-bold text-slate-200">{cm.author}</span>
+                  <span className="text-xs font-bold text-slate-200">{cm.author || 'Elena Ionescu'}</span>
                 </div>
-                <span className="text-[11px] text-slate-500 font-medium">{cm.timestamp}</span>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {cm.createdAt ? new Date(cm.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
+                </span>
               </div>
 
               <div className="flex items-center justify-between gap-2">
@@ -210,4 +207,3 @@ export default function CollaborationTab() {
     </div>
   );
 }
-

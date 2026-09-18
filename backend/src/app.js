@@ -10,7 +10,7 @@ import { recordApiLog } from './utils/logger.js';
 import usersRoutes from './api/routes/users.routes.js';
 import cvRoutes from './api/routes/cv.routes.js';
 import resourcesRoutes from './api/routes/resources.routes.js';
-import chatRoutes from './api/routes/chat.routes.js';
+import aiRoutes from './api/routes/ai.routes.js';
 import logsRoutes from './api/routes/logs.routes.js';
 import utilsRoutes from './api/routes/utils.routes.js';
 
@@ -83,7 +83,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/cv', cvRoutes);
 app.use('/api/resources', resourcesRoutes);
 app.use('/api/articles', resourcesRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/chat', aiRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/utils', utilsRoutes);
 app.use('/api/export-md', utilsRoutes);

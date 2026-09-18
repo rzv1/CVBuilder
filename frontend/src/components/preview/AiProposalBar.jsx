@@ -7,7 +7,7 @@ import {
   X,
   FileCode,
   Layers
-} from '../Icons.jsx';
+} from 'lucide-react';
 import { Button } from '@/frontend/components/ui/button';
 import { Badge } from '@/frontend/components/ui/badge';
 import { Input } from '@/frontend/components/ui/input';
