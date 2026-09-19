@@ -513,7 +513,7 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
 
   // Handlers for Custom Sections (Max 3)
   const addCustomSection = () => {
-    const currentCustomSecs = cvData.customSections || [];
+    const currentCustomSecs = cvData?.customSections || [];
     if (currentCustomSecs.length >= 3) return;
 
     const newSecNumber = currentCustomSecs.length + 1;
@@ -533,7 +533,7 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
     };
     setCvData(prev => ({
       ...prev,
-      customSections: [...(prev.customSections || []), newSec]
+      customSections: [...(prev?.customSections || []), newSec]
     }));
     setActiveSection(`custom-${newSec.id}`);
   };
@@ -541,7 +541,7 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
   const deleteCustomSection = (secIdx) => {
     setCvData(prev => ({
       ...prev,
-      customSections: (prev.customSections || []).filter((_, i) => i !== secIdx)
+      customSections: (prev?.customSections || []).filter((_, i) => i !== secIdx)
     }));
   };
 
@@ -555,23 +555,26 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
       detail: "Description and achievements."
     };
     setCvData(prev => {
-      const secList = [...(prev.customSections || [])];
-      secList[secIdx].items.push(newItem);
+      const secList = [...(prev?.customSections || [])];
+      if (!secList[secIdx]) return prev;
+      secList[secIdx].items = [...(secList[secIdx].items || []), newItem];
       return { ...prev, customSections: secList };
     });
   };
 
   const deleteCustomSectionItem = (secIdx, itemIdx) => {
     setCvData(prev => {
-      const secList = [...(prev.customSections || [])];
-      secList[secIdx].items = secList[secIdx].items.filter((_, i) => i !== itemIdx);
+      const secList = [...(prev?.customSections || [])];
+      if (!secList[secIdx]) return prev;
+      secList[secIdx].items = (secList[secIdx].items || []).filter((_, i) => i !== itemIdx);
       return { ...prev, customSections: secList };
     });
   };
 
   const handleCustomItemChange = (secIdx, itemIdx, field, value) => {
     setCvData(prev => {
-      const secList = [...(prev.customSections || [])];
+      const secList = [...(prev?.customSections || [])];
+      if (!secList[secIdx] || !secList[secIdx].items?.[itemIdx]) return prev;
       secList[secIdx].items[itemIdx] = {
         ...secList[secIdx].items[itemIdx],
         [field]: value
@@ -580,7 +583,7 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
     });
   };
 
-  const customSectionsList = cvData.customSections || [];
+  const customSectionsList = cvData?.customSections || [];
   const isMaxCustomSectionsReached = customSectionsList.length >= 3;
 
   return {

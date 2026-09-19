@@ -76,10 +76,10 @@ export function usePreviewPanel({
         const height = cvContentRef.current.scrollHeight;
         pages = Math.max(1, Math.ceil(height / 1123));
       } else {
-        const expCount = (activeCv.experience || []).length;
-        const eduCount = (activeCv.education || []).length;
-        const skillCount = (activeCv.skills || []).length;
-        const customCount = (activeCv.customSections || []).length;
+        const expCount = (activeCv?.experience || []).length;
+        const eduCount = (activeCv?.education || []).length;
+        const skillCount = (activeCv?.skills || []).length;
+        const customCount = (activeCv?.customSections || []).length;
         const totalItems = expCount + eduCount + skillCount + customCount;
         pages = totalItems > 3 ? 2 : 1;
       }

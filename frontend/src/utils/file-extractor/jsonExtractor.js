@@ -9,7 +9,7 @@ export async function extractFromJson(file) {
   try {
     parsed = JSON.parse(rawText);
   } catch (err) {
-    throw new Error('Fișierul JSON are o sintaxă invalidă.');
+    throw new Error('Invalid JSON syntax.');
   }
 
   // Case 1: Already App CV format (has personal section)

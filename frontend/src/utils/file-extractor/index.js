@@ -34,5 +34,5 @@ export async function extractFromFile(file) {
     return extractFromWord(file);
   }
 
-  throw new Error(`Formatul fișierului '${file.name}' nu este suportat.`);
+  throw new Error(`File format '${file.name}' not supported.`);
 }

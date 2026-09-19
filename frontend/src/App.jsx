@@ -13,7 +13,7 @@ import CollaborationTab from './components/tabs/CollaborationTab.jsx';
 import AnalyticsTab from './components/tabs/AnalyticsTab.jsx';
 import TechBlogView from './components/blog/TechBlogView.jsx';
 
-import AppModals from './components/modals/AppModals.jsx';
+import AppModals from './components/modals/AppModals';
 import AiChatDrawer from './components/ai/AiChatDrawer.jsx';
 
 import { useCvState } from './hooks/useCvState.js';
@@ -125,6 +125,7 @@ export default function App() {
     };
   }, [isRightResizing]);
 
+  
   // Auto-expand left panel width when Dev Mode is active on Content Editor
   useEffect(() => {
     if (isDevMode && activeTab === 'editor') {

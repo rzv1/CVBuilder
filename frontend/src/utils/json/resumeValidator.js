@@ -17,7 +17,7 @@ export function validateJsonResume(jsonInput) {
     return {
       isValid: false,
       syntaxError: true,
-      errors: [{ path: '', message: 'Conținut JSON gol' }]
+      errors: [{ path: '', message: 'Empty JSON content' }]
     };
   }
 
@@ -29,7 +29,7 @@ export function validateJsonResume(jsonInput) {
       return {
         isValid: false,
         syntaxError: true,
-        errors: [{ path: '', message: `Sintaxă JSON invalidă: ${err.message}` }]
+        errors: [{ path: '', message: `JSON syntax error: ${err.message}` }]
       };
     }
   } else {
@@ -40,10 +40,10 @@ export function validateJsonResume(jsonInput) {
 
   if (!valid && validateSchema.errors) {
     const formattedErrors = validateSchema.errors.map((err) => {
-      const fieldPath = err.instancePath ? err.instancePath : 'rădăcină (root)';
-      let msg = err.message || 'Eroare de validare';
+      const fieldPath = err.instancePath ? err.instancePath : 'root';
+      let msg = err.message || 'Validation error';
       if (err.keyword === 'additionalProperties' && err.params?.additionalProperty) {
-        msg = `Proprietatea nepermisă '${err.params.additionalProperty}' nu face parte din schema JSON Resume`;
+        msg = `Forbidden property '${err.params.additionalProperty}' is not part of the JSON Resume schema`;
       }
       return {
         path: fieldPath,
