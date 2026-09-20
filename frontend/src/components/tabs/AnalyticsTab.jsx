@@ -12,9 +12,18 @@ import {
 import { Card } from '@/frontend/components/ui/card';
 import { Button } from '@/frontend/components/ui/button';
 import { Badge } from '@/frontend/components/ui/badge';
+import { useCv, useUI } from '@/frontend/src/context/index.jsx';
 
-export default function AnalyticsTab({ analyticsEvents = [], slug = 'alex-popescu', onOpenShareModal }) {
+export default function AnalyticsTab(props = {}) {
+  const cv = useCv();
+  const ui = useUI();
+
+  const analyticsEvents = props.analyticsEvents ?? cv.analyticsEvents ?? [];
+  const slug = props.slug ?? cv.slug ?? 'alex-popescu';
+  const onOpenShareModal = props.onOpenShareModal ?? (() => ui.setIsShareModalOpen(true));
+
   const [copiedLink, setCopiedLink] = useState(false);
+
 
   const hostedUrl = `https://cvbuilder.live/${slug}`;
 

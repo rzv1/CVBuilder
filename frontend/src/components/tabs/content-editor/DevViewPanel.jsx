@@ -4,12 +4,17 @@ import {
   FileText,
   Sliders,
   Columns,
+  Square,
+  Zap,
+  ZapOff,
   Play,
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
-import { Button } from '@/frontend/components/ui/button';
-import { Badge } from '@/frontend/components/ui/badge';
+import { Button } from '@/frontend/src/components/ui/button';
+import { Badge } from '@/frontend/src/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/frontend/src/components/ui/tabs';
+import { Swap, SwapIndicator } from '@/frontend/src/components/ui/swap';
 
 export default function DevViewPanel({
   activeDevFile,
@@ -34,77 +39,101 @@ export default function DevViewPanel({
     <div className="flex flex-col h-full w-full bg-slate-950 text-slate-100 overflow-hidden">
       {/* Dev View Top Control Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 shrink-0 flex-wrap gap-2">
-        {/* Left Side: File Tabs Selector */}
-        <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
+        {/* Left Side: File Tabs Selector using Ark Tabs */}
+        <Tabs
+          value={isSplitView ? '' : activeDevFile}
+          onValueChange={(details) => {
+            if (details.value) {
+              setActiveDevFile(details.value);
+              if (isSplitView) setIsSplitView(false);
+            }
+          }}
+          className="w-auto"
+        >
+          <TabsList className="h-7.5 bg-slate-950 border border-slate-800 p-0.5 rounded-lg flex items-center gap-1">
+            <TabsTrigger
+              value="content"
+              className={`gap-1.5 text-xs py-1 px-2.5 h-6 rounded-md font-semibold transition-colors ${
+                !isSplitView && activeDevFile === 'content'
+                  ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FileText className="size-3.5 text-blue-400" />
+              <span>content.yaml</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="style"
+              className={`gap-1.5 text-xs py-1 px-2.5 h-6 rounded-md font-semibold transition-colors ${
+                !isSplitView && activeDevFile === 'style'
+                  ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Sliders className="size-3.5 text-purple-400" />
+              <span>style.yaml</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Center/Right Controls: Split View (Swap), Auto-Run (Swap), Run Button */}
+        <div className="flex items-center gap-2.5">
+          {/* Split View Toggle with Swap */}
           <Button
             type="button"
-            variant="ghost"
+            variant={isSplitView ? "secondary" : "outline"}
             size="xs"
-            onClick={() => setActiveDevFile('content')}
-            className={`h-7 text-xs font-semibold gap-1.5 px-3 rounded-md transition-colors ${
-              activeDevFile === 'content' && !isSplitView
-                ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <FileText className="size-3.5 text-blue-400" />
-            <span>content.yaml</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            onClick={() => setActiveDevFile('style')}
-            className={`h-7 text-xs font-semibold gap-1.5 px-3 rounded-md transition-colors ${
-              activeDevFile === 'style' && !isSplitView
-                ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Sliders className="size-3.5 text-purple-400" />
-            <span>style.yaml</span>
-          </Button>
-        </div>
-
-        {/* Center/Right Controls: Split View, Auto-Run, Run Button */}
-        <div className="flex items-center gap-3">
-          {/* Split View Toggle */}
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => setIsSplitView(prev => !prev)}
-            className={`h-7 text-xs font-semibold gap-1.5 rounded-lg border-slate-700/60 ${
+            onClick={() => setIsSplitView((prev) => !prev)}
+            className={`h-7.5 text-xs font-semibold px-2.5 rounded-lg transition-all ${
               isSplitView
-                ? 'bg-indigo-950/60 text-indigo-300 border-indigo-500/50'
-                : 'bg-slate-900 text-slate-300 hover:text-white'
+                ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-500/50 shadow-sm shadow-indigo-950/40 hover:bg-indigo-900/60'
+                : 'bg-slate-900/90 text-slate-300 border border-slate-700/60 hover:text-white hover:bg-slate-800'
             }`}
-            title="Split view side-by-side"
+            title={isSplitView ? "Comută pe vizualizare simplă" : "Comută pe vizualizare split (side-by-side)"}
           >
-            <Columns className="size-3.5" />
-            <span>Split View</span>
+            <Swap swap={isSplitView}>
+              <SwapIndicator type="on" className="inline-flex items-center gap-1.5">
+                <Columns className="size-3.5 text-indigo-400" />
+                <span>Split View</span>
+              </SwapIndicator>
+              <SwapIndicator type="off" className="inline-flex items-center gap-1.5">
+                <Square className="size-3.5 text-slate-400" />
+                <span>Single View</span>
+              </SwapIndicator>
+            </Swap>
           </Button>
 
-          {/* Auto-Run Toggle Switch */}
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg" title="Auto-run pe fiecare modificare">
-            <span className="text-xs font-semibold text-slate-400">Auto-Run</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoRun}
-                onChange={(e) => setAutoRun(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
-            </label>
-          </div>
+          {/* Auto-Run Toggle with Swap */}
+          <Button
+            type="button"
+            variant={autoRun ? "secondary" : "outline"}
+            size="xs"
+            onClick={() => setAutoRun((prev) => !prev)}
+            className={`h-7.5 text-xs font-semibold px-2.5 rounded-lg transition-all ${
+              autoRun
+                ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-sm shadow-emerald-950/40 hover:bg-emerald-900/60'
+                : 'bg-slate-900/90 text-slate-400 border border-slate-700/60 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+            title={autoRun ? "Dezactivează Auto-Run" : "Activează Auto-Run la fiecare modificare"}
+          >
+            <Swap swap={autoRun}>
+              <SwapIndicator type="on" className="inline-flex items-center gap-1.5">
+                <Zap className="size-3.5 text-emerald-400 fill-emerald-400" />
+                <span>Auto-Run On</span>
+              </SwapIndicator>
+              <SwapIndicator type="off" className="inline-flex items-center gap-1.5">
+                <ZapOff className="size-3.5 text-slate-500" />
+                <span>Auto-Run Off</span>
+              </SwapIndicator>
+            </Swap>
+          </Button>
 
           {/* Run Code Button */}
           <Button
             size="xs"
             onClick={handleRunCode}
             disabled={isRunning}
-            className="h-7 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold gap-1.5 text-xs rounded-lg shadow-md shadow-emerald-900/20 disabled:opacity-60"
+            className="h-7.5 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold gap-1.5 text-xs px-3 rounded-lg shadow-md shadow-emerald-900/20 disabled:opacity-60 border-0"
             title="Rulează codul manual (Ctrl+Enter)"
           >
             <Play className="size-3.5 fill-current" />
@@ -121,7 +150,7 @@ export default function DevViewPanel({
               <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                 <FileText className="size-3.5 text-blue-400" /> content.yaml
               </span>
-              <Badge variant="blue" className="text-[10px] py-0 px-1.5 font-semibold">Read/Write</Badge>
+              <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-semibold text-blue-400 border-blue-500/30 bg-blue-950/40">Read/Write</Badge>
             </div>
             <div className="flex-1 overflow-hidden">
               <Editor
@@ -145,7 +174,7 @@ export default function DevViewPanel({
               <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                 <Sliders className="size-3.5 text-purple-400" /> style.yaml
               </span>
-              <Badge variant="purple" className="text-[10px] py-0 px-1.5 font-semibold">Read/Write</Badge>
+              <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-semibold text-purple-400 border-purple-500/30 bg-purple-950/40">Read/Write</Badge>
             </div>
             <div className="flex-1 overflow-hidden">
               <Editor

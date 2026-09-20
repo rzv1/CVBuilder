@@ -14,6 +14,9 @@ import aiRoutes from './api/routes/ai.routes.js';
 import logsRoutes from './api/routes/logs.routes.js';
 import utilsRoutes from './api/routes/utils.routes.js';
 
+import * as trpcExpress from '@trpc/server/adapters/express';
+import { appRouter } from './trpc/appRouter.js';
+
 const app = express();
 
 // Global Middlewares
@@ -78,7 +81,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// API Routes
+// tRPC API Middleware
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext: () => ({}),
+  })
+);
+
+// REST API Routes (preserved for backwards compatibility)
 app.use('/api/users', usersRoutes);
 app.use('/api/cv', cvRoutes);
 app.use('/api/resources', resourcesRoutes);
@@ -92,7 +104,7 @@ app.use('/api/export-md', utilsRoutes);
 // Static Admin CMS UI Middleware & SPA Fallback
 app.use(express.static(CMS_UI_DIR));
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
+  if (req.path.startsWith('/api') || req.path.startsWith('/trpc')) {
     return next();
   }
   const targetFile = path.join(CMS_UI_DIR, 'index.html');

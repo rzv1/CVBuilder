@@ -13,15 +13,19 @@ import { Card } from '@/frontend/components/ui/card';
 import { Button } from '@/frontend/components/ui/button';
 import { Badge } from '@/frontend/components/ui/badge';
 import { Input } from '@/frontend/components/ui/input';
+import { useCv } from '@/frontend/src/context/index.jsx';
 
-export default function CollaborationTab({
-  groupMembers = [],
-  comments = [],
-  onAddComment,
-  onToggleComment
-}) {
+export default function CollaborationTab(props = {}) {
+  const cv = useCv();
+
+  const groupMembers = props.groupMembers ?? cv.groupMembers ?? [];
+  const comments = props.comments ?? cv.comments ?? [];
+  const onAddComment = props.onAddComment ?? cv.handleAddGroupComment;
+  const onToggleComment = props.onToggleComment ?? cv.handleToggleGroupComment;
+
   const [newCommentText, setNewCommentText] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
+
 
   const handleSendComment = async () => {
     if (!newCommentText.trim()) return;

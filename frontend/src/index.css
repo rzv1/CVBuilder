@@ -61,8 +61,14 @@
   --sidebar-accent-foreground: oklch(0.14 0 0);
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-ring: oklch(0.14 0 0);
+  --destructive-foreground: var(--color-red-400);
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-blue-700);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-700);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-amber-700);
 }
-
 
 body {
   font-family: var(--font-sans);
@@ -239,6 +245,113 @@ header .text-base.font-extrabold {
   --color-purple-200: #1e293b;
   --color-purple-100: #0f172a;
   --color-purple-50: #ffffff;
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  @keyframes accordion-open-x {
+  from {
+    width: 0;
+    opacity: 0;
+    }
+  to {
+    width: var(--width);
+    opacity: 1;
+    }
+  }
+  @keyframes accordion-close-x {
+  from {
+    width: var(--width);
+    opacity: 1;
+    }
+  to {
+    width: 0;
+    opacity: 0;
+    }
+  }
+  @keyframes swap-fade-in {
+  from {
+    opacity: 0;
+    }
+  to {
+    opacity: 1;
+    }
+  }
+  @keyframes swap-fade-out {
+  from {
+    opacity: 1;
+    }
+  to {
+    opacity: 0;
+    }
+  }
+  @keyframes swap-rotate-in {
+  from {
+    transform: rotate(-90deg);
+    }
+  to {
+    transform: rotate(0deg);
+    }
+  }
+  @keyframes swap-rotate-out {
+  from {
+    transform: rotate(0deg);
+    }
+  to {
+    transform: rotate(90deg);
+    }
+  }
+  @keyframes swap-scale-in {
+  from {
+    transform: scale(0);
+    }
+  to {
+    transform: scale(1);
+    }
+  }
+  @keyframes swap-scale-out {
+  from {
+    transform: scale(1);
+    }
+  to {
+    transform: scale(0);
+    }
+  }
+  @keyframes swap-flip-in {
+  from {
+    transform: rotateY(180deg);
+    }
+  to {
+    transform: rotateY(0deg);
+    }
+  }
+  @keyframes swap-flip-out {
+  from {
+    transform: rotateY(0deg);
+    }
+  to {
+    transform: rotateY(180deg);
+    }
+  }
+  @keyframes swap-blur-in {
+  from {
+    filter: blur(2px);
+    }
+  to {
+    filter: blur(0);
+    }
+  }
+  @keyframes swap-blur-out {
+  from {
+    filter: blur(0);
+    }
+  to {
+    filter: blur(2px);
+    }
+  }
 }
 
 .dark {
@@ -273,6 +386,13 @@ header .text-base.font-extrabold {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --destructive-foreground: var(--color-red-400);
+  --info: var(--color-blue-500);
+  --info-foreground: var(--color-blue-400);
+  --success: var(--color-emerald-500);
+  --success-foreground: var(--color-emerald-400);
+  --warning: var(--color-amber-500);
+  --warning-foreground: var(--color-amber-400);
 }
 
 @layer base {
@@ -284,5 +404,57 @@ header .text-base.font-extrabold {
   }
   html {
     @apply font-sans;
+  }
+}
+
+@keyframes textShimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.shimmer,
+.animate-text-shimmer {
+  background: linear-gradient(90deg, #94a3b8 0%, #ffffff 50%, #94a3b8 100%);
+  background-size: 200% auto;
+  color: transparent !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  animation: textShimmer 2s linear infinite;
+}
+  .swap-indicator-fade[data-state="open"] {
+    animation: swap-fade-in 200ms ease-out, swap-blur-in 200ms ease-out;
+}
+  .swap-indicator-fade[data-state="closed"] {
+    animation: swap-fade-out 100ms ease-in, swap-blur-out 100ms ease-in;
+}
+  .swap-indicator-flip {
+    backface-visibility: hidden;
+}
+  .swap-indicator-flip[data-state="open"] {
+    animation: swap-flip-in 400ms ease, swap-blur-in 400ms ease;
+}
+  .swap-indicator-flip[data-state="closed"] {
+    animation: swap-flip-out 200ms ease, swap-blur-out 200ms ease;
+}
+  .swap-indicator-rotate[data-state="open"] {
+    animation: swap-rotate-in 250ms ease-out, swap-fade-in 250ms ease-out, swap-blur-in 250ms ease-out;
+}
+  .swap-indicator-rotate[data-state="closed"] {
+    animation: swap-rotate-out 100ms ease-in, swap-fade-out 100ms ease-in, swap-blur-out 100ms ease-in;
+}
+  .swap-indicator-scale[data-state="open"] {
+    animation: swap-scale-in 200ms ease-out, swap-fade-in 200ms ease-out, swap-blur-in 200ms ease-out;
+}
+  .swap-indicator-scale[data-state="closed"] {
+    animation: swap-scale-out 100ms ease-in, swap-fade-out 100ms ease-in, swap-blur-out 100ms ease-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swap-indicator-fade, .swap-indicator-flip, .swap-indicator-rotate, .swap-indicator-scale {
+    animation: none !important;
   }
 }

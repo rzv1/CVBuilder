@@ -1,99 +1,155 @@
 import React from 'react';
-import { User, ChevronDown, ChevronUp } from 'lucide-react';
-import { Input } from '@/frontend/components/ui/input';
+import { User } from 'lucide-react';
 import { Textarea } from '@/frontend/components/ui/textarea';
+import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/frontend/src/components/ui/accordion';
+import { Field, FieldLabel } from '@/frontend/src/components/ui/field';
+import { Separator } from '@/frontend/src/components/ui/separator';
+import {
+  Editable,
+  EditableArea,
+  EditableInput,
+  EditablePreview,
+} from '@/frontend/src/components/ui/editable';
 
 export default function PersonalDetailsSection({
-  activeSection,
-  toggleSection,
   personalData,
   handlePersonalChange
 }) {
-  const isOpen = activeSection === 'personal';
-
   return (
-    <div className="border border-slate-800 rounded-xl bg-slate-900 overflow-hidden shadow-sm">
-      <button
-        type="button"
-        className={`w-full flex items-center justify-between p-4 px-5 text-left transition-colors ${
-          isOpen ? 'bg-slate-800/80 border-b border-slate-700/60' : 'hover:bg-slate-800/40'
-        }`}
-        onClick={() => toggleSection('personal')}
-      >
+    <AccordionItem value="personal" className="border border-slate-800 rounded-xl bg-slate-900 overflow-hidden shadow-sm">
+      <AccordionTrigger className="w-full flex items-center justify-between p-4 px-5 text-left hover:bg-slate-800/40 data-[state=open]:bg-slate-800/80 data-[state=open]:border-b data-[state=open]:border-slate-700/60 transition-colors">
         <div className="flex items-center gap-2.5">
           <User className="size-5 text-blue-400" />
           <span className="text-sm font-bold text-slate-100">Personal Details</span>
         </div>
-        <div className="text-slate-400">
-          {isOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-        </div>
-      </button>
+      </AccordionTrigger>
 
-      {isOpen && (
-        <div className="p-5 space-y-4 bg-slate-950/60">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">Full Name</label>
-            <Input
-              type="text"
-              placeholder="e.g. Alexandru Popescu"
+      <AccordionPanel className="p-6 space-y-6 bg-slate-950" containerClassName="p-0">
+        {/* 2-Column Grid with Continuous Vertical Separator */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1px_1fr] gap-x-8 gap-y-6 items-start">
+          {/* Row 1 */}
+          <Field className="md:col-start-1 md:row-start-1">
+            <FieldLabel className="text-xs font-semibold text-slate-400">Full Name</FieldLabel>
+            <Editable
               value={personalData?.name || ''}
-              onChange={(e) => handlePersonalChange('name', e.target.value)}
-            />
-          </div>
+              onValueChange={(details) => handlePersonalChange('name', details.value)}
+              onValueRevert={(details) => handlePersonalChange('name', details.value)}
+              placeholder="e.g. John Doe"
+              className="w-full max-w-none"
+            >
+              <EditableArea>
+                <EditablePreview />
+                <EditableInput />
+              </EditableArea>
+            </Editable>
+          </Field>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Professional Title</label>
-              <Input
-                type="text"
-                placeholder="e.g. Senior Full Stack Engineer"
-                value={personalData?.title || ''}
-                onChange={(e) => handlePersonalChange('title', e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Email Address</label>
-              <Input
-                type="email"
-                placeholder="e.g. alex@techdev.io"
-                value={personalData?.email || ''}
-                onChange={(e) => handlePersonalChange('email', e.target.value)}
-              />
-            </div>
-          </div>
+          {/* Continuous Vertical Separator spanning rows 1-3 */}
+          <Separator
+            orientation="vertical"
+            className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-3 bg-slate-800/80 self-stretch my-1"
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Phone Number</label>
-              <Input
-                type="text"
-                placeholder="e.g. +40 722 123 456"
-                value={personalData?.phone || ''}
-                onChange={(e) => handlePersonalChange('phone', e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Location</label>
-              <Input
-                type="text"
-                placeholder="e.g. Bucharest, Romania"
-                value={personalData?.address || ''}
-                onChange={(e) => handlePersonalChange('address', e.target.value)}
-              />
-            </div>
-          </div>
+          <Field className="md:col-start-3 md:row-start-1">
+            <FieldLabel className="text-xs font-semibold text-slate-400">Professional Title</FieldLabel>
+            <Editable
+              value={personalData?.title || ''}
+              onValueChange={(details) => handlePersonalChange('title', details.value)}
+              onValueRevert={(details) => handlePersonalChange('title', details.value)}
+              placeholder="e.g. Senior Full Stack Engineer"
+              className="w-full max-w-none"
+            >
+              <EditableArea>
+                <EditablePreview />
+                <EditableInput />
+              </EditableArea>
+            </Editable>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">Professional Summary</label>
-            <Textarea
-              rows={3}
-              placeholder="Write a concise overview of your technical experience, domain expertise, and core strengths..."
-              value={personalData?.summary || ''}
-              onChange={(e) => handlePersonalChange('summary', e.target.value)}
-            />
-          </div>
+          {/* Row 2 */}
+          <Field className="md:col-start-1 md:row-start-2">
+            <FieldLabel className="text-xs font-semibold text-slate-400">Email Address</FieldLabel>
+            <Editable
+              value={personalData?.email || ''}
+              onValueChange={(details) => handlePersonalChange('email', details.value)}
+              onValueRevert={(details) => handlePersonalChange('email', details.value)}
+              placeholder="e.g. john.doe@example.com"
+              className="w-full max-w-none"
+            >
+              <EditableArea>
+                <EditablePreview />
+                <EditableInput type="email" />
+              </EditableArea>
+            </Editable>
+          </Field>
+
+          <Field className="md:col-start-3 md:row-start-2">
+            <FieldLabel className="text-xs font-semibold text-slate-400">Phone Number</FieldLabel>
+            <Editable
+              value={personalData?.phone || ''}
+              onValueChange={(details) => handlePersonalChange('phone', details.value)}
+              onValueRevert={(details) => handlePersonalChange('phone', details.value)}
+              placeholder="e.g. +1 555 123 4567"
+              className="w-full max-w-none"
+            >
+              <EditableArea>
+                <EditablePreview />
+                <EditableInput type="tel" />
+              </EditableArea>
+            </Editable>
+          </Field>
+
+          {/* Row 3 */}
+          <Field className="md:col-start-1 md:row-start-3">
+            <FieldLabel className="text-xs font-semibold text-slate-400">Location</FieldLabel>
+            <Editable
+              value={personalData?.address || personalData?.location || ''}
+              onValueChange={(details) => {
+                handlePersonalChange('address', details.value);
+                handlePersonalChange('location', details.value);
+              }}
+              onValueRevert={(details) => {
+                handlePersonalChange('address', details.value);
+                handlePersonalChange('location', details.value);
+              }}
+              placeholder="e.g. San Francisco, CA"
+              className="w-full max-w-none"
+            >
+              <EditableArea>
+                <EditablePreview />
+                <EditableInput />
+              </EditableArea>
+            </Editable>
+          </Field>
+
+          <Field className="md:col-start-3 md:row-start-3">
+            <FieldLabel className="text-xs font-semibold text-slate-400">Website / Portfolio</FieldLabel>
+            <Editable
+              value={personalData?.website || ''}
+              onValueChange={(details) => handlePersonalChange('website', details.value)}
+              onValueRevert={(details) => handlePersonalChange('website', details.value)}
+              placeholder="e.g. https://johndoe.dev"
+              className="w-full max-w-none"
+            >
+              <EditableArea>
+                <EditablePreview />
+                <EditableInput />
+              </EditableArea>
+            </Editable>
+          </Field>
         </div>
-      )}
-    </div>
+
+        {/* Professional Summary */}
+        <Field>
+          <FieldLabel className="text-xs font-semibold text-slate-400 mt-6">Professional Summary</FieldLabel>
+          <Textarea
+            rows={3}
+            placeholder="Write a concise overview of your technical experience, domain expertise, and core strengths..."
+            value={personalData?.summary || ''}
+            onChange={(e) => handlePersonalChange('summary', e.target.value)}
+          />
+        </Field>
+      </AccordionPanel>
+    </AccordionItem>
   );
 }

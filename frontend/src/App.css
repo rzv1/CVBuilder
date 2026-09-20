@@ -150,7 +150,7 @@
 
 /* Workspace Layout */
 .workspace {
-  display: grid;
+  display: flex;
   height: calc(100vh - 61px);
   overflow: hidden;
   position: relative;

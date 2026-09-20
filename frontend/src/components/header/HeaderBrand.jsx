@@ -12,9 +12,6 @@ export default function HeaderBrand() {
         <div className="text-base font-extrabold tracking-tight bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent leading-snug">
            CV Builder space
         </div>
-        <Badge variant="success" className="text-[10px] py-0 px-1.5 gap-1 font-semibold leading-normal">
-          <CheckCircle2 className="size-2.5" /> Live Sync Active
-        </Badge>
       </div>
     </div>
   );

@@ -8,10 +8,11 @@ import { StyleSheet } from '@react-pdf/renderer';
  * @returns {Object} React PDF StyleSheet object
  */
 export function createPDFStyles(styleData = {}) {
-  const theme = styleData.theme || {};
-  const layout = styleData.layout || {};
-  const typography = styleData.typography || {};
-  const features = styleData.features || {};
+  const safeStyle = styleData || {};
+  const theme = safeStyle.theme || {};
+  const layout = safeStyle.layout || {};
+  const typography = safeStyle.typography || {};
+  const features = safeStyle.features || {};
 
   // Extract color tokens with fallbacks
   const primaryColor = theme.primaryColor || '#0f172a';

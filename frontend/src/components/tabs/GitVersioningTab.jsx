@@ -10,10 +10,19 @@ import {
   Sparkles,
   FileDiff
 } from 'lucide-react';
+import { useCv, useUI } from '../../context/index.jsx';
 
-export default function GitVersioningTab({ gitCommits = [], onAddCommit, onOpenDiffModal }) {
+export default function GitVersioningTab(props = {}) {
+  const cv = useCv();
+  const ui = useUI();
+
+  const gitCommits = props.gitCommits ?? cv.gitCommits ?? [];
+  const onAddCommit = props.onAddCommit ?? cv.handleAddGitCommit;
+  const onOpenDiffModal = props.onOpenDiffModal ?? (() => ui.setIsDiffModalOpen(true));
+
   const [snapshotMsg, setSnapshotMsg] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+
 
   const handleCreateSnapshot = async () => {
     if (!snapshotMsg.trim()) return;

@@ -21,6 +21,7 @@ export default function CVDocument({
     : styleData;
 
   const styles = React.useMemo(() => createPDFStyles(activeStyle), [activeStyle]);
+  if (!activeCv) return null;
   const showQrCode = activeStyle?.features?.showQrCode !== false;
   const currentTemplate = layoutTemplate || activeStyle?.layout?.template || 'classic';
 

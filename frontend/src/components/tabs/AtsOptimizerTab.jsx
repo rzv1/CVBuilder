@@ -29,6 +29,7 @@ import { Button } from '@/frontend/components/ui/button';
 import { Badge } from '@/frontend/components/ui/badge';
 import { Textarea } from '@/frontend/components/ui/textarea';
 import { Progress } from '@/frontend/components/ui/progress';
+import { useCv } from '@/frontend/src/context/index.jsx';
 
 const INITIAL_TARGET_JOBS = [
   {
@@ -72,7 +73,11 @@ const INITIAL_TARGET_JOBS = [
   }
 ];
 
-export default function AtsOptimizerTab({ cvData }) {
+export default function AtsOptimizerTab(props = {}) {
+  const { cvData: cvCtxData } = useCv();
+  const cvData = props.cvData ?? cvCtxData;
+
+  const [jobs, setJobs] = useState(INITIAL_TARGET_JOBS);
   const [jobDesc, setJobDesc] = useState(DEFAULT_JOB_DESCRIPTION);
   const [selectedJobId, setSelectedJobId] = useState("job-1");
   const [isAnalyzing, setIsAnalyzing] = useState(false);

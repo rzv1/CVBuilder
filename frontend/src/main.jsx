@@ -8,8 +8,12 @@ if (typeof window !== 'undefined' && !window.Buffer) {
     window.Buffer = Buffer;
 }
 
+import { AppProviders } from './context/index.jsx';
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App/>
+    <AppProviders>
+      <App />
+    </AppProviders>
   </StrictMode>,
 )

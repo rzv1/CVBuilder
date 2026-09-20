@@ -1,7 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import YAML from 'yaml';
+import { useCv, useUI } from '../../../../context/index.jsx';
 
-export function useContentEditor({ cvData, setCvData, styleData, setStyleData, isDevMode }) {
+export function useContentEditor(props = {}) {
+  const cvCtx = useCv();
+  const uiCtx = useUI();
+
+  const cvData = props.cvData ?? cvCtx.cvData;
+  const setCvData = props.setCvData ?? cvCtx.handleUpdateCvData;
+  const styleData = props.styleData ?? cvCtx.styleData;
+  const setStyleData = props.setStyleData ?? cvCtx.handleUpdateStyleData;
+  const isDevMode = props.isDevMode ?? uiCtx.isDevMode;
+
   // Accordion state: default open section is 'personal'
   const [activeSection, setActiveSection] = useState('personal');
 
@@ -246,13 +256,11 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
     };
   }, []);
 
-  // Drag & drop state for reordering items within sections
-  const [draggedItem, setDraggedItem] = useState(null);
-
   const toggleSection = useCallback((sectionKey) => {
     setActiveSection(prev => prev === sectionKey ? null : sectionKey);
   }, []);
 
+  // Reorder helper
   const reorder = (list, startIndex, endIndex) => {
     const result = Array.from(list);
     const [removed] = result.splice(startIndex, 1);
@@ -278,6 +286,58 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
       });
     }
   };
+
+  // Modern @dnd-kit Drag & Drop End Handler
+  const handleDndDragEnd = useCallback((event) => {
+    if (event.canceled) return;
+    const { source, target } = event.operation;
+    if (!source || !target || source.id === target.id) return;
+
+    const sourceData = source.data;
+    const targetData = target.data;
+
+    // 1. Custom Sections reordering
+    if (sourceData?.customSecIdx !== undefined && sourceData?.customSecIdx !== null) {
+      const secIdx = sourceData.customSecIdx;
+      if (targetData?.customSecIdx !== secIdx) return; // Disallow cross-section drops
+
+      setCvData(prev => {
+        const secList = [...(prev.customSections || [])];
+        const items = secList[secIdx]?.items || [];
+        const fromIdx = items.findIndex((item, idx) => (item.id || `custom-${secIdx}-${idx}`) === source.id);
+        const toIdx = items.findIndex((item, idx) => (item.id || `custom-${secIdx}-${idx}`) === target.id);
+        if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev;
+
+        secList[secIdx] = {
+          ...secList[secIdx],
+          items: reorder(items, fromIdx, toIdx)
+        };
+        return { ...prev, customSections: secList };
+      });
+      return;
+    }
+
+    // 2. Standard sections reordering (experience, education, skills, languages, awards)
+    const sectionKey = sourceData?.sectionKey || source.group;
+    const targetSectionKey = targetData?.sectionKey || target.group;
+
+    if (!sectionKey || sectionKey !== targetSectionKey) return;
+
+    setCvData(prev => {
+      const list = prev[sectionKey] || [];
+      const fromIdx = list.findIndex((item, idx) => (item.id || `${sectionKey}-${idx}`) === source.id);
+      const toIdx = list.findIndex((item, idx) => (item.id || `${sectionKey}-${idx}`) === target.id);
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev;
+
+      return {
+        ...prev,
+        [sectionKey]: reorder(list, fromIdx, toIdx)
+      };
+    });
+  }, [setCvData]);
+
+  // Legacy HTML5 drag & drop handlers (Archived / preserved for backwards compatibility)
+  const [draggedItem, setDraggedItem] = useState(null);
 
   const handleDragStart = (e, sectionKey, index, customSecIdx = null) => {
     setDraggedItem({ sectionKey, index, customSecIdx });
@@ -425,11 +485,13 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
     });
   };
 
-  const handleSkillItemsChange = (idx, textValue) => {
-    const itemsArray = textValue.split(',').map(s => s.trim()).filter(Boolean);
+  const handleSkillItemsChange = (idx, value) => {
+    const itemsArray = Array.isArray(value)
+      ? value.map(s => String(s).trim()).filter(Boolean)
+      : String(value || '').split(',').map(s => s.trim()).filter(Boolean);
     setCvData(prev => {
       const list = [...(prev.skills || [])];
-      list[idx] = { ...list[idx], items: itemsArray, rawInput: textValue };
+      list[idx] = { ...list[idx], items: itemsArray, rawInput: Array.isArray(value) ? undefined : value };
       return { ...prev, skills: list };
     });
   };
@@ -588,6 +650,7 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
 
   return {
     activeSection,
+    setActiveSection,
     toggleSection,
     activeDevFile,
     setActiveDevFile,
@@ -606,6 +669,7 @@ export function useContentEditor({ cvData, setCvData, styleData, setStyleData, i
     handleStyleChange,
     handleBeforeMount,
     handleRunCode,
+    handleDndDragEnd,
     draggedItem,
     moveItem,
     handleDragStart,

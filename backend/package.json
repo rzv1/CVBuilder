@@ -19,6 +19,7 @@
   "dependencies": {
     "@ai-sdk/google": "^1.1.9",
     "@prisma/client": "^5.22.0",
+    "@trpc/server": "^11.19.0",
     "ai": "^4.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

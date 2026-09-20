@@ -1,18 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePDF } from '@react-pdf/renderer';
 import CVDocument from '../../pdf/CVDocument.jsx';
+import { useCv, useAiProposal } from '../../../context/index.jsx';
 
-export function usePreviewPanel({
-  cvData,
-  styleData,
-  activeVariant,
-  pendingProposal,
-  proposalViewMode,
-  setProposalViewMode,
-  onAcceptCurrent,
-  onAcceptNewProfile,
-  onRejectProposal
-}) {
+export function usePreviewPanel(props = {}) {
+  const cvCtx = useCv();
+  const aiPropCtx = useAiProposal();
+
+  const cvData = props.cvData ?? cvCtx.cvData;
+  const styleData = props.styleData ?? cvCtx.styleData;
+  const activeVariant = props.activeVariant ?? cvCtx.activeVariant;
+
+  const pendingProposal = props.pendingProposal ?? aiPropCtx.pendingProposal;
+  const proposalViewMode = props.proposalViewMode ?? aiPropCtx.proposalViewMode;
+  const setProposalViewMode = props.setProposalViewMode ?? aiPropCtx.setProposalViewMode;
+  const onAcceptCurrent = props.onAcceptCurrent ?? aiPropCtx.handleAcceptCurrent;
+  const onAcceptNewProfile = props.onAcceptNewProfile ?? aiPropCtx.handleAcceptNewProfile;
+  const onRejectProposal = props.onRejectProposal ?? aiPropCtx.handleRejectProposal;
+
   const [zoomLevel, setZoomLevel] = useState(100);
   const [themeTemplate, setThemeTemplate] = useState('modern');
   const [layoutTemplate, setLayoutTemplate] = useState(styleData?.layout?.template || 'classic');
@@ -120,6 +125,7 @@ export function usePreviewPanel({
 
   return {
     zoomLevel,
+    setZoomLevel,
     handleZoomIn,
     handleZoomOut,
     themeTemplate,
