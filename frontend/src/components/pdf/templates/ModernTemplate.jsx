@@ -1,30 +1,35 @@
 import React from 'react';
 import { Document, Page, Text, View, Image } from '@react-pdf/renderer';
 import DiffText from '../DiffText.jsx';
+import { DEFAULT_AVATAR } from '../pdfHelpers.js';
 
 export default function ModernTemplate({
-  personal,
-  experience,
-  education,
-  skills,
-  languages,
-  awards,
-  customSections,
-  hobbies,
-  styles,
-  fontFamily,
-  showQrCode,
+  personal = {},
+  experience = [],
+  education = [],
+  skills = [],
+  languages = [],
+  awards = [],
+  customSections = [],
+  hobbies = [],
+  styles = {},
+  fontFamily = 'Helvetica',
+  showQrCode = true,
   qrCodeUrl,
   avatarUrl,
-  proposalViewMode
+  proposalViewMode = 'after'
 }) {
+  const resolvedAvatar = avatarUrl || personal.avatar || personal.photo || DEFAULT_AVATAR;
+
   return (
     <Document title={`CV_${personal.name || 'Resume'}`} author={personal.name || 'CVBuilder'}>
       <Page size="A4" style={[styles.page, { fontFamily }]}>
 
         {/* MODERN HEADER CARD */}
         <View style={styles.modernHeader}>
-          <Image src={avatarUrl} style={styles.modernAvatar} />
+          {resolvedAvatar ? (
+            <Image src={resolvedAvatar} style={styles.modernAvatar} />
+          ) : null}
 
           <View style={styles.modernHeaderMain}>
             <DiffText diff={personal._diff?.name} proposalViewMode={proposalViewMode} style={styles.modernName}>

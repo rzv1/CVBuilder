@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Lock
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 import { Card } from '@/frontend/src/components/ui/card';
 import { Button } from '@/frontend/src/components/ui/button';
@@ -147,18 +148,45 @@ export default function AtsOptimizerTab(props = {}) {
   };
 
   const handleGenerateCoverLetterForJob = async (job) => {
+    if (!job || isGeneratingLetter) return;
     setActiveModalJob(job);
     setIsGeneratingLetter(true);
     setIsCoverLetterModalOpen(true);
 
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      await sendChatMessageApi({
+        messages: [
+          {
+            sender: 'user',
+            text: `Te rog să redactezi o scrisoare de intenție (Cover Letter) profesională, personalizată și convingătoare pentru poziția "${job.title}" la compania "${job.company}".
+Descriere și cerințe post:
+${job.description || 'Conform rolului din titlu'}
 
-    const generated = `Stimate Manager de Recrutare,\n\nVă scriu pentru a-mi exprima interesul ferm pentru poziția de ${job.title} în cadrul ${job.company}.\n\nCu o experiență vastă în dezvoltarea de aplicații web de înaltă performanță și scalabilitate, consider că profilul meu tehnic se potrivește excelent cerințelor din Job Description. În rolurile mele anterioare am condus echipe în livrarea de produse critice și optimizarea sistemelor distribuite.\n\nSunt entuziasmat de oportunitatea de a contribui la obiectivele echipei ${job.company}.\n\nCu stimă,\n${cvData?.personal?.name || 'Alexandru Popescu'}`;
-
-    setModalCoverLetterText(generated);
-    updateJobMutation.mutate({ id: job.id, coverLetter: generated });
-    setIsGeneratingLetter(false);
+Folosește experiența și competențele din CV pentru a sublinia compatibilitatea cu rolul. Redactează exclusiv corpul complet al scrisorii de intenție gata de utilizare, fără taguri de cod, blocuri markdown de patch sau alte comentarii meta.`
+          }
+        ],
+        cvData,
+        styleData,
+        currentUser,
+        onComplete: ({ accumulatedText }) => {
+          const cleanText = accumulatedText ? accumulatedText.replace(/```[\s\S]*?```/g, '').trim() : '';
+          const finalLetter = cleanText || accumulatedText;
+          setModalCoverLetterText(finalLetter);
+          updateJobMutation.mutate({ id: job.id, coverLetter: finalLetter });
+          setIsGeneratingLetter(false);
+        },
+        onError: (err) => {
+          setIsGeneratingLetter(false);
+          console.error('Eroare generare scrisoare de intenție cu AI:', err);
+          const fallback = `Stimate Manager de Recrutare,\n\nVă scriu pentru a-mi exprima interesul ferm pentru poziția de ${job.title} în cadrul ${job.company}.\n\nCu o experiență solidă în domeniu și competențe direct aliniate cerințelor postului, consider că profilul meu tehnic și profesional se potrivește excelent nevoilor echipei dumneavoastră.\n\nCu stimă,\n${cvData?.personal?.name || currentUser?.name || 'Alexandru Popescu'}`;
+          setModalCoverLetterText(fallback);
+          updateJobMutation.mutate({ id: job.id, coverLetter: fallback });
+        }
+      });
+    } catch (err) {
+      setIsGeneratingLetter(false);
+      console.error('Eroare apel generare letter:', err);
+    }
   };
 
   const handleCopyModalCoverLetter = () => {
@@ -294,9 +322,22 @@ Adaptează secțiunea de summary profesional, adaugă skill-urile cheie relevant
           <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
             <span>Target Jobs</span>
           </label>
-          <Badge variant="outline" className="text-[10px] text-indigo-300 border-indigo-500/30">
-            Count: {jobs.length}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => targetJobsQuery.refetch()}
+              disabled={targetJobsQuery.isFetching}
+              className="h-6 w-6 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Reîmprospătează lista de joburi"
+              aria-label="Reîmprospătează joburi"
+            >
+              <RefreshCw className={cn("size-3.5", targetJobsQuery.isFetching && "animate-spin text-indigo-400")} />
+            </Button>
+            <Badge variant="outline" className="text-[10px] text-indigo-300 border-indigo-500/30">
+              Count: {jobs.length}
+            </Badge>
+          </div>
         </div>
 
         {/* Scrollable Container Box (chenar) */}
@@ -632,18 +673,19 @@ Adaptează secțiunea de summary profesional, adaugă skill-urile cheie relevant
 
             {/* Modal Footer */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 bg-slate-950/40 border-t border-slate-800">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => handleGenerateCoverLetterForJob(activeModalJob)}
-                disabled={isGeneratingLetter}
-                className="gap-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/40"
-              >
-                <RefreshCw className="size-3.5" />
-                Regenerează cu AI
-              </Button>
+              {!modalCoverLetterText && !isGeneratingLetter && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleGenerateCoverLetterForJob(activeModalJob)}
+                  className="gap-1.5 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/40 border-indigo-500/40 hover:bg-indigo-900/60 transition-all cursor-pointer"
+                >
+                  <Sparkles className="size-3.5 text-indigo-400" />
+                  <span>Generează cu AI</span>
+                </Button>
+              )}
 
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-2 ml-auto">
                 <Button 
                   variant="outline" 
                   size="sm" 

@@ -8,6 +8,7 @@ import {
   Cpu, 
   Zap,
   Eye,
+  Check,
   FileCode,
   History,
   Clock,
@@ -51,11 +52,12 @@ import {
   EmptyContent 
 } from '@/frontend/src/components/ui/empty';
 import { cn } from '@/frontend/lib/utils';
-import { useUI, useAuth } from '../../context/index.jsx';
+import { useUI, useAuth, useAiProposal } from '../../context/index.jsx';
 
 export default function AiChatDrawer(props = {}) {
   const ui = useUI();
   const auth = useAuth();
+  const { appliedMessageIds } = useAiProposal();
 
   const isOpen = props.isOpen ?? ui.isAiChatOpen;
   const setIsOpen = props.setIsOpen ?? ui.setIsAiChatOpen;
@@ -76,7 +78,9 @@ export default function AiChatDrawer(props = {}) {
     handleSelectSession,
     handleDeleteSession,
     contextLimit,
-    setContextLimit
+    setContextLimit,
+    onApplyPatches,
+    handleMarkMessageApplied
   } = useAiChat(props);
 
 
@@ -101,59 +105,16 @@ export default function AiChatDrawer(props = {}) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Configurable Context Window Selector */}
-          <Menu
-            positioning={{ placement: "bottom-end", gutter: 8 }}
-            onSelect={(details) => {
-              const val = parseInt(details.value, 10);
-              if (val > 0) setContextLimit(val);
-            }}
-          >
-            <MenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="xs"
-                className="h-8 px-2 text-[11px] font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/60 rounded-lg gap-1"
-                title="Fereastră de context AI (ultimele N mesaje)"
-                aria-label="Configurare context mesaje"
-              >
-                <span className="text-slate-400">N=</span>
-                <span className="text-indigo-400 font-bold">{contextLimit}</span>
-              </Button>
-            </MenuTrigger>
-            <MenuPopup
-              positionerClassName="z-[9999]"
-              className="w-44 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 text-slate-200 shadow-2xl shadow-black/80 p-1.5 rounded-xl"
-            >
-              <MenuItemGroup>
-                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                  Context Istoric
-                </div>
-                {[1, 2, 3, 5, 8].map((n) => (
-                  <MenuItem
-                    key={n}
-                    value={String(n)}
-                    className={cn(
-                      "flex items-center justify-between px-2 py-1.5 rounded-lg text-xs cursor-pointer transition-colors",
-                      contextLimit === n ? "bg-indigo-950 border border-indigo-500/40 text-indigo-200 font-semibold" : "hover:bg-slate-800 text-slate-300"
-                    )}
-                  >
-                    <span>Ultimele {n} {n === 1 ? 'mesaj' : 'mesaje'}</span>
-                    {contextLimit === n && <span className="text-[10px] text-indigo-400">✓</span>}
-                  </MenuItem>
-                ))}
-              </MenuItemGroup>
-            </MenuPopup>
-          </Menu>
 
-          {/* Istoric Chat-uri Dropdown Menu */}
+          {/* History chat Dropdown Menu */}
           <Menu 
             positioning={{ placement: "bottom-end", gutter: 8 }}
             onSelect={(details) => {
-              if (details.value === 'new-chat') {
+              const val = typeof details === 'string' ? details : details?.value;
+              if (val === 'new-chat') {
                 handleNewChat();
-              } else if (details.value) {
-                handleSelectSession(details.value);
+              } else if (val) {
+                handleSelectSession(val);
               }
             }}
           >
@@ -202,6 +163,7 @@ export default function AiChatDrawer(props = {}) {
                           key={session.id}
                           value={session.id}
                           onSelect={() => handleSelectSession(session.id)}
+                          onClick={() => handleSelectSession(session.id)}
                           className={cn(
                             "group relative flex flex-col items-start gap-1 p-2 rounded-lg cursor-pointer transition-colors text-left",
                             isActive 
@@ -259,6 +221,7 @@ export default function AiChatDrawer(props = {}) {
                 <MenuItem
                   value="new-chat"
                   onSelect={handleNewChat}
+                  onClick={handleNewChat}
                   className="flex items-center gap-2 px-2.5 py-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/40 rounded-lg cursor-pointer transition-colors"
                 >
                   <Plus className="size-3.5" />
@@ -400,7 +363,7 @@ export default function AiChatDrawer(props = {}) {
                         <TypewriterText 
                           text={cleanText} 
                           isStreaming={msg.isStreaming} 
-                          animate={false}
+                          animate={msg.animate ?? (msg.isStreaming || false)}
                         />
                       )}
                     </BubbleContent>
@@ -408,43 +371,63 @@ export default function AiChatDrawer(props = {}) {
                 )}
 
                 {/* RFC 6902 JSON Patch Card Component */}
-                {msg.patches && msg.patches.length > 0 && (
-                  <div className="mt-2 border-blue-500/40 bg-slate-950/90 p-3 shadow-lg shadow-blue-950/30 rounded-xl">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
-                        <FileCode className="size-3.5" /> {msg.patches.length} JSON Patch{msg.patches.length > 1 ? 'es' : ''}
-                      </span>
+                {msg.patches && msg.patches.length > 0 && (() => {
+                  const isApplied = Boolean(msg.applied || appliedMessageIds?.has(msg.id));
+                  return (
+                    <div className="mt-2 border-blue-500/40 bg-slate-950/90 p-3 shadow-lg shadow-blue-950/30 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                          <FileCode className="size-3.5" /> {msg.patches.length} JSON Patch{msg.patches.length > 1 ? 'es' : ''}
+                        </span>
+                        {isApplied && (
+                          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <Check className="size-2.5" /> Applied
+                          </span>
+                        )}
+                      </div>
 
+                      <div className="text-[11px] text-slate-300 font-mono mb-3 max-h-24 overflow-y-auto p-2 bg-slate-900/90 rounded-lg border border-slate-800 space-y-1">
+                        {msg.patches.map((p, i) => (
+                          <div key={i} className="truncate">
+                            <span className={p.op === 'add' ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
+                              {p.op.toUpperCase()}
+                            </span>{' '}
+                            <span className="text-slate-300">{p.path}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {isApplied ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={true}
+                          className="w-full bg-slate-800 text-slate-400 border border-slate-700/60 cursor-not-allowed opacity-80 text-xs font-semibold gap-1.5 rounded-lg"
+                        >
+                          <Check className="size-3.5 text-emerald-400" /> Applied
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold gap-1.5 shadow-md shadow-blue-900/30 rounded-lg"
+                          onClick={() => {
+                            if (onApplyPatches) {
+                              onApplyPatches({
+                                explanation: cleanText || 'Gemini a generat patch-uri JSON restrânse pentru CV.',
+                                patches: msg.patches,
+                                messageId: msg.id,
+                                onApplied: handleMarkMessageApplied
+                              });
+                            }
+                          }}
+                        >
+                          <Eye className="size-3.5" /> See changes 
+                        </Button>
+                      )}
                     </div>
-
-                    <div className="text-[11px] text-slate-300 font-mono mb-3 max-h-24 overflow-y-auto p-2 bg-slate-900/90 rounded-lg border border-slate-800 space-y-1">
-                      {msg.patches.map((p, i) => (
-                        <div key={i} className="truncate">
-                          <span className={p.op === 'add' ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
-                            {p.op.toUpperCase()}
-                          </span>{' '}
-                          <span className="text-slate-300">{p.path}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold gap-1.5 shadow-md shadow-blue-900/30 rounded-lg"
-                      onClick={() => {
-                        if (onApplyPatches) {
-                          onApplyPatches({
-                            explanation: cleanText || 'Gemini a generat patch-uri JSON restrânse pentru CV.',
-                            patches: msg.patches
-                          });
-                        }
-                      }}
-                    >
-                      <Eye className="size-3.5" /> Vezi Chenar Diferențe pe CV
-                    </Button>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {msg.actions && msg.actions.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -504,7 +487,7 @@ export default function AiChatDrawer(props = {}) {
           <Input
             ref={inputRef}
             type="text"
-            className="border-0 bg-transparent text-xs text-slate-100 placeholder:text-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-8 shadow-none"
+            className="border-0 bg-transparent text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-8 shadow-none"
             placeholder="Ask Gemini..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}

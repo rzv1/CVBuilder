@@ -25,7 +25,9 @@ export function useTypewriter({
     if (displayedCount < text.length) {
       timerRef.current = setTimeout(() => {
         setDisplayedCount(prev => {
-          const next = prev + 1;
+          const remaining = text.length - prev;
+          const step = remaining > 60 ? 4 : (remaining > 20 ? 2 : 1);
+          const next = Math.min(text.length, prev + step);
           if (onCharacterTyped) onCharacterTyped();
           if (next >= text.length && onComplete) {
             onComplete();

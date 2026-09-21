@@ -1,32 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-
-// Helper for dynamic loading pdfjs-dist (local npm or ESM CDN fallback)
-let pdfjsPromise = null;
-
-function loadPdfJs() {
-  if (pdfjsPromise) return pdfjsPromise;
-
-  pdfjsPromise = (async () => {
-    try {
-      const pdfjs = await import('pdfjs-dist');
-      try {
-        const workerModule = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
-        pdfjs.GlobalWorkerOptions.workerSrc = workerModule.default;
-      } catch (wErr) {
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version || '4.10.38'}/pdf.worker.min.mjs`;
-      }
-      return pdfjs;
-    } catch (err) {
-      // CDN Fallback if npm package is not installed
-      const cdnUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
-      const pdfjs = await import(/* @vite-ignore */ cdnUrl);
-      pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-      return pdfjs;
-    }
-  })();
-
-  return pdfjsPromise;
-}
+import { getPdfJs, getSharedPdfWorker } from '../../utils/file-extractor';
 
 export default function PDFCanvasViewer({
   pdfUrl,
@@ -41,37 +14,54 @@ export default function PDFCanvasViewer({
   const pdfDocRef = useRef(null);
   const renderTaskRef = useRef(null);
 
-  // Load PDF Document when pdfUrl changes
+  // Load PDF Document when pdfUrl changes using singleton pdfjs reference
   useEffect(() => {
     if (!pdfUrl) return;
 
     let isMounted = true;
+    let loadingTask = null;
     setLoading(true);
     setError(null);
 
-    loadPdfJs()
-      .then((pdfjsLib) => {
-        if (!isMounted) return;
-        const loadingTask = pdfjsLib.getDocument({ url: pdfUrl });
-
-        return loadingTask.promise.then((pdfDoc) => {
-          if (!isMounted) return;
-          pdfDocRef.current = pdfDoc;
-          setLoading(false);
-          if (onDocumentLoad) {
-            onDocumentLoad({ numPages: pdfDoc.numPages });
+    getPdfJs()
+      .then((pdfjs) => {
+        if (!isMounted) return null;
+        const worker = getSharedPdfWorker(pdfjs);
+        loadingTask = pdfjs.getDocument({ url: pdfUrl, worker });
+        return loadingTask.promise;
+      })
+      .then((pdfDoc) => {
+        if (!isMounted || !pdfDoc) return;
+        if (pdfDocRef.current && pdfDocRef.current !== pdfDoc) {
+          try {
+            pdfDocRef.current.destroy();
+          } catch (e) {
+            // Ignore doc destroy error
           }
-        });
+        }
+        pdfDocRef.current = pdfDoc;
+        setLoading(false);
+        if (onDocumentLoad) {
+          onDocumentLoad({ numPages: pdfDoc.numPages });
+        }
       })
       .catch((err) => {
         if (!isMounted) return;
+        if (err && err.name === 'RenderingCancelledException') return;
         console.error('Error loading PDF document:', err);
-        setError('Error loading PDF module.');
+        setError(err?.message || 'Failed to load PDF');
         setLoading(false);
       });
 
     return () => {
       isMounted = false;
+      if (loadingTask) {
+        try {
+          loadingTask.destroy();
+        } catch (e) {
+          // Ignore destroy error
+        }
+      }
     };
   }, [pdfUrl, onDocumentLoad]);
 

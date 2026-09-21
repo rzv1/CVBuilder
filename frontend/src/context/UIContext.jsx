@@ -46,15 +46,7 @@ export function UIProvider({ children }) {
       if (handleRecordAnalytics) {
         handleRecordAnalytics('download', 'pdf_export', 0);
       }
-      const doc = (
-        <CVDocument
-          cvData={cvData}
-          styleData={styleData}
-          activeVariant={activeVariant}
-          pendingProposal={pendingProposal}
-          proposalViewMode={proposalViewMode}
-        />
-      );
+      const doc = <CVDocument />;
       const blob = await pdf(doc).toBlob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');

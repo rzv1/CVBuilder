@@ -1,3 +1,5 @@
+import { trpcClient } from '../../../lib/trpc.js';
+
 /**
  * Helper to parse RFC 6902 JSON patch block from stream text
  */
@@ -17,7 +19,7 @@ export const parseJsonPatchesFromText = (text) => {
 };
 
 /**
- * API call to send chat messages to AI assistant and receive streamed response
+ * API call to send chat messages to AI assistant via tRPC
  */
 export const sendChatMessageApi = async ({
   messages,
@@ -25,62 +27,48 @@ export const sendChatMessageApi = async ({
   styleData,
   currentUser,
   contextLimit = 2,
+  generateMutation,
   onChunk,
   onComplete,
   onError
 }) => {
   try {
     const token = currentUser?.id || localStorage.getItem('cv_builder_token') || '';
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'x-user-id': token, 'authorization': `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({
-        messages: messages.map(m => ({
-          role: m.sender === 'user' ? 'user' : 'assistant',
-          content: m.text
-        })),
-        content: cvData,
-        style: styleData,
-        userId: token || currentUser?.id,
-        userName: currentUser?.name,
-        contextLimit
-      })
-    });
+    const payload = {
+      messages: messages.map(m => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text
+      })),
+      content: cvData,
+      style: styleData,
+      userId: token || currentUser?.id,
+      userName: currentUser?.name,
+      contextLimit
+    };
 
-    if (!response.ok) {
-      throw new Error(`Server returned HTTP ${response.status}`);
-    }
+    const res = generateMutation
+      ? await generateMutation.mutateAsync(payload)
+      : await trpcClient.chat.generate.mutate(payload);
 
-    if (!response.body) {
-      throw new Error('ReadableStream not supported');
-    }
+    const fullText = res?.text || '';
+    const patches = parseJsonPatchesFromText(fullText);
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let accumulatedText = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      accumulatedText += chunk;
-
-      const patches = parseJsonPatchesFromText(accumulatedText);
-      if (onChunk) {
-        onChunk({ accumulatedText, patches });
+    // Stream chunks progressively to create fluid typewriter effect
+    if (onChunk && fullText.length > 0) {
+      const step = Math.max(3, Math.floor(fullText.length / 40));
+      for (let i = step; i < fullText.length; i += step) {
+        await new Promise(r => setTimeout(r, 18));
+        const partial = fullText.slice(0, i);
+        onChunk({ accumulatedText: partial, patches: parseJsonPatchesFromText(partial) });
       }
+      onChunk({ accumulatedText: fullText, patches });
     }
 
-    const finalPatches = parseJsonPatchesFromText(accumulatedText);
     if (onComplete) {
-      onComplete({ accumulatedText, patches: finalPatches });
+      onComplete({ accumulatedText: fullText, patches });
     }
   } catch (err) {
-    console.error('AI Chat Service Error:', err);
+    console.error('AI Chat Service Error via tRPC:', err);
     if (onError) {
       onError(err);
     }
@@ -88,24 +76,20 @@ export const sendChatMessageApi = async ({
 };
 
 /**
- * API call to parse raw CV text using AI into a structured CV object
+ * API call to parse raw CV text using AI into a structured CV object via tRPC
  */
 export const parseCvWithAi = async ({ text, currentUser }) => {
-  const response = await fetch('/api/ai/parse-cv', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      text,
-      userId: currentUser?.id,
-      userName: currentUser?.name
-    })
+  const data = await trpcClient.ai.parseCv.mutate({
+    text,
+    userId: currentUser?.id,
+    userName: currentUser?.name
   });
 
-  const data = await response.json();
-  if (!response.ok || !data.success) {
-    throw new Error(data.error || 'A apărut o eroare la parsarea CV-ului cu AI.');
+  if (!data?.success || !data?.cvData) {
+    throw new Error(data?.error || 'A apărut o eroare la parsarea CV-ului cu AI.');
   }
 
   return data.cvData;
 };
+
 

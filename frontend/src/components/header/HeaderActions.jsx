@@ -5,6 +5,7 @@ import {
   Download, 
   BookOpen,
   User,
+  UserRoundIcon,
   Zap,
   LogOut,
   Copy,
@@ -21,7 +22,7 @@ import { Button } from '../ui/button';
 import { Item, ItemMedia, ItemContent, ItemTitle, ItemDescription, ItemActions } from '../ui/item';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '../ui/input-group';
 import { QrCode, QrCodeFrame, QrCodePattern } from '../ui/qr-code';
-import { FileUpload, FileUploadDropzone, FileUploadContext, FileUploadItemGroup, FileUploadItem, FileUploadItemPreview, FileUploadItemName, FileUploadItemSizeText, FileUploadItemDeleteTrigger, FileUploadItemPreviewImage } from '../ui/file-upload';
+import { FileUpload, FileUploadLabel, FileUploadDropzone, FileUploadContext, FileUploadItemGroup, FileUploadItem, FileUploadItemPreview, FileUploadItemName, FileUploadItemSizeText, FileUploadItemDeleteTrigger, FileUploadItemPreviewImage } from '../ui/file-upload';
 import { 
   Menu, 
   MenuTrigger, 
@@ -31,7 +32,9 @@ import {
   MenuSeparator 
 } from '../ui/menu';
 import { useAuth, useUI } from '../../context/index.jsx';
-import { trpcClient } from '../../lib/trpc.js';
+import { cn } from '@/lib/utils';
+
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
 export default function HeaderActions(props = {}) {
   const auth = useAuth();
@@ -49,6 +52,7 @@ export default function HeaderActions(props = {}) {
 
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [nameInput, setNameInput] = useState(currentUser?.name || '');
+  const [avatar, setAvatar] = useState(currentUser?.avatar || '');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -66,8 +70,22 @@ export default function HeaderActions(props = {}) {
 
   useEffect(() => {
     setNameInput(currentUser?.name || '');
+    setAvatar(currentUser?.avatar || '');
     setErrorMsg('');
   }, [currentUser, isAuthOpen]);
+
+  const handleAvatarChange = (details) => {
+    if (details?.acceptedFiles && details.acceptedFiles.length > 0) {
+      const file = details.acceptedFiles[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatar(event.target?.result || '');
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setAvatar('');
+    }
+  };
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
@@ -81,7 +99,8 @@ export default function HeaderActions(props = {}) {
     setErrorMsg('');
 
     try {
-      const data = await trpcClient.users.auth.mutate({ name });
+      const mutation = props.registerMutation ?? auth.registerMutation;
+      const data = await mutation.mutateAsync({ name, avatar });
       if (data?.success && data?.user) {
         if (onUserAuth) {
           onUserAuth(data.user);
@@ -105,6 +124,7 @@ export default function HeaderActions(props = {}) {
       onUserAuth(null);
     }
     setNameInput('');
+    setAvatar('');
     setIsAuthOpen(false);
   };
 
@@ -161,8 +181,12 @@ export default function HeaderActions(props = {}) {
               <div className="px-2.5 py-2 mb-1 bg-slate-800/60 rounded-lg border border-slate-700/50">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-indigo-950 text-indigo-400 border border-indigo-500/30">
-                      <User className="size-3.5" />
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-indigo-950 text-indigo-400 border border-indigo-500/30 overflow-hidden">
+                      {currentUser.avatar ? (
+                        <img src={currentUser.avatar} alt={currentUser.name} className="size-full object-cover" />
+                      ) : (
+                        <User className="size-3.5" />
+                      )}
                     </div>
                     <span className="font-semibold text-xs text-slate-100 truncate">
                       {currentUser.name}
@@ -271,7 +295,11 @@ export default function HeaderActions(props = {}) {
               ) : (
                 <Item>
                   <ItemMedia>
-                    <User className="size-4" />
+                    {currentUser.avatar ? (
+                      <img src={currentUser.avatar} alt={currentUser.name} className="size-5 rounded-full object-cover" />
+                    ) : (
+                      <User className="size-4" />
+                    )}
                   </ItemMedia>
                   <ItemContent>
                     <ItemTitle>{currentUser.name}</ItemTitle>
@@ -284,6 +312,93 @@ export default function HeaderActions(props = {}) {
                   </ItemActions>
                 </Item>
               )}
+
+              {/* Avatar Photo Upload */}
+              <div className="flex flex-col items-center justify-center w-full py-1">
+                <FileUpload
+                  accept={{ "image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"] }}
+                  className="w-full max-w-xs flex-col items-center gap-4"
+                  maxFileSize={AVATAR_MAX_BYTES}
+                  maxFiles={1}
+                  onFileChange={handleAvatarChange}
+                >
+                  <FileUploadLabel className="sr-only">Avatar photo</FileUploadLabel>
+                  <div className="relative size-40 sm:size-48 shrink-0">
+                    <FileUploadContext>
+                      {({ acceptedFiles }) => {
+                        if (acceptedFiles.length <= 0) {
+                          return (
+                            <FileUploadDropzone
+                              className={cn(
+                                "cursor-pointer flex size-40 sm:size-48 flex-col items-center justify-center gap-2 rounded-full border-2 border-dashed border-input bg-muted/20 p-4 transition-colors relative overflow-hidden group",
+                                "hover:bg-muted/35 data-dragging:border-primary data-dragging:bg-primary/5",
+                              )}
+                            >
+                              {avatar ? (
+                                <>
+                                  <img src={avatar} alt="Avatar" className="size-full object-cover absolute inset-0 rounded-full" />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-2">
+                                    <UserRoundIcon className="size-8 mb-1" />
+                                    <span className="text-xs text-center font-medium">Schimbă poza</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <UserRoundIcon className="size-12 text-muted-foreground" />
+                                  <span className="px-2 text-center text-muted-foreground text-xs leading-tight">
+                                    Tap or drop image
+                                  </span>
+                                </>
+                              )}
+                            </FileUploadDropzone>
+                          );
+                        }
+
+                        return (
+                          <FileUploadItemGroup
+                            className={cn(
+                              "absolute inset-0 m-0 flex items-center justify-center p-0",
+                            )}
+                          >
+                            {acceptedFiles.map((file) => (
+                              <FileUploadItem
+                                key={`${file.name}-${file.size}`}
+                                className="relative size-full max-h-40 sm:max-h-48 max-w-40 sm:max-w-48 border-0 bg-transparent p-0 shadow-none"
+                                file={file}
+                              >
+                                <FileUploadItemPreview
+                                  className="size-full overflow-hidden rounded-full border-0"
+                                  type="image/*"
+                                >
+                                  <FileUploadItemPreviewImage className="size-full max-h-none max-w-none border-0 object-cover" />
+                                </FileUploadItemPreview>
+                                <FileUploadItemDeleteTrigger
+                                  aria-label={`Remove ${file.name}`}
+                                  className="absolute top-4 right-3 z-10 rounded-full bg-background p-1 hover:bg-muted"
+                                >
+                                  <XIcon className="stroke-[2.5]" />
+                                </FileUploadItemDeleteTrigger>
+                              </FileUploadItem>
+                            ))}
+                          </FileUploadItemGroup>
+                        );
+                      }}
+                    </FileUploadContext>
+                  </div>
+                  <FileUploadContext>
+                    {({ acceptedFiles }) => (
+                      <div className="flex flex-col items-center gap-1 text-center">
+                        <p className="font-semibold text-base text-foreground leading-tight">
+                          {acceptedFiles.length > 0 || avatar ? "Avatar uploaded" : "Add your avatar"}
+                        </p>
+                        <p className="text-muted-foreground text-sm leading-snug">
+                          PNG, JPG up to 2MB
+                        </p>
+                      </div>
+                    )}
+                  </FileUploadContext>
+                </FileUpload>
+              </div>
 
               <div className="flex flex-col gap-2">
                 <ItemDescription>

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useMemo 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { generateJsonPatch, validateClientCvData } from '../utils/json/index.js';
 import { projectMasterToVariant, mergeVariantToMaster } from '../utils/variantProjection.js';
-import { useTRPC, trpcClient } from '../lib/trpc.js';
+import { useTRPC } from '../lib/trpc.js';
 import { useAuth } from './AuthContext.jsx';
 
 const CvContext = createContext(null);
@@ -15,7 +15,7 @@ export function CvProvider({ children }) {
   const [masterCvData, setMasterCvData] = useState(null);
   const [styleData, setStyleData] = useState(null);
   const [activeVariant, setActiveVariant] = useState('all');
-  const [variants, setVariants] = useState([]);
+  const [variants, setVariants] = useState([{ id: 'all', label: 'Default' }]);
 
   // Relational Entities State
   const [gitCommits, setGitCommits] = useState([]);
@@ -39,37 +39,181 @@ export function CvProvider({ children }) {
     return projectMasterToVariant(masterCvData, activeVariant);
   }, [currentUser, masterCvData, activeVariant]);
 
-  useEffect(() => {
-    if (cvData) {
-      lastSyncedVariantRAMRef.current = cvData;
-    }
-  }, [activeVariant, cvData]);
+  // Pending save reference and timer for reliable, flushed debounce
+  const pendingSaveRef = useRef(null);
+  const saveTimerRef = useRef(null);
+  const activeUserRef = useRef(currentUser);
 
-  // Clear CV data when user logs out
+  useEffect(() => {
+    activeUserRef.current = currentUser;
+  }, [currentUser]);
+
+  // TanStack Mutation for CV saving (tracks in TanStack DevTools)
+  const saveCvMutation = useMutation(
+    trpc.cv.save.mutationOptions({
+      onSuccess: (data, variables) => {
+        if (data && data.success && variables?.userId) {
+          queryClient.setQueryData(
+            trpc.cv.get.queryKey({ userId: variables.userId }),
+            (old) => ({
+              ...(old || {}),
+              success: true,
+              content: variables.content || old?.content,
+              style: variables.style || old?.style,
+              variants: data.variants || old?.variants || variables.variants,
+            })
+          );
+        }
+      },
+      onError: (err) => {
+        console.error('Failed to save CV data via TanStack mutation:', err);
+      },
+    })
+  );
+
+  const flushPendingSave = () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    const targetUser = activeUserRef.current;
+    if (pendingSaveRef.current && targetUser?.id) {
+      const payload = {
+        userId: targetUser.id,
+        ...pendingSaveRef.current,
+      };
+      pendingSaveRef.current = null;
+      saveCvMutation.mutate(payload);
+    }
+  };
+
+  const scheduleSave = (nextMaster, style, variantId, nextVariants) => {
+    pendingSaveRef.current = {
+      content: nextMaster,
+      style: style || styleData,
+      variantId: variantId || activeVariant,
+      variants: nextVariants || variants,
+    };
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    saveTimerRef.current = setTimeout(() => {
+      flushPendingSave();
+    }, 400);
+  };
+
+  // Creates a new variant with optional content and style, activating and saving it to server
+  const handleCreateVariant = (newVariant, variantContent, nextStyle) => {
+    const nextVariants = [...(variants || []).filter((v) => v.id !== newVariant.id), newVariant];
+    setVariants(nextVariants);
+
+    let nextMaster = masterCvData || {};
+    if (variantContent) {
+      nextMaster = mergeVariantToMaster(nextMaster, variantContent, newVariant.id);
+      setMasterCvData(nextMaster);
+    }
+
+    const targetStyle = nextStyle || styleData;
+    if (nextStyle) {
+      setStyleData(nextStyle);
+    }
+
+    setActiveVariant(newVariant.id);
+    scheduleSave(nextMaster, targetStyle, newVariant.id, nextVariants);
+  };
+
+  // Immediate full CV save (used for loading mock demo, file imports, etc.)
+  const handleSaveFullCv = async (content, style) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    pendingSaveRef.current = null;
+
+    setMasterCvData(content);
+    if (style) setStyleData(style);
+
+    const defaultVariants = [{ id: 'all', label: 'Default' }];
+    setVariants((prev) => {
+      if (prev && prev.length > 0) {
+        if (!prev.some((v) => v.id === 'all')) {
+          return [{ id: 'all', label: 'Default' }, ...prev];
+        }
+        return prev;
+      }
+      return defaultVariants;
+    });
+    setActiveVariant('all');
+
+    const targetUser = activeUserRef.current;
+    if (targetUser?.id) {
+      const targetStyle = style || styleData || {};
+      const res = await saveCvMutation.mutateAsync({
+        userId: targetUser.id,
+        content,
+        style: targetStyle,
+        variantId: 'all',
+        variants: defaultVariants,
+      });
+
+      return res;
+    }
+  };
+
+  // Clear CV data when user logs out, flushing any unsaved edits first
   useEffect(() => {
     if (!currentUser) {
+      flushPendingSave();
       setMasterCvData(null);
       setStyleData(null);
-      setVariants([]);
+      setVariants([{ id: 'all', label: 'Default' }]);
+      setActiveVariant('all');
       setGitCommits([]);
       setGroupMembers([]);
       setComments([]);
       setAnalyticsEvents([]);
-      lastSyncedVariantRAMRef.current = null;
     }
   }, [currentUser]);
+
+  // Ensure Default variant exists whenever masterCvData is populated
+  useEffect(() => {
+    if (currentUser && masterCvData && (!variants || variants.length === 0)) {
+      setVariants([{ id: 'all', label: 'Default' }]);
+    }
+  }, [currentUser, masterCvData, variants]);
+
+  // Flush pending save on unmount
+  useEffect(() => {
+    return () => {
+      flushPendingSave();
+    };
+  }, []);
 
   // Sync loaded server data into local state when query completes
   useEffect(() => {
     if (currentUser && cvQuery.data && cvQuery.data.success) {
       const data = cvQuery.data;
-      if (data.content) {
+      if (data.content && Object.keys(data.content).length > 0) {
         setMasterCvData(data.content);
-        lastSyncedVariantRAMRef.current = projectMasterToVariant(data.content, activeVariant);
       }
-      if (data.style) setStyleData(data.style);
+      if (data.style && Object.keys(data.style).length > 0) {
+        setStyleData(data.style);
+      }
       if (data.variants && data.variants.length > 0) {
-        setVariants(data.variants.map((v) => ({ id: v.variantKey || v.id, label: v.label })));
+        const formatted = data.variants.map((v) => ({ id: v.variantKey || v.id, label: v.label }));
+        if (!formatted.some((v) => v.id === 'all')) {
+          formatted.unshift({ id: 'all', label: 'Default' });
+        }
+        setVariants(formatted);
+      } else if (data.content && Object.keys(data.content).length > 0) {
+        setVariants([{ id: 'all', label: 'Default' }]);
+      }
+      if (data.activeVariant) {
+        setActiveVariant(data.activeVariant);
+      } else {
+        setActiveVariant('all');
       }
       if (data.gitCommits) setGitCommits(data.gitCommits);
       if (data.groupMembers) setGroupMembers(data.groupMembers);
@@ -78,43 +222,6 @@ export function CvProvider({ children }) {
       if (data.slug) setSlug(data.slug);
     }
   }, [currentUser, cvQuery.data]);
-
-  // Debounced API persist handle using RFC 6902 JSON Patches
-  const saveTimerRef = useRef(null);
-
-  const triggerDebouncedPersist = (variantId, nextVariantRAM, style) => {
-    if (!nextVariantRAM) return;
-    const clientVal = validateClientCvData(nextVariantRAM);
-    if (!clientVal.isValid) {
-      console.warn('Client validation blocked invalid CV update:', clientVal.error);
-      return;
-    }
-
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-    }
-
-    saveTimerRef.current = setTimeout(() => {
-      const baseRAM = lastSyncedVariantRAMRef.current || {};
-      const patches = generateJsonPatch(baseRAM, nextVariantRAM);
-
-      if (patches.length === 0 && !style) return;
-
-      trpcClient.cv.save
-        .mutate({
-          userId: currentUser?.id,
-          variantId,
-          patches,
-          style: style || styleData,
-        })
-        .then((data) => {
-          if (data && data.success) {
-            lastSyncedVariantRAMRef.current = nextVariantRAM;
-          }
-        })
-        .catch(() => {});
-    }, 2000);
-  };
 
   // State update callback for active variant RAM content
   const handleUpdateCvData = (updater) => {
@@ -129,16 +236,17 @@ export function CvProvider({ children }) {
       return;
     }
 
-    setMasterCvData((prevMaster) => mergeVariantToMaster(prevMaster || {}, nextVariantRAM, activeVariant));
-    triggerDebouncedPersist(activeVariant, nextVariantRAM, styleData);
+    const nextMaster = mergeVariantToMaster(masterCvData || {}, nextVariantRAM, activeVariant);
+    setMasterCvData(nextMaster);
+    scheduleSave(nextMaster, styleData, activeVariant);
   };
 
   // State update callback for style data
   const handleUpdateStyleData = (updater) => {
     const nextStyle = typeof updater === 'function' ? updater(styleData || {}) : updater;
     setStyleData(nextStyle);
-    if (cvData) {
-      triggerDebouncedPersist(activeVariant, cvData, nextStyle);
+    if (masterCvData) {
+      scheduleSave(masterCvData, nextStyle, activeVariant);
     }
   };
 
@@ -212,6 +320,9 @@ export function CvProvider({ children }) {
     cvData,
     handleUpdateCvData,
     handleUpdateStyleData,
+    handleCreateVariant,
+    handleSaveFullCv,
+    flushPendingSave,
     gitCommits,
     groupMembers,
     comments,

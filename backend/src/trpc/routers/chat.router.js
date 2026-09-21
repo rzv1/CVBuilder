@@ -4,6 +4,8 @@ import {
   saveChatSession,
   deleteChatSession
 } from '../../services/chat.service.js';
+import { generateChatMessage } from '../../services/ai.service.js';
+
 
 export const chatRouter = router({
   list: publicProcedure
@@ -58,5 +60,24 @@ export const chatRouter = router({
           message: err.message
         });
       }
+    }),
+
+  generate: publicProcedure
+    .input((val) => val || {})
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const userId = input?.userId || ctx?.userId;
+        const result = await generateChatMessage({ ...(input || {}), userId });
+        return {
+          success: true,
+          ...result
+        };
+      } catch (err) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: err.message
+        });
+      }
     })
 });
+

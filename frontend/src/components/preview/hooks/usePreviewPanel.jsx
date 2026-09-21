@@ -45,59 +45,36 @@ export function usePreviewPanel(props = {}) {
     : styleData;
 
   const [pdfInstance, updatePdfInstance] = usePDF({
-    document: (
-      <CVDocument
-        cvData={activeCv}
-        styleData={activeStyle}
-        activeVariant={activeVariant}
-        pendingProposal={pendingProposal}
-        proposalViewMode={proposalViewMode}
-        layoutTemplate={layoutTemplate}
-      />
-    )
+    document: <CVDocument layoutTemplate={layoutTemplate} />
   });
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      updatePdfInstance(
-        <CVDocument
-          cvData={activeCv}
-          styleData={activeStyle}
-          activeVariant={activeVariant}
-          pendingProposal={pendingProposal}
-          proposalViewMode={proposalViewMode}
-          layoutTemplate={layoutTemplate}
-        />
-      );
+      updatePdfInstance(<CVDocument layoutTemplate={layoutTemplate} />);
     }, 400);
 
     return () => clearTimeout(timer);
   }, [activeCv, activeStyle, activeVariant, pendingProposal, proposalViewMode, layoutTemplate]);
 
   useEffect(() => {
-    const updateTotalPages = () => {
-      let pages = 1;
-      if (previewEngine === 'html' && cvContentRef.current) {
-        const height = cvContentRef.current.scrollHeight;
-        pages = Math.max(1, Math.ceil(height / 1123));
-      } else {
-        const expCount = (activeCv?.experience || []).length;
-        const eduCount = (activeCv?.education || []).length;
-        const skillCount = (activeCv?.skills || []).length;
-        const customCount = (activeCv?.customSections || []).length;
-        const totalItems = expCount + eduCount + skillCount + customCount;
-        pages = totalItems > 3 ? 2 : 1;
-      }
+    // When logged out or no CV data, reset page to 1
+    if (!activeCv || !activeCv.personal) {
+      setTotalPages(1);
+      setCurrentPage(1);
+      return;
+    }
+
+    if (previewEngine === 'html' && cvContentRef.current) {
+      const height = cvContentRef.current.scrollHeight;
+      const pages = Math.max(1, Math.ceil(height / 1123));
       setTotalPages(pages);
       if (currentPage > pages) {
         setCurrentPage(pages);
       }
-    };
-
-    updateTotalPages();
-    const timer = setTimeout(updateTotalPages, 100);
-    return () => clearTimeout(timer);
-  }, [activeCv, activeStyle, activeVariant, proposalViewMode, previewEngine, currentPage]);
+    }
+    // Note: For react-pdf engine, totalPages is set accurately by PDFCanvasViewer onDocumentLoad,
+    // avoiding synthetic page count bouncing and flickering between 1 and 2 pages on proposal before/after toggles!
+  }, [activeCv, previewEngine, currentPage]);
 
   const handleCreateProfileSubmit = (e) => {
     e.preventDefault();

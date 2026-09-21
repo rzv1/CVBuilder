@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sendChatMessageApi } from '../api/aiApi.js';
 import { useCv, useAuth, useAiProposal, useUI } from '../../../context/index.jsx';
-import { trpcClient } from '../../../lib/trpc.js';
+import { useTRPC } from '../../../lib/trpc.js';
 
 const getInitialWelcomeMessage = (user) => {
   const userName = user?.name ? user.name : '';
   const greeting = userName ? `Salut, ${userName}!` : 'Salut!';
   return [
     {
-      id: 'msg-welcome',
+      id: 'msg-welcome-' + Date.now(),
       sender: 'ai',
       text: `${greeting} Cu ce te pot ajuta astăzi pentru optimizarea sau reformularea secțiunilor?`,
       timestamp: getCurrentTime(),
@@ -48,9 +49,48 @@ export function useAiChat(props = {}) {
   const onApplyPatches = props.onApplyPatches ?? aiProposal.handleApplyPatches;
   const currentUser = props.currentUser ?? auth.currentUser;
   const setCurrentUser = props.setCurrentUser ?? auth.setCurrentUser;
+  const activeCredits = props.activeCredits ?? currentUser?.credits ?? 0;
 
   // Configurable context window limit (default: 2)
   const [contextLimit, setContextLimit] = useState(2);
+
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  // TanStack Query for Chat Sessions (registered in TanStack DevTools under Queries)
+  const chatListQuery = useQuery({
+    ...trpc.chat.list.queryOptions({ userId: currentUser?.id }),
+    enabled: Boolean(currentUser?.id),
+  });
+
+  // TanStack Mutations for Chat Save, Delete, Generate (registered in TanStack DevTools under Mutations)
+  const saveChatMutation = useMutation(
+    trpc.chat.save.mutationOptions({
+      onSuccess: () => {
+        if (currentUser?.id) {
+          queryClient.invalidateQueries({
+            queryKey: trpc.chat.list.queryKey({ userId: currentUser.id }),
+          });
+        }
+      },
+    })
+  );
+
+  const deleteChatMutation = useMutation(
+    trpc.chat.delete.mutationOptions({
+      onSuccess: () => {
+        if (currentUser?.id) {
+          queryClient.invalidateQueries({
+            queryKey: trpc.chat.list.queryKey({ userId: currentUser.id }),
+          });
+        }
+      },
+    })
+  );
+
+  const generateChatMutation = useMutation(
+    trpc.chat.generate.mutationOptions()
+  );
 
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(() => 'session-' + Date.now());
@@ -60,9 +100,17 @@ export function useAiChat(props = {}) {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const activeCredits = currentUser ? (currentUser.credits ?? 0) : 0;
+  const activeSessionIdRef = useRef(activeSessionId);
+  useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
 
-  // Load chat sessions from Database for logged-in user
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  // Sync loaded chat sessions from TanStack Query into local state
   useEffect(() => {
     if (!currentUser || !currentUser.id) {
       setSessions([]);
@@ -71,56 +119,54 @@ export function useAiChat(props = {}) {
       return;
     }
 
-    let isMounted = true;
-    trpcClient.chat.list
-      .query({ userId: currentUser.id })
-      .then((res) => {
-        if (!isMounted) return;
-        if (res && res.success && Array.isArray(res.sessions)) {
-          setSessions(res.sessions);
-          if (res.sessions.length > 0) {
-            // Check if existing activeSessionId matches one in database
-            const matched = res.sessions.find((s) => s.id === activeSessionId);
-            if (matched) {
-              setMessages(matched.messages || []);
-            } else {
-              const firstSession = res.sessions[0];
-              setActiveSessionId(firstSession.id);
-              setMessages(firstSession.messages || []);
+    if (chatListQuery.data?.success && Array.isArray(chatListQuery.data.sessions)) {
+      const serverSessions = chatListQuery.data.sessions;
+      setSessions(serverSessions);
 
-              // Check if the most recent session has patches to restore diffs
-              const latestWithPatches = [...(firstSession.messages || [])]
-                .reverse()
-                .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0);
-              if (latestWithPatches && onApplyPatches) {
-                const cleanExplanation = latestWithPatches.text
-                  ? latestWithPatches.text.replace(/```json[\s\S]*?```/g, '').trim()
-                  : '';
-                onApplyPatches({
-                  explanation: cleanExplanation || 'Gemini a generat propuneri de modificări prin JSON patch.',
-                  patches: latestWithPatches.patches
-                });
-              }
-            }
-          } else {
-            // Clean initial state for user with no chat history
-            setActiveSessionId('session-' + Date.now());
-            setMessages(getInitialWelcomeMessage(currentUser));
+      // Synchronize already applied message IDs into aiProposal context
+      serverSessions.forEach((s) => {
+        (s.messages || []).forEach((m) => {
+          if (m.applied && aiProposal.markMessageApplied) {
+            aiProposal.markMessageApplied(m.id);
           }
-        }
-      })
-      .catch((err) => {
-        console.warn('Eroare la încărcarea istoricului de chat din DB:', err);
+        });
       });
 
-    return () => {
-      isMounted = false;
-    };
-  }, [currentUser]);
+      if (serverSessions.length > 0) {
+        // Check if existing activeSessionId matches one in database
+        const matched = serverSessions.find((s) => s.id === activeSessionIdRef.current);
+        if (matched) {
+          setMessages(matched.messages || []);
+        } else if (messagesRef.current.length <= 1) {
+          // Only auto-switch to firstSession if user has not started typing or sending in a new chat
+          const firstSession = serverSessions[0];
+          setActiveSessionId(firstSession.id);
+          setMessages(firstSession.messages || []);
+
+          // Check if the most recent session has patches to restore diffs (only if not already applied)
+          const latestWithPatches = [...(firstSession.messages || [])]
+            .reverse()
+            .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0 && !m.applied && !aiProposal.appliedMessageIds?.has(m.id));
+          if (latestWithPatches && onApplyPatches) {
+            const cleanExplanation = latestWithPatches.text
+              ? latestWithPatches.text.replace(/```json[\s\S]*?```/g, '').trim()
+              : '';
+            onApplyPatches({
+              explanation: cleanExplanation || 'Gemini a generat propuneri de modificări prin JSON patch.',
+              patches: latestWithPatches.patches,
+              messageId: latestWithPatches.id,
+              onApplied: handleMarkMessageApplied
+            });
+          }
+        }
+      }
+    }
+  }, [currentUser?.id, chatListQuery.data]);
+
 
   // Update welcome greeting when currentUser changes if only initial message is present
   useEffect(() => {
-    if (messages.length === 1 && messages[0].id === 'msg-welcome') {
+    if (messages.length === 1 && (messages[0].id === 'msg-welcome' || messages[0].id?.startsWith?.('msg-welcome'))) {
       setMessages(getInitialWelcomeMessage(currentUser));
     }
   }, [currentUser]);
@@ -134,6 +180,62 @@ export function useAiChat(props = {}) {
       scrollToBottom();
     }
   }, [isOpen, messages, isTyping, scrollToBottom]);
+
+  const handleMarkMessageApplied = useCallback((messageId) => {
+    if (!messageId) return;
+
+    if (aiProposal.markMessageApplied) {
+      aiProposal.markMessageApplied(messageId);
+    }
+
+    setMessages((prevMessages) => {
+      const updatedMessages = prevMessages.map((m) =>
+        m.id === messageId ? { ...m, applied: true } : m
+      );
+
+      // Persist to Database if user is logged in
+      if (currentUser && currentUser.id) {
+        const currentSession = sessions.find((s) => s.id === activeSessionIdRef.current);
+        saveChatMutation.mutate({
+          sessionId: activeSessionIdRef.current,
+          userId: currentUser.id,
+          title: currentSession?.title || 'Conversație',
+          messages: updatedMessages
+        });
+      }
+
+      return updatedMessages;
+    });
+
+    setSessions((prevSessions) =>
+      prevSessions.map((s) => {
+        const hasMsg = s.messages?.some((m) => m.id === messageId);
+        if (hasMsg) {
+          const updatedMsgs = (s.messages || []).map((m) =>
+            m.id === messageId ? { ...m, applied: true } : m
+          );
+          if (currentUser && currentUser.id && s.id !== activeSessionIdRef.current) {
+            saveChatMutation.mutate({
+              sessionId: s.id,
+              userId: currentUser.id,
+              title: s.title || 'Conversație',
+              messages: updatedMsgs
+            });
+          }
+          return {
+            ...s,
+            updatedAt: Date.now(),
+            messages: updatedMsgs
+          };
+        }
+        return s;
+      })
+    );
+
+    if (aiProposal.pendingProposal?.messageId === messageId && aiProposal.setPendingProposal) {
+      aiProposal.setPendingProposal(null);
+    }
+  }, [currentUser, sessions, saveChatMutation, aiProposal]);
 
   const handleSendMessage = async (textToSend) => {
     const text = textToSend || inputText;
@@ -177,13 +279,52 @@ export function useAiChat(props = {}) {
       setCurrentUser((prev) => (prev ? { ...prev, credits: Math.max(0, (prev.credits ?? 0) - 1) } : null));
     }
 
+    const currentSessionId = activeSessionIdRef.current;
+
+    // Immediately create or update the session in history so it appears right away
+    const cleanFirstUserMsg = userMsg.text.replace(/[\n\r]+/g, ' ').trim();
+    const derivedTitle = cleanFirstUserMsg.length > 38 ? `${cleanFirstUserMsg.slice(0, 38)}...` : cleanFirstUserMsg;
+
+    setSessions((prev) => {
+      const existingIdx = prev.findIndex((s) => s.id === currentSessionId);
+      if (existingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          updatedAt: Date.now(),
+          date: formatSessionDate(),
+          messages: nextMessages
+        };
+        return updated;
+      } else {
+        const newSession = {
+          id: currentSessionId,
+          title: derivedTitle || 'Conversație',
+          date: formatSessionDate(),
+          updatedAt: Date.now(),
+          messages: nextMessages
+        };
+        return [newSession, ...prev];
+      }
+    });
+
+    // Save initial session state to Database immediately via TanStack Mutation
+    if (currentUser && currentUser.id) {
+      saveChatMutation.mutate({
+        sessionId: currentSessionId,
+        userId: currentUser.id,
+        title: derivedTitle || 'Conversație',
+        messages: nextMessages
+      });
+    }
+
     const aiMsgId = `msg-${Date.now() + 1}`;
     const initialAiMsg = {
       id: aiMsgId,
       sender: 'ai',
       text: '',
       timestamp: getCurrentTime(),
-      animate: false,
+      animate: true,
       isStreaming: true,
       patches: null
     };
@@ -196,6 +337,7 @@ export function useAiChat(props = {}) {
       styleData,
       currentUser,
       contextLimit,
+      generateMutation: generateChatMutation,
       onChunk: ({ accumulatedText, patches }) => {
         setMessages((prev) =>
           prev.map((msg) => {
@@ -203,7 +345,9 @@ export function useAiChat(props = {}) {
               return {
                 ...msg,
                 text: accumulatedText,
-                patches: patches
+                patches: patches,
+                animate: true,
+                isStreaming: true
               };
             }
             return msg;
@@ -217,6 +361,7 @@ export function useAiChat(props = {}) {
           text: accumulatedText,
           timestamp: getCurrentTime(),
           isStreaming: false,
+          animate: false,
           patches: patches || null
         };
 
@@ -224,26 +369,21 @@ export function useAiChat(props = {}) {
         setMessages(updatedMessages);
 
         // Determine title for chat session
-        const existingSession = sessions.find((s) => s.id === activeSessionId);
-        const cleanFirstUserMsg = userMsg.text.replace(/[\n\r]+/g, ' ').trim();
-        const derivedTitle = cleanFirstUserMsg.length > 38 ? `${cleanFirstUserMsg.slice(0, 38)}...` : cleanFirstUserMsg;
-        const sessionTitle = existingSession?.title && existingSession.title !== 'Conversație nouă'
-          ? existingSession.title
-          : (derivedTitle || 'Conversație');
+        const sessionTitle = derivedTitle || 'Conversație';
 
-        // Persist session and messages in Database for logged-in user
+        // Update session and messages in Database for logged-in user via TanStack Mutation
         if (currentUser && currentUser.id) {
           try {
-            await trpcClient.chat.save.mutate({
-              sessionId: activeSessionId,
+            await saveChatMutation.mutateAsync({
+              sessionId: currentSessionId,
               userId: currentUser.id,
               title: sessionTitle,
               messages: updatedMessages
             });
 
-            // Update local sessions list
+            // Update local sessions list with final messages
             setSessions((prev) => {
-              const existingIdx = prev.findIndex((s) => s.id === activeSessionId);
+              const existingIdx = prev.findIndex((s) => s.id === currentSessionId);
               if (existingIdx >= 0) {
                 const updated = [...prev];
                 updated[existingIdx] = {
@@ -256,7 +396,7 @@ export function useAiChat(props = {}) {
                 return updated;
               } else {
                 const newSession = {
-                  id: activeSessionId,
+                  id: currentSessionId,
                   title: sessionTitle,
                   date: formatSessionDate(),
                   updatedAt: Date.now(),
@@ -275,7 +415,9 @@ export function useAiChat(props = {}) {
           const cleanExplanation = accumulatedText.replace(/```json[\s\S]*?```/g, '').trim();
           onApplyPatches({
             explanation: cleanExplanation || 'Gemini a generat patch-uri JSON restrânse pentru actualizarea CV-ului.',
-            patches: patches
+            patches: patches,
+            messageId: aiMsgId,
+            onApplied: handleMarkMessageApplied
           });
         }
 
@@ -318,18 +460,20 @@ export function useAiChat(props = {}) {
    * Reopens a chat session from history and restores visual diffs box if patches exist.
    */
   const handleSelectSession = (sessionId) => {
-    if (isTyping || sessionId === activeSessionId) return;
+    if (isTyping) return;
     const session = sessions.find((s) => s.id === sessionId);
     if (session) {
       setActiveSessionId(session.id);
-      const sessionMessages = session.messages || [];
+      const sessionMessages = (session.messages && session.messages.length > 0)
+        ? session.messages
+        : getInitialWelcomeMessage(currentUser);
       setMessages(sessionMessages);
       setInputText('');
 
-      // Find the latest AI message that contains patches to immediately restore diffs
+      // Find the latest AI message that contains patches to immediately restore diffs (only if not applied)
       const latestWithPatches = [...sessionMessages]
         .reverse()
-        .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0);
+        .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0 && !m.applied && !aiProposal.appliedMessageIds?.has(m.id));
 
       if (latestWithPatches && onApplyPatches) {
         const cleanExplanation = latestWithPatches.text
@@ -337,7 +481,9 @@ export function useAiChat(props = {}) {
           : '';
         onApplyPatches({
           explanation: cleanExplanation || 'Gemini a generat patch-uri JSON pentru actualizarea CV-ului.',
-          patches: latestWithPatches.patches
+          patches: latestWithPatches.patches,
+          messageId: latestWithPatches.id,
+          onApplied: handleMarkMessageApplied
         });
       } else if (aiProposal.setPendingProposal) {
         aiProposal.setPendingProposal(null);
@@ -351,7 +497,7 @@ export function useAiChat(props = {}) {
   const handleDeleteSession = async (sessionId) => {
     if (currentUser && currentUser.id) {
       try {
-        await trpcClient.chat.delete.mutate({ sessionId, userId: currentUser.id });
+        await deleteChatMutation.mutateAsync({ sessionId, userId: currentUser.id });
       } catch (err) {
         console.error('Eroare la ștergerea conversației:', err);
       }
@@ -367,11 +513,13 @@ export function useAiChat(props = {}) {
 
           const latestWithPatches = [...(nextSession.messages || [])]
             .reverse()
-            .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0);
+            .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0 && !m.applied && !aiProposal.appliedMessageIds?.has(m.id));
           if (latestWithPatches && onApplyPatches) {
             onApplyPatches({
               explanation: latestWithPatches.text.replace(/```json[\s\S]*?```/g, '').trim() || '',
-              patches: latestWithPatches.patches
+              patches: latestWithPatches.patches,
+              messageId: latestWithPatches.id,
+              onApplied: handleMarkMessageApplied
             });
           } else if (aiProposal.setPendingProposal) {
             aiProposal.setPendingProposal(null);
@@ -405,6 +553,8 @@ export function useAiChat(props = {}) {
     handleSelectSession,
     handleDeleteSession,
     contextLimit,
-    setContextLimit
+    setContextLimit,
+    onApplyPatches,
+    handleMarkMessageApplied
   };
 }

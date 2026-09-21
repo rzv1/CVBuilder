@@ -84,15 +84,22 @@ export async function getCvData(userId) {
     });
 
     if (dbCv) {
+      let dbVariants = dbCv.variants || [];
+      if (dbVariants.length === 0) {
+        dbVariants = [{ id: 'all', variantKey: 'all', label: 'Default' }];
+      } else if (!dbVariants.some((v) => (v.variantKey || v.id) === 'all')) {
+        dbVariants = [{ id: 'all', variantKey: 'all', label: 'Default' }, ...dbVariants];
+      }
+
       return {
         id: dbCv.id,
         slug: dbCv.slug,
         title: dbCv.title,
-        activeVariant: dbCv.activeVariant,
+        activeVariant: dbCv.activeVariant || 'all',
         content: dbCv.content ? JSON.parse(dbCv.content) : null,
         style: dbCv.style ? JSON.parse(dbCv.style) : DEFAULT_STYLE,
         user: dbCv.user,
-        variants: dbCv.variants,
+        variants: dbVariants,
         gitCommits: dbCv.gitCommits,
         groupMembers: dbCv.groupMembers,
         comments: dbCv.comments,
@@ -152,7 +159,9 @@ export async function saveCvData(body) {
     let currentMaster = (dbCv && dbCv.content) ? JSON.parse(dbCv.content) : {};
     let currentStyle = (dbCv && dbCv.style) ? JSON.parse(dbCv.style) : DEFAULT_STYLE;
 
-    if (Array.isArray(body.patches) && body.patches.length > 0 && body.variantId) {
+    if (body.content) {
+      currentMaster = body.content;
+    } else if (Array.isArray(body.patches) && body.patches.length > 0 && body.variantId && Object.keys(currentMaster).length > 0) {
       const currentVariantRAM = projectMasterToVariant(currentMaster, body.variantId);
       const { newContent } = applySmartPatches(currentVariantRAM, {}, body.patches);
       currentMaster = mergeVariantToMaster(currentMaster, newContent, body.variantId);
@@ -160,13 +169,13 @@ export async function saveCvData(body) {
       patchCount = body.patches.length;
     } else if (body.variantContent && body.variantId) {
       currentMaster = mergeVariantToMaster(currentMaster, body.variantContent, body.variantId);
-    } else if (body.content) {
-      currentMaster = body.content;
     }
 
     if (body.style) {
       currentStyle = body.style;
     }
+
+    const targetSlug = dbCv?.slug || (user ? `${user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${user.id.slice(-6)}` : 'master-cv');
 
     await prisma.cvData.upsert({
       where: { id: cvId },
@@ -178,7 +187,7 @@ export async function saveCvData(body) {
       create: {
         id: cvId,
         userId: user ? user.id : (dbCv?.userId || 'usr_alex_popescu'),
-        slug: user ? user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'master-cv',
+        slug: targetSlug,
         title: 'Master CV',
         content: JSON.stringify(currentMaster),
         style: JSON.stringify(currentStyle),
@@ -186,8 +195,63 @@ export async function saveCvData(body) {
       }
     });
 
+    try {
+      await prisma.cvVariant.upsert({
+        where: {
+          variantKey_cvDataId: {
+            variantKey: 'all',
+            cvDataId: cvId
+          }
+        },
+        update: {},
+        create: {
+          variantKey: 'all',
+          cvDataId: cvId,
+          label: 'Default'
+        }
+      });
+    } catch {
+      // Ignore if constraint or relation error
+    }
+
+    if (Array.isArray(body.variants) && body.variants.length > 0) {
+      for (const v of body.variants) {
+        const key = v.variantKey || v.id;
+        const lbl = v.label || key;
+        if (!key) continue;
+        try {
+          await prisma.cvVariant.upsert({
+            where: {
+              variantKey_cvDataId: {
+                variantKey: key,
+                cvDataId: cvId
+              }
+            },
+            update: {
+              label: lbl
+            },
+            create: {
+              variantKey: key,
+              cvDataId: cvId,
+              label: lbl
+            }
+          });
+        } catch {
+          // Ignore
+        }
+      }
+    }
+
+    const updatedVariants = await prisma.cvVariant.findMany({
+      where: { cvDataId: cvId }
+    });
+
     return {
-      message: patched ? `Aplicat ${patchCount} patch-uri JSON în baza de date cu succes!` : 'CV salvat în baza de date Prisma cu succes!'
+      success: true,
+      message: patched ? `Aplicat ${patchCount} patch-uri JSON în baza de date cu succes!` : 'CV salvat în baza de date Prisma cu succes!',
+      content: currentMaster,
+      style: currentStyle,
+      variants: updatedVariants
     };
   } catch (err) {
     throw new Error('Eroare la salvarea CV-ului în baza de date Prisma: ' + err.message);

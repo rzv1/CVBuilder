@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 
 import { PORT } from './config/env.js';
-import { recordApiLog } from './utils/logger.js';
 
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { appRouter } from './trpc/appRouter.js';
@@ -12,8 +11,7 @@ import {
   updateTargetJob,
   deleteTargetJob,
 } from './services/targetJobs.service.js';
-import { processChatStream } from './services/ai.service.js';
-import { getOrCreateUserByName, getUserById } from './services/users.service.js';
+import { getOrCreateUserByName } from './services/users.service.js';
 
 const app = express();
 
@@ -26,7 +24,6 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 
-
 // Helper to resolve user ID from request headers or query
 const extractUserId = (req) => {
   const authHeader = req.headers.authorization;
@@ -34,7 +31,7 @@ const extractUserId = (req) => {
   return req.headers['x-user-id'] || bearerToken || req.query.userId || null;
 };
 
-// tRPC API Middleware
+// tRPC API Middleware (Used by Frontend)
 app.use(
   '/trpc',
   trpcExpress.createExpressMiddleware({
@@ -46,7 +43,7 @@ app.use(
   })
 );
 
-// Unified Authentication & User Creation REST Endpoint
+// Unified Authentication & User Creation REST Endpoint (Used by Extension)
 const handleUnifiedAuth = async (req, res, next) => {
   try {
     const name = (req.body?.name || req.body?.username || req.query?.name || req.query?.username || '').trim();
@@ -66,37 +63,9 @@ const handleUnifiedAuth = async (req, res, next) => {
 };
 
 app.get('/api/users/auth', handleUnifiedAuth);
+app.post('/api/users/auth', handleUnifiedAuth);
 
-// Get User by Token / ID
-app.get('/api/users/me', async (req, res, next) => {
-  try {
-    const userId = extractUserId(req);
-    if (!userId) {
-      return res.status(400).json({ success: false, error: 'ID-ul sau token-ul de utilizator lipsește.' });
-    }
-    const user = await getUserById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'Utilizatorul nu a fost găsit.' });
-    }
-    return res.json({ success: true, id: user.id, userId: user.id, user });
-  } catch (err) {
-    next(err);
-  }
-});
-
-app.get('/api/users/:id', async (req, res, next) => {
-  try {
-    const user = await getUserById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'Utilizatorul nu a fost găsit.' });
-    }
-    return res.json({ success: true, id: user.id, userId: user.id, user });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// REST API for Target Jobs (used directly by Web Extension and third parties)
+// REST API for Target Jobs (Used directly by Web Extension)
 app.get('/api/target-jobs', async (req, res, next) => {
   try {
     const userId = extractUserId(req);
@@ -135,16 +104,6 @@ app.delete('/api/target-jobs/:id', async (req, res, next) => {
   }
 });
 
-// AI Chat Streaming Route (supports chat and ATS optimization RFC 6902 JSON Patches)
-app.post('/api/chat', async (req, res, next) => {
-  try {
-    const userId = extractUserId(req) || req.body?.userId;
-    await processChatStream({ ...(req.body || {}), userId }, res);
-  } catch (err) {
-    next(err);
-  }
-});
-
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Express Application Error:', err);
@@ -154,8 +113,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
     console.log(`server online on: http://localhost:${PORT}\n`);
-});
+  });
+}
+
 
 export default app;

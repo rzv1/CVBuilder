@@ -61,9 +61,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('cv_builder_token');
       localStorage.removeItem('cv_builder_user');
       localStorage.removeItem('cv_builder_content');
-      if (currentUser?.id) {
-        queryClient.removeQueries({ queryKey: ['user', currentUser.id] });
-      }
+      queryClient.clear();
     }
   };
 

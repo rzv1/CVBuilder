@@ -3,19 +3,19 @@ import { Document, Page, Text, View, Image } from '@react-pdf/renderer';
 import DiffText from '../DiffText.jsx';
 
 export default function ClassicTemplate({
-  personal,
-  experience,
-  education,
-  skills,
-  languages,
-  awards,
-  customSections,
-  hobbies,
-  styles,
-  fontFamily,
-  showQrCode,
+  personal = {},
+  experience = [],
+  education = [],
+  skills = [],
+  languages = [],
+  awards = [],
+  customSections = [],
+  hobbies = [],
+  styles = {},
+  fontFamily = 'Helvetica',
+  showQrCode = true,
   qrCodeUrl,
-  proposalViewMode
+  proposalViewMode = 'after'
 }) {
   return (
     <Document title={`CV_${personal.name || 'Resume'}`} author={personal.name || 'CVBuilder'}>

@@ -47,14 +47,17 @@ describe('Users tRPC Integration Tests', () => {
     expect(res.user.credits).toBe(50);
   });
 
-  it('users.deductCredits should deduct credits', async () => {
+  it('deductUserCredits should be an internal function (not an exposed tRPC route)', async () => {
+    // Calling caller.users.deductCredits should reject because no procedure exists
+    await expect(caller.users.deductCredits()).rejects.toThrow();
+
     const userName = `Deduct User ${Date.now()}`;
     const regRes = await caller.users.register({ name: userName });
     const user = regRes.user;
 
-    const res = await caller.users.deductCredits({ id: user.id, amount: 10 });
-    expect(res.success).toBe(true);
-    expect(res.credits).toBe(90);
+    const { deductUserCredits } = await import('../../services/users.service.js');
+    const updated = await deductUserCredits(user.id, 10);
+    expect(updated.credits).toBe(90);
   });
 
   it('users.delete should delete an existing user', async () => {
@@ -66,5 +69,19 @@ describe('Users tRPC Integration Tests', () => {
     expect(res.success).toBe(true);
 
     await expect(caller.users.getById(user.id)).rejects.toThrow();
+  });
+
+  it('users.auth should save and update avatar', async () => {
+    const userName = `Avatar User ${Date.now()}`;
+    const avatarUrl = 'data:image/png;base64,mockAvatarData';
+    const authRes = await caller.users.auth({ name: userName, avatar: avatarUrl });
+    expect(authRes.success).toBe(true);
+    expect(authRes.user.avatar).toBe(avatarUrl);
+
+    // Updating avatar via users.auth again
+    const updatedAvatar = 'data:image/png;base64,newAvatarData';
+    const updatedRes = await caller.users.auth({ name: userName, avatar: updatedAvatar });
+    expect(updatedRes.success).toBe(true);
+    expect(updatedRes.user.avatar).toBe(updatedAvatar);
   });
 });

@@ -1,13 +1,14 @@
-import { getPdfJs } from './pdfLoader.js';
+import { getPdfJs, getSharedPdfWorker } from './pdfLoader.js';
 
 /**
  * PDF Extractor using pdfjs-dist
  */
 export async function extractFromPdf(file) {
   const pdfjs = await getPdfJs();
+  const worker = getSharedPdfWorker(pdfjs);
   const arrayBuffer = await file.arrayBuffer();
 
-  const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+  const loadingTask = pdfjs.getDocument({ data: arrayBuffer, worker });
   const pdfDoc = await loadingTask.promise;
 
   let fullText = '';

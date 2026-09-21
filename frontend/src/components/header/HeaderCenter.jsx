@@ -31,7 +31,11 @@ export default function HeaderCenter() {
 
   const collaborators = groupMembers ?? [];
 
-  const selectItems = (variants || []).map((v) => ({
+  const effectiveVariants = (variants && variants.length > 0)
+    ? variants
+    : [{ id: 'all', label: 'Default' }];
+
+  const selectItems = effectiveVariants.map((v) => ({
     value: v.id,
     label: v.label,
   }));
@@ -64,7 +68,9 @@ export default function HeaderCenter() {
       {/* Dynamic Tailoring Profile Select */}
       <Select
         items={selectItems}
-        value={activeVariant ? [activeVariant] : []}
+        itemToValue={(item) => item.value}
+        itemToString={(item) => item.label}
+        value={[activeVariant || 'all']}
         onValueChange={(details) => {
           if (details?.value?.[0]) {
             setActiveVariant(details.value[0]);

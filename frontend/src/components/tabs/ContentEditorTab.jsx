@@ -25,10 +25,14 @@ export default function ContentEditorTab(props = {}) {
   const isDevMode = props.isDevMode ?? uiCtx.isDevMode;
   const onOpenImportModal = props.onOpenImportModal ?? (() => uiCtx.setIsImportModalOpen(true));
 
-  const handleLoadMock = (e) => {
+  const handleLoadMock = async (e) => {
     e?.preventDefault();
-    cvCtx.handleUpdateCvData(mockContent);
-    cvCtx.handleUpdateStyleData(mockStyle);
+    if (cvCtx.handleSaveFullCv) {
+      await cvCtx.handleSaveFullCv(mockContent, mockStyle);
+    } else {
+      cvCtx.handleUpdateCvData(mockContent);
+      cvCtx.handleUpdateStyleData(mockStyle);
+    }
   };
 
   if (!currentUser) {

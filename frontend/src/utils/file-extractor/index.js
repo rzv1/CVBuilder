@@ -3,7 +3,7 @@ import { extractFromJson } from './jsonExtractor.js';
 import { extractFromPdf } from './pdfExtractor.js';
 import { extractFromWord } from './wordExtractor.js';
 
-export { getPdfJs } from './pdfLoader.js';
+export { getPdfJs, getSharedPdfWorker, pdfJs } from './pdfLoader.js';
 export { mapJsonResumeToAppSchema } from './jsonResumeMapper.js';
 export { extractFromTxt } from './txtExtractor.js';
 export { extractFromJson } from './jsonExtractor.js';

@@ -49,9 +49,19 @@ export async function getChatSessions(userId) {
       date: formatSessionDate(s.updatedAt),
       messages: (s.messages || []).map((m) => {
         let parsedPatches = null;
+        let applied = false;
         if (m.patches) {
           try {
-            parsedPatches = JSON.parse(m.patches);
+            const raw = JSON.parse(m.patches);
+            if (raw && typeof raw === 'object') {
+              if (Array.isArray(raw)) {
+                parsedPatches = raw;
+                applied = false;
+              } else if (Array.isArray(raw.list)) {
+                parsedPatches = raw.list;
+                applied = Boolean(raw.applied);
+              }
+            }
           } catch (err) {
             console.warn('Failed to parse patches for message:', m.id, err.message);
           }
@@ -61,6 +71,7 @@ export async function getChatSessions(userId) {
           sender: m.sender,
           text: m.text,
           patches: parsedPatches,
+          applied: applied,
           timestamp: m.timestamp || '',
           animate: false
         };
@@ -111,14 +122,24 @@ export async function saveChatSession({ sessionId, userId, title, messages }) {
 
     if (Array.isArray(messages) && messages.length > 0) {
       await prisma.chatMessage.createMany({
-        data: messages.map((m) => ({
-          id: m.id || ('msg-' + Math.random().toString(36).substring(2, 9)),
-          sessionId: session.id,
-          sender: m.sender || 'user',
-          text: m.text || '',
-          patches: m.patches ? JSON.stringify(m.patches) : null,
-          timestamp: m.timestamp || ''
-        }))
+        data: messages.map((m) => {
+          let patchesStr = null;
+          if (m.patches) {
+            if (m.applied) {
+              patchesStr = JSON.stringify({ applied: true, list: m.patches });
+            } else {
+              patchesStr = JSON.stringify(m.patches);
+            }
+          }
+          return {
+            id: m.id || ('msg-' + Math.random().toString(36).substring(2, 9)),
+            sessionId: session.id,
+            sender: m.sender || 'user',
+            text: m.text || '',
+            patches: patchesStr,
+            timestamp: m.timestamp || ''
+          };
+        })
       });
     }
 

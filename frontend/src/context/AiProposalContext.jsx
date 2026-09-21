@@ -11,16 +11,26 @@ export function AiProposalProvider({ children }) {
     styleData,
     handleUpdateCvData,
     handleUpdateStyleData,
-    setMasterCvData,
-    setVariants,
-    setActiveVariant,
+    handleCreateVariant,
   } = useCv();
 
   const [pendingProposal, setPendingProposal] = useState(null);
   const [proposalViewMode, setProposalViewMode] = useState('after'); // 'before' | 'after'
+  const [appliedMessageIds, setAppliedMessageIds] = useState(() => new Set());
 
-  const handleApplyPatches = ({ explanation, patches }) => {
+  const markMessageApplied = (messageId) => {
+    if (!messageId) return;
+    setAppliedMessageIds((prev) => {
+      const next = new Set(prev);
+      next.add(messageId);
+      return next;
+    });
+  };
+
+  const handleApplyPatches = ({ explanation, patches, messageId, onApplied }) => {
     if (!Array.isArray(patches) || patches.length === 0) return;
+    if (messageId && appliedMessageIds.has(messageId)) return;
+
     const { newContent, newStyle } = applySmartPatches(cvData, styleData, patches);
     const { contentPaths, stylePaths } = getAffectedPaths(patches);
     const ephemeralCvData = createEphemeralJsonWithDiff(cvData, newContent, patches);
@@ -28,6 +38,8 @@ export function AiProposalProvider({ children }) {
     setPendingProposal({
       explanation,
       patches,
+      messageId,
+      onApplied,
       contentPaths,
       stylePaths,
       beforeContent: cvData,
@@ -48,6 +60,12 @@ export function AiProposalProvider({ children }) {
     if (active.afterStyle) {
       handleUpdateStyleData(active.afterStyle);
     }
+    if (active.messageId) {
+      markMessageApplied(active.messageId);
+      if (typeof active.onApplied === 'function') {
+        active.onApplied(active.messageId);
+      }
+    }
     setPendingProposal(null);
   };
 
@@ -55,23 +73,15 @@ export function AiProposalProvider({ children }) {
     const active = proposal || pendingProposal;
     if (!active) return;
     const newVariantId = 'var-' + Date.now();
+    const newVariant = { id: newVariantId, label: profileName };
 
-    setVariants((prev) => [
-      ...prev,
-      { id: newVariantId, label: profileName },
-    ]);
-
-    if (active.afterContent) {
-      setMasterCvData((prevMaster) => {
-        return mergeVariantToMaster(prevMaster, active.afterContent, newVariantId);
-      });
+    handleCreateVariant(newVariant, active.afterContent, active.afterStyle);
+    if (active.messageId) {
+      markMessageApplied(active.messageId);
+      if (typeof active.onApplied === 'function') {
+        active.onApplied(active.messageId);
+      }
     }
-
-    if (active.afterStyle) {
-      handleUpdateStyleData(active.afterStyle);
-    }
-
-    setActiveVariant(newVariantId);
     setPendingProposal(null);
   };
 
@@ -84,6 +94,8 @@ export function AiProposalProvider({ children }) {
     setPendingProposal,
     proposalViewMode,
     setProposalViewMode,
+    appliedMessageIds,
+    markMessageApplied,
     handleApplyPatches,
     handleAcceptCurrent,
     handleAcceptNewProfile,

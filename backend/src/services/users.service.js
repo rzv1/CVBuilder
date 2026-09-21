@@ -1,5 +1,6 @@
 import { prisma } from '../config/db.js';
-import { slugify } from '../utils/slugify.js';
+
+const slugify = (text) => (text || 'user').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export async function getUsers() {
   try {
@@ -25,7 +26,7 @@ export async function getUserById(userId) {
   }
 }
 
-export async function getOrCreateUserByName(name) {
+export async function getOrCreateUserByName(name, avatar) {
   const trimmedName = (name || '').trim();
   if (!trimmedName) {
     throw new Error('Numele este obligatoriu pentru autentificare.');
@@ -35,7 +36,9 @@ export async function getOrCreateUserByName(name) {
   const existingUser = await getUserById(trimmedName);
 
   if (existingUser) {
-    return await updateUser(existingUser.id, { lastActive: now.toISOString(), status: 'active' });
+    const updatePayload = { lastActive: now.toISOString(), status: 'active' };
+    if (avatar !== undefined) updatePayload.avatar = avatar;
+    return await updateUser(existingUser.id, updatePayload);
   }
 
   const newId = 'usr_' + slugify(trimmedName) + '_' + Math.random().toString(36).substring(2, 7);
@@ -45,6 +48,7 @@ export async function getOrCreateUserByName(name) {
       data: {
         id: newId,
         name: trimmedName,
+        avatar: avatar || null,
         credits: 100,
         status: 'active',
         createdAt: now,
@@ -73,6 +77,7 @@ export async function updateUser(userId, data) {
     const updateData = { lastActive: now };
     if (data.credits !== undefined) updateData.credits = Math.max(0, parseInt(data.credits, 10) || 0);
     if (data.name !== undefined && data.name.trim()) updateData.name = data.name.trim();
+    if (data.avatar !== undefined) updateData.avatar = data.avatar;
     if (data.status !== undefined) updateData.status = data.status;
 
     return await prisma.user.update({
@@ -115,3 +120,7 @@ export async function deductUserCredits(userId, amount = 1) {
   const updatedCredits = user.credits - amount;
   return await updateUser(user.id, { credits: updatedCredits });
 }
+
+// Internal server function - not exposed as an HTTP route or tRPC procedure
+export const deductCredits = deductUserCredits;
+
