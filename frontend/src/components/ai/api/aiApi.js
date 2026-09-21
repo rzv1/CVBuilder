@@ -24,14 +24,19 @@ export const sendChatMessageApi = async ({
   cvData,
   styleData,
   currentUser,
+  contextLimit = 2,
   onChunk,
   onComplete,
   onError
 }) => {
   try {
+    const token = currentUser?.id || localStorage.getItem('cv_builder_token') || '';
     const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'x-user-id': token, 'authorization': `Bearer ${token}` } : {})
+      },
       body: JSON.stringify({
         messages: messages.map(m => ({
           role: m.sender === 'user' ? 'user' : 'assistant',
@@ -39,8 +44,9 @@ export const sendChatMessageApi = async ({
         })),
         content: cvData,
         style: styleData,
-        userId: currentUser?.id,
-        userName: currentUser?.name
+        userId: token || currentUser?.id,
+        userName: currentUser?.name,
+        contextLimit
       })
     });
 

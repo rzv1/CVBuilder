@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { sendChatMessageApi } from '../api/aiApi.js';
 import { useCv, useAuth, useAiProposal, useUI } from '../../../context/index.jsx';
+import { trpcClient } from '../../../lib/trpc.js';
 
 const getInitialWelcomeMessage = (user) => {
   const userName = user?.name ? user.name : '';
@@ -35,64 +36,6 @@ const formatSessionDate = (dateInput = new Date()) => {
   }
 };
 
-const defaultInitialSessions = [
-  {
-    id: 'session-sample-1',
-    title: 'Optimizare experiență Senior Dev',
-    date: '19 Sep, 17:20',
-    updatedAt: Date.now() - 86400000,
-    messages: [
-      {
-        id: 'msg-s1-1',
-        sender: 'user',
-        text: 'Cum pot reformula experiența de Senior Developer pentru un impact mai puternic?',
-        timestamp: '17:20'
-      },
-      {
-        id: 'msg-s1-2',
-        sender: 'ai',
-        text: 'Am optimizat descrierile rolului pentru a pune accent pe rezultate cuantificabile (creștere performanță cu 35%, arhitectură microservicii) și leadership tehnic.',
-        timestamp: '17:21',
-        animate: false
-      }
-    ]
-  },
-  {
-    id: 'session-sample-2',
-    title: 'Adăugare abilități Cloud & DevOps',
-    date: '18 Sep, 11:05',
-    updatedAt: Date.now() - 172800000,
-    messages: [
-      {
-        id: 'msg-s2-1',
-        sender: 'user',
-        text: 'Sugerează-mi cele mai căutate skill-uri Cloud pentru rolul meu.',
-        timestamp: '11:05'
-      },
-      {
-        id: 'msg-s2-2',
-        sender: 'ai',
-        text: 'Îți recomand includerea: Docker, Kubernetes, AWS (ECS, Lambda, S3), CI/CD pipelines (GitHub Actions) și Terraform.',
-        timestamp: '11:06',
-        animate: false
-      }
-    ]
-  }
-];
-
-const loadSavedSessions = () => {
-  try {
-    const raw = localStorage.getItem('cv_ai_chat_sessions');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {
-    console.error('Failed to load chat sessions:', e);
-  }
-  return defaultInitialSessions;
-};
-
 export function useAiChat(props = {}) {
   const cv = useCv();
   const auth = useAuth();
@@ -106,27 +49,12 @@ export function useAiChat(props = {}) {
   const currentUser = props.currentUser ?? auth.currentUser;
   const setCurrentUser = props.setCurrentUser ?? auth.setCurrentUser;
 
-  const [sessions, setSessions] = useState(() => loadSavedSessions());
-  const [activeSessionId, setActiveSessionId] = useState(() => {
-    try {
-      const savedActiveId = localStorage.getItem('cv_ai_active_session_id');
-      const loaded = loadSavedSessions();
-      if (savedActiveId && loaded.some(s => s.id === savedActiveId)) {
-        return savedActiveId;
-      }
-    } catch (e) {}
-    return 'session-' + Date.now();
-  });
+  // Configurable context window limit (default: 2)
+  const [contextLimit, setContextLimit] = useState(2);
 
-  const [messages, setMessages] = useState(() => {
-    const loaded = loadSavedSessions();
-    const savedActiveId = localStorage.getItem('cv_ai_active_session_id');
-    const existing = loaded.find(s => s.id === savedActiveId);
-    if (existing && existing.messages && existing.messages.length > 0) {
-      return existing.messages;
-    }
-    return getInitialWelcomeMessage(currentUser);
-  });
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(() => 'session-' + Date.now());
+  const [messages, setMessages] = useState(() => getInitialWelcomeMessage(currentUser));
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
@@ -134,57 +62,61 @@ export function useAiChat(props = {}) {
 
   const activeCredits = currentUser ? (currentUser.credits ?? 0) : 0;
 
-  // Persist sessions to localStorage
+  // Load chat sessions from Database for logged-in user
   useEffect(() => {
-    try {
-      localStorage.setItem('cv_ai_chat_sessions', JSON.stringify(sessions));
-    } catch (e) {
-      console.error('Failed to save chat sessions:', e);
+    if (!currentUser || !currentUser.id) {
+      setSessions([]);
+      setActiveSessionId('session-' + Date.now());
+      setMessages(getInitialWelcomeMessage(null));
+      return;
     }
-  }, [sessions]);
 
-  // Persist activeSessionId to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('cv_ai_active_session_id', activeSessionId);
-    } catch (e) {}
-  }, [activeSessionId]);
+    let isMounted = true;
+    trpcClient.chat.list
+      .query({ userId: currentUser.id })
+      .then((res) => {
+        if (!isMounted) return;
+        if (res && res.success && Array.isArray(res.sessions)) {
+          setSessions(res.sessions);
+          if (res.sessions.length > 0) {
+            // Check if existing activeSessionId matches one in database
+            const matched = res.sessions.find((s) => s.id === activeSessionId);
+            if (matched) {
+              setMessages(matched.messages || []);
+            } else {
+              const firstSession = res.sessions[0];
+              setActiveSessionId(firstSession.id);
+              setMessages(firstSession.messages || []);
 
-  // Update current session in sessions list when messages update
-  useEffect(() => {
-    const hasUserMessage = messages.some(m => m.sender === 'user');
-    if (!hasUserMessage) return;
+              // Check if the most recent session has patches to restore diffs
+              const latestWithPatches = [...(firstSession.messages || [])]
+                .reverse()
+                .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0);
+              if (latestWithPatches && onApplyPatches) {
+                const cleanExplanation = latestWithPatches.text
+                  ? latestWithPatches.text.replace(/```json[\s\S]*?```/g, '').trim()
+                  : '';
+                onApplyPatches({
+                  explanation: cleanExplanation || 'Gemini a generat propuneri de modificări prin JSON patch.',
+                  patches: latestWithPatches.patches
+                });
+              }
+            }
+          } else {
+            // Clean initial state for user with no chat history
+            setActiveSessionId('session-' + Date.now());
+            setMessages(getInitialWelcomeMessage(currentUser));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Eroare la încărcarea istoricului de chat din DB:', err);
+      });
 
-    const firstUserMsg = messages.find(m => m.sender === 'user')?.text || 'Conversație nouă';
-    const cleanTitle = firstUserMsg.replace(/[\n\r]+/g, ' ').trim();
-    const truncatedTitle = cleanTitle.length > 38 ? `${cleanTitle.slice(0, 38)}...` : cleanTitle;
-
-    setSessions(prev => {
-      const existingIndex = prev.findIndex(s => s.id === activeSessionId);
-      if (existingIndex >= 0) {
-        if (prev[existingIndex].messages === messages) return prev;
-        const updated = [...prev];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          title: updated[existingIndex].title && updated[existingIndex].title !== 'Conversație nouă'
-            ? updated[existingIndex].title
-            : truncatedTitle,
-          messages,
-          updatedAt: Date.now()
-        };
-        return updated;
-      } else {
-        const newSession = {
-          id: activeSessionId,
-          title: truncatedTitle,
-          date: formatSessionDate(),
-          updatedAt: Date.now(),
-          messages
-        };
-        return [newSession, ...prev];
-      }
-    });
-  }, [messages, activeSessionId]);
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser]);
 
   // Update welcome greeting when currentUser changes if only initial message is present
   useEffect(() => {
@@ -208,7 +140,7 @@ export function useAiChat(props = {}) {
     if (!text.trim() || isTyping) return;
 
     if (activeCredits <= 0) {
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         {
           id: `msg-${Date.now()}`,
@@ -235,13 +167,14 @@ export function useAiChat(props = {}) {
       timestamp: getCurrentTime()
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    const nextMessages = [...messages, userMsg];
+    setMessages(nextMessages);
     if (!textToSend) setInputText('');
     setIsTyping(true);
 
     // Deduct credit in current user state
     if (currentUser && setCurrentUser) {
-      setCurrentUser(prev => prev ? { ...prev, credits: Math.max(0, (prev.credits ?? 0) - 1) } : null);
+      setCurrentUser((prev) => (prev ? { ...prev, credits: Math.max(0, (prev.credits ?? 0) - 1) } : null));
     }
 
     const aiMsgId = `msg-${Date.now() + 1}`;
@@ -255,38 +188,89 @@ export function useAiChat(props = {}) {
       patches: null
     };
 
-    setMessages(prev => [...prev, initialAiMsg]);
+    setMessages([...nextMessages, initialAiMsg]);
 
     await sendChatMessageApi({
-      messages: [...messages, userMsg],
+      messages: nextMessages,
       cvData,
       styleData,
       currentUser,
+      contextLimit,
       onChunk: ({ accumulatedText, patches }) => {
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === aiMsgId) {
-            return {
-              ...msg,
-              text: accumulatedText,
-              patches: patches
-            };
-          }
-          return msg;
-        }));
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (msg.id === aiMsgId) {
+              return {
+                ...msg,
+                text: accumulatedText,
+                patches: patches
+              };
+            }
+            return msg;
+          })
+        );
       },
-      onComplete: ({ accumulatedText, patches }) => {
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === aiMsgId) {
-            return {
-              ...msg,
-              isStreaming: false,
-              patches: patches
-            };
-          }
-          return msg;
-        }));
+      onComplete: async ({ accumulatedText, patches }) => {
+        const finalAiMsg = {
+          id: aiMsgId,
+          sender: 'ai',
+          text: accumulatedText,
+          timestamp: getCurrentTime(),
+          isStreaming: false,
+          patches: patches || null
+        };
 
-        // Automatically trigger visual diff proposal if patches were received
+        const updatedMessages = [...nextMessages, finalAiMsg];
+        setMessages(updatedMessages);
+
+        // Determine title for chat session
+        const existingSession = sessions.find((s) => s.id === activeSessionId);
+        const cleanFirstUserMsg = userMsg.text.replace(/[\n\r]+/g, ' ').trim();
+        const derivedTitle = cleanFirstUserMsg.length > 38 ? `${cleanFirstUserMsg.slice(0, 38)}...` : cleanFirstUserMsg;
+        const sessionTitle = existingSession?.title && existingSession.title !== 'Conversație nouă'
+          ? existingSession.title
+          : (derivedTitle || 'Conversație');
+
+        // Persist session and messages in Database for logged-in user
+        if (currentUser && currentUser.id) {
+          try {
+            await trpcClient.chat.save.mutate({
+              sessionId: activeSessionId,
+              userId: currentUser.id,
+              title: sessionTitle,
+              messages: updatedMessages
+            });
+
+            // Update local sessions list
+            setSessions((prev) => {
+              const existingIdx = prev.findIndex((s) => s.id === activeSessionId);
+              if (existingIdx >= 0) {
+                const updated = [...prev];
+                updated[existingIdx] = {
+                  ...updated[existingIdx],
+                  title: sessionTitle,
+                  updatedAt: Date.now(),
+                  date: formatSessionDate(),
+                  messages: updatedMessages
+                };
+                return updated;
+              } else {
+                const newSession = {
+                  id: activeSessionId,
+                  title: sessionTitle,
+                  date: formatSessionDate(),
+                  updatedAt: Date.now(),
+                  messages: updatedMessages
+                };
+                return [newSession, ...prev];
+              }
+            });
+          } catch (persistErr) {
+            console.error('Failed to persist chat session to database:', persistErr);
+          }
+        }
+
+        // Automatically trigger visual diff proposal on CV if patches were generated
         if (patches && patches.length > 0 && onApplyPatches) {
           const cleanExplanation = accumulatedText.replace(/```json[\s\S]*?```/g, '').trim();
           onApplyPatches({
@@ -299,50 +283,106 @@ export function useAiChat(props = {}) {
       },
       onError: (err) => {
         console.error('AI Chat Error:', err);
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === aiMsgId) {
-            return {
-              ...msg,
-              text: 'Scuze, a intervenit o eroare la conectarea cu AI Assistant. Asigură-te că serverul e.',
-              isStreaming: false
-            };
-          }
-          return msg;
-        }));
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (msg.id === aiMsgId) {
+              return {
+                ...msg,
+                text: 'Scuze, a intervenit o eroare la conectarea cu AI Assistant. Asigură-te că serverul este pornit.',
+                isStreaming: false
+              };
+            }
+            return msg;
+          })
+        );
         setIsTyping(false);
       }
     });
   };
 
+  /**
+   * Starts a brand new chat. The session is NOT saved to DB until the user sends their first message.
+   */
   const handleNewChat = () => {
     if (isTyping) return;
     const newSessionId = 'session-' + Date.now();
     setActiveSessionId(newSessionId);
     setMessages(getInitialWelcomeMessage(currentUser));
     setInputText('');
-  };
-
-  const handleSelectSession = (sessionId) => {
-    if (isTyping || sessionId === activeSessionId) return;
-    const session = sessions.find(s => s.id === sessionId);
-    if (session) {
-      setActiveSessionId(session.id);
-      setMessages(session.messages || []);
-      setInputText('');
+    if (aiProposal.setPendingProposal) {
+      aiProposal.setPendingProposal(null);
     }
   };
 
-  const handleDeleteSession = (sessionId) => {
-    setSessions(prev => {
-      const filtered = prev.filter(s => s.id !== sessionId);
+  /**
+   * Reopens a chat session from history and restores visual diffs box if patches exist.
+   */
+  const handleSelectSession = (sessionId) => {
+    if (isTyping || sessionId === activeSessionId) return;
+    const session = sessions.find((s) => s.id === sessionId);
+    if (session) {
+      setActiveSessionId(session.id);
+      const sessionMessages = session.messages || [];
+      setMessages(sessionMessages);
+      setInputText('');
+
+      // Find the latest AI message that contains patches to immediately restore diffs
+      const latestWithPatches = [...sessionMessages]
+        .reverse()
+        .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0);
+
+      if (latestWithPatches && onApplyPatches) {
+        const cleanExplanation = latestWithPatches.text
+          ? latestWithPatches.text.replace(/```json[\s\S]*?```/g, '').trim()
+          : '';
+        onApplyPatches({
+          explanation: cleanExplanation || 'Gemini a generat patch-uri JSON pentru actualizarea CV-ului.',
+          patches: latestWithPatches.patches
+        });
+      } else if (aiProposal.setPendingProposal) {
+        aiProposal.setPendingProposal(null);
+      }
+    }
+  };
+
+  /**
+   * Deletes a chat session from Database and local state.
+   */
+  const handleDeleteSession = async (sessionId) => {
+    if (currentUser && currentUser.id) {
+      try {
+        await trpcClient.chat.delete.mutate({ sessionId, userId: currentUser.id });
+      } catch (err) {
+        console.error('Eroare la ștergerea conversației:', err);
+      }
+    }
+
+    setSessions((prev) => {
+      const filtered = prev.filter((s) => s.id !== sessionId);
       if (sessionId === activeSessionId) {
         if (filtered.length > 0) {
-          setActiveSessionId(filtered[0].id);
-          setMessages(filtered[0].messages || []);
+          const nextSession = filtered[0];
+          setActiveSessionId(nextSession.id);
+          setMessages(nextSession.messages || []);
+
+          const latestWithPatches = [...(nextSession.messages || [])]
+            .reverse()
+            .find((m) => m.patches && Array.isArray(m.patches) && m.patches.length > 0);
+          if (latestWithPatches && onApplyPatches) {
+            onApplyPatches({
+              explanation: latestWithPatches.text.replace(/```json[\s\S]*?```/g, '').trim() || '',
+              patches: latestWithPatches.patches
+            });
+          } else if (aiProposal.setPendingProposal) {
+            aiProposal.setPendingProposal(null);
+          }
         } else {
           const newId = 'session-' + Date.now();
           setActiveSessionId(newId);
           setMessages(getInitialWelcomeMessage(currentUser));
+          if (aiProposal.setPendingProposal) {
+            aiProposal.setPendingProposal(null);
+          }
         }
       }
       return filtered;
@@ -363,6 +403,8 @@ export function useAiChat(props = {}) {
     sessions,
     activeSessionId,
     handleSelectSession,
-    handleDeleteSession
+    handleDeleteSession,
+    contextLimit,
+    setContextLimit
   };
 }

@@ -178,16 +178,16 @@ export const DatePickerInput = ({
         }
 
         return (
-          <DatePickerPrimitive.Control render={<InputGroup className={cn("w-full", containerClassName)} />}>{startAddon && (
+          <DatePickerPrimitive.Control render={<InputGroup className={cn("w-full flex-nowrap", containerClassName)} />}>{startAddon && (
                             <InputGroupAddon align={"inline-start"}>
                               {startAddon}
                             </InputGroupAddon>
-                          )}<DatePickerPrimitive.Input placeholder={placeholder} render={<InputGroupInput size={size} className={cn("w-full", className)} />}></DatePickerPrimitive.Input><InputGroupAddon align={"inline-end"}>
+                          )}<DatePickerPrimitive.Input placeholder={placeholder} render={<InputGroupInput size={size} className={cn("flex-1 min-w-0", className)} />}></DatePickerPrimitive.Input><InputGroupAddon align={"inline-end"}>
                             {endAddon}
                             {showClear && (
                               <DatePickerPrimitive.ClearTrigger render={<Button variant="ghost" size={"icon-sm"} />}><XIcon /></DatePickerPrimitive.ClearTrigger>
                             )}
-                            <DatePickerPrimitive.Trigger render={<Button variant="ghost" size={"icon-sm"} />}><Calendar /></DatePickerPrimitive.Trigger>
+                            <DatePickerPrimitive.Trigger render={<Button variant="ghost" size={"icon-sm"} />}><Calendar className="size-4" /></DatePickerPrimitive.Trigger>
                           </InputGroupAddon></DatePickerPrimitive.Control>
         );
       }}

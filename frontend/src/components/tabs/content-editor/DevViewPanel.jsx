@@ -15,26 +15,28 @@ import { Button } from '@/frontend/src/components/ui/button';
 import { Badge } from '@/frontend/src/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/frontend/src/components/ui/tabs';
 import { Swap, SwapIndicator } from '@/frontend/src/components/ui/swap';
+import { useDevView } from './hooks/useDevView.jsx';
 
-export default function DevViewPanel({
-  activeDevFile,
-  setActiveDevFile,
-  isSplitView,
-  setIsSplitView,
-  autoRun,
-  setAutoRun,
-  isRunning,
-  handleRunCode,
-  contentYaml,
-  handleContentChange,
-  styleYaml,
-  handleStyleChange,
-  monacoOptions,
-  handleBeforeMount,
-  handleEditorMount,
-  syntaxError,
-  setSyntaxError
-}) {
+export default function DevViewPanel(props = {}) {
+  const devState = useDevView();
+
+  const activeDevFile = props.activeDevFile ?? devState.activeDevFile;
+  const setActiveDevFile = props.setActiveDevFile ?? devState.setActiveDevFile;
+  const isSplitView = props.isSplitView ?? devState.isSplitView;
+  const setIsSplitView = props.setIsSplitView ?? devState.setIsSplitView;
+  const autoRun = props.autoRun ?? devState.autoRun;
+  const setAutoRun = props.setAutoRun ?? devState.setAutoRun;
+  const isRunning = props.isRunning ?? devState.isRunning;
+  const handleRunCode = props.handleRunCode ?? devState.handleRunCode;
+  const contentYaml = props.contentYaml ?? devState.contentYaml;
+  const handleContentChange = props.handleContentChange ?? devState.handleContentChange;
+  const styleYaml = props.styleYaml ?? devState.styleYaml;
+  const handleStyleChange = props.handleStyleChange ?? devState.handleStyleChange;
+  const monacoOptions = props.monacoOptions ?? devState.monacoOptions;
+  const handleBeforeMount = props.handleBeforeMount ?? devState.handleBeforeMount;
+  const handleEditorMount = props.handleEditorMount ?? devState.handleEditorMount;
+  const syntaxError = props.syntaxError ?? devState.syntaxError;
+  const setSyntaxError = props.setSyntaxError ?? devState.setSyntaxError;
   return (
     <div className="flex flex-col h-full w-full bg-slate-950 text-slate-100 overflow-hidden">
       {/* Dev View Top Control Toolbar */}

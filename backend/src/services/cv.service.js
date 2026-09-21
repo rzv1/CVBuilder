@@ -44,9 +44,35 @@ export const DEFAULT_STYLE = {
 /**
  * Retrieves Master CV content, style, variants, gitCommits, collaborators & analytics directly from Prisma DB.
  */
-export async function getCvData() {
+export async function getCvData(userId) {
   try {
+    let whereClause = {};
+    if (userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        return {
+          id: null,
+          slug: '',
+          title: 'Master CV',
+          activeVariant: 'all',
+          content: null,
+          style: null,
+          user: null,
+          variants: [],
+          gitCommits: [],
+          groupMembers: [],
+          comments: [],
+          analyticsEvents: []
+        };
+      }
+      whereClause = { userId: user.id };
+    }
+
     const dbCv = await prisma.cvData.findFirst({
+      where: whereClause,
       include: {
         user: true,
         variants: true,
@@ -63,7 +89,7 @@ export async function getCvData() {
         slug: dbCv.slug,
         title: dbCv.title,
         activeVariant: dbCv.activeVariant,
-        content: JSON.parse(dbCv.content),
+        content: dbCv.content ? JSON.parse(dbCv.content) : null,
         style: dbCv.style ? JSON.parse(dbCv.style) : DEFAULT_STYLE,
         user: dbCv.user,
         variants: dbCv.variants,
@@ -80,7 +106,7 @@ export async function getCvData() {
       title: 'Master CV',
       activeVariant: 'all',
       content: null,
-      style: DEFAULT_STYLE,
+      style: null,
       user: null,
       variants: [],
       gitCommits: [],
@@ -110,9 +136,20 @@ export async function saveCvData(body) {
     let patched = false;
     let patchCount = 0;
 
-    const dbCv = await prisma.cvData.findFirst();
-    const cvId = dbCv ? dbCv.id : 'cv_default_master';
-    let currentMaster = dbCv ? JSON.parse(dbCv.content) : {};
+    const userId = body.userId;
+    let user = null;
+    if (userId) {
+      user = await prisma.user.findFirst({
+        where: { id: userId },
+      });
+    }
+
+    const dbCv = user
+      ? await prisma.cvData.findFirst({ where: { userId: user.id } })
+      : await prisma.cvData.findFirst();
+
+    const cvId = dbCv ? dbCv.id : ('cv_' + (user ? user.id : 'default_master'));
+    let currentMaster = (dbCv && dbCv.content) ? JSON.parse(dbCv.content) : {};
     let currentStyle = (dbCv && dbCv.style) ? JSON.parse(dbCv.style) : DEFAULT_STYLE;
 
     if (Array.isArray(body.patches) && body.patches.length > 0 && body.variantId) {
@@ -140,8 +177,8 @@ export async function saveCvData(body) {
       },
       create: {
         id: cvId,
-        userId: dbCv?.userId || 'usr_alex_popescu',
-        slug: 'alex-popescu',
+        userId: user ? user.id : (dbCv?.userId || 'usr_alex_popescu'),
+        slug: user ? user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'master-cv',
         title: 'Master CV',
         content: JSON.stringify(currentMaster),
         style: JSON.stringify(currentStyle),

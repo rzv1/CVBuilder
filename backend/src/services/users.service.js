@@ -25,10 +25,10 @@ export async function getUserById(userId) {
   }
 }
 
-export async function registerUser(name) {
+export async function getOrCreateUserByName(name) {
   const trimmedName = (name || '').trim();
   if (!trimmedName) {
-    throw new Error('Numele este obligatoriu pentru înregistrare.');
+    throw new Error('Numele este obligatoriu pentru autentificare.');
   }
 
   const now = new Date();
@@ -55,6 +55,8 @@ export async function registerUser(name) {
     throw new Error('Eroare la înregistrarea utilizatorului în Prisma DB: ' + err.message);
   }
 }
+
+export const registerUser = getOrCreateUserByName;
 
 export async function updateUser(userId, data) {
   const now = new Date();

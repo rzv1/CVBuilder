@@ -20,23 +20,16 @@ import {
 } from '../ui/select';
 import { useCv, useUI } from '../../context/index.jsx';
 
-export default function HeaderCenter(props = {}) {
-  const { isDevMode: uiDevMode, toggleDevMode } = useUI();
+export default function HeaderCenter() {
+  const { isDevMode, toggleDevMode } = useUI();
   const { 
-    activeVariant: cvActiveVariant, 
+    activeVariant, 
     setActiveVariant, 
-    variants: cvVariants, 
+    variants, 
     groupMembers 
   } = useCv();
 
-  const isDevMode = props.isDevMode ?? uiDevMode;
-  const activeVariant = props.activeVariant ?? cvActiveVariant;
-  const variants = props.variants ?? cvVariants ?? [];
-  const collaborators = props.collaborators ?? groupMembers ?? [];
-
-  const handleDevMode = props.handleDevMode ?? (() => toggleDevMode(true));
-  const handleNormalMode = props.handleNormalMode ?? (() => toggleDevMode(false));
-  const handleVariantChange = props.handleVariantChange ?? ((e) => setActiveVariant(e.target.value));
+  const collaborators = groupMembers ?? [];
 
   const selectItems = (variants || []).map((v) => ({
     value: v.id,
@@ -51,9 +44,9 @@ export default function HeaderCenter(props = {}) {
         checked={isDevMode}
         onCheckedChange={(details) => {
           if (details.checked) {
-            handleDevMode();
+            toggleDevMode(true);
           } else {
-            handleNormalMode();
+            toggleDevMode(false);
           }
         }}
         className="flex items-center gap-2 cursor-pointer"
@@ -74,7 +67,7 @@ export default function HeaderCenter(props = {}) {
         value={activeVariant ? [activeVariant] : []}
         onValueChange={(details) => {
           if (details?.value?.[0]) {
-            handleVariantChange({ target: { value: details.value[0] } });
+            setActiveVariant(details.value[0]);
           }
         }}
         positioning={{ placement: "bottom-start", sameWidth: false }}
@@ -83,7 +76,7 @@ export default function HeaderCenter(props = {}) {
           <SelectTrigger className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-400 outline-none cursor-pointer hover:bg-slate-700/80 transition-colors">
             <Layers className="size-3.5 text-blue-400 shrink-0" />
             <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Profile:</span>
-            <SelectValue placeholder="Selectează profil..." />
+            <SelectValue placeholder="Select" />
             <SelectIndicator />
           </SelectTrigger>
         </SelectControl>
@@ -101,7 +94,7 @@ export default function HeaderCenter(props = {}) {
 
       {/* Real-time Collaborators stack */}
       <div className="flex items-center gap-2 pl-1" title="Live Collaboration Room">
-        <div className="flex items-center -space-x-2">
+        {/*<div className="flex items-center -space-x-2">
           {collaborators.map(collab => (
             <img 
               key={collab.id} 
@@ -111,9 +104,9 @@ export default function HeaderCenter(props = {}) {
               title={`${collab.name} - ${collab.status}`}
             />
           ))}
-        </div>
+        </div>*/}
         <Badge variant="purple" className="text-[10px] py-0 px-1.5 gap-1 font-semibold">
-          <Users className="size-2.5" /> 2 Online
+          <Users className="size-2.5" /> {collaborators.length + 1} Online
         </Badge>
       </div>
 

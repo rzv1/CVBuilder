@@ -9,38 +9,42 @@ export function AuthProvider({ children }) {
   const trpc = useTRPC();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Initialize currentUser from localStorage
+  // Initialize currentUser from localStorage (reads token and cached user)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('cv_builder_user');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) return JSON.parse(saved);
+      const token = localStorage.getItem('cv_builder_token');
+      return token ? { id: token, name: '' } : null;
     } catch {
       return null;
     }
   });
 
-  // Query to refresh user details & credits from server via tRPC
+  const activeToken = currentUser?.id || (typeof window !== 'undefined' ? (localStorage.getItem('cv_builder_token') || '') : '');
+
+  // Query to refresh user details & credits from server via tRPC using token ID
   const { data: userData } = useQuery({
-    ...trpc.users.getById.queryOptions(currentUser?.id || ''),
-    enabled: Boolean(currentUser?.id),
+    ...trpc.users.getById.queryOptions(activeToken),
+    enabled: Boolean(activeToken),
   });
 
-  // Sync refreshed server data to currentUser and localStorage
+  // Sync refreshed server data to currentUser and localStorage token
   useEffect(() => {
     if (userData?.success && userData?.user) {
       setCurrentUser(userData.user);
+      localStorage.setItem('cv_builder_token', userData.user.id);
       localStorage.setItem('cv_builder_user', JSON.stringify(userData.user));
     }
   }, [userData]);
 
-  // Mutation for user registration / login via tRPC
+  // Mutation for unified user login / registration via tRPC
   const registerMutation = useMutation(
-    trpc.users.register.mutationOptions({
+    trpc.users.auth.mutationOptions({
       onSuccess: (data) => {
         const user = data?.user || data;
         if (user) {
-          setCurrentUser(user);
-          localStorage.setItem('cv_builder_user', JSON.stringify(user));
+          handleUserAuth(user);
           setIsAuthModalOpen(false);
         }
       },
@@ -49,11 +53,14 @@ export function AuthProvider({ children }) {
 
   const handleUserAuth = (user) => {
     setCurrentUser(user);
-    if (user) {
+    if (user && user.id) {
+      localStorage.setItem('cv_builder_token', user.id);
       localStorage.setItem('cv_builder_user', JSON.stringify(user));
       queryClient.setQueryData(['user', user.id], { success: true, user });
     } else {
+      localStorage.removeItem('cv_builder_token');
       localStorage.removeItem('cv_builder_user');
+      localStorage.removeItem('cv_builder_content');
       if (currentUser?.id) {
         queryClient.removeQueries({ queryKey: ['user', currentUser.id] });
       }

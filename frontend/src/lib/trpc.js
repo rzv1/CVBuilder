@@ -5,6 +5,15 @@ export const trpcClient = createTRPCClient({
   links: [
     httpBatchLink({
       url: '/trpc',
+      headers() {
+        const token = localStorage.getItem('cv_builder_token') || localStorage.getItem('cv_builder_user_id');
+        return token
+          ? {
+              'x-user-id': token,
+              authorization: `Bearer ${token}`,
+            }
+          : {};
+      },
     }),
   ],
 });

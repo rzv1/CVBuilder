@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   FolderPlus,
   Plus,
@@ -7,9 +7,9 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { Button } from '@/frontend/components/ui/button';
-import { Badge } from '@/frontend/components/ui/badge';
-import { Input } from '@/frontend/components/ui/input';
+import { Button } from '@/frontend/src/components/ui/button';
+import { Badge } from '@/frontend/src/components/ui/badge';
+import { Input } from '@/frontend/src/components/ui/input';
 import { Textarea } from '@/frontend/components/ui/textarea';
 import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/frontend/src/components/ui/accordion';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/frontend/src/components/ui/empty';
@@ -28,22 +28,94 @@ import {
   DatePickerCalendar,
 } from '@/frontend/src/components/ui/date-picker';
 import { useSortable } from '@dnd-kit/react/sortable';
+import { useCv } from '@/frontend/src/context/index.jsx';
 
-export default function CustomSections({
-  customSectionsList = [],
-  isMaxCustomSectionsReached,
-  addCustomSection,
-  deleteCustomSection,
-  addCustomSectionItem,
-  deleteCustomSectionItem,
-  handleCustomItemChange,
-  setCvData,
-  draggedItem,
-  handleDragStart,
-  handleDragOver,
-  handleDrop,
-  moveItem
-}) {
+export default function CustomSections() {
+  const { cvData, handleUpdateCvData } = useCv();
+  const customSectionsList = cvData?.customSections || [];
+  const isMaxCustomSectionsReached = customSectionsList.length >= 3;
+
+  const addCustomSection = () => {
+    if (isMaxCustomSectionsReached) return;
+    const newSecNumber = customSectionsList.length + 1;
+    const newSec = {
+      id: `custom-sec-${Date.now()}`,
+      title: `Secțiune Personalizată ${newSecNumber} (ex: Proiecte / Voluntariat)`,
+      items: [
+        {
+          id: `csi-${Date.now()}`,
+          heading: "Titlu Proiect / Rol",
+          subheading: "Organizație / Tehnologii",
+          start: "2024",
+          end: "Prezent",
+          detail: "Descrierea activităților desfășurate și a rezultatelor cheie."
+        }
+      ]
+    };
+    handleUpdateCvData(prev => ({
+      ...prev,
+      customSections: [...(prev?.customSections || []), newSec]
+    }));
+  };
+
+  const deleteCustomSection = (secIdx) => {
+    handleUpdateCvData(prev => ({
+      ...prev,
+      customSections: (prev?.customSections || []).filter((_, i) => i !== secIdx)
+    }));
+  };
+
+  const addCustomSectionItem = (secIdx) => {
+    const newItem = {
+      id: `csi-${Date.now()}`,
+      heading: "Titlu Intrare Nouă",
+      subheading: "Subtitlu / Rol",
+      start: "2024",
+      end: "Prezent",
+      detail: "Detalii și rezultate obținute."
+    };
+    handleUpdateCvData(prev => {
+      const secList = [...(prev?.customSections || [])];
+      if (!secList[secIdx]) return prev;
+      secList[secIdx].items = [...(secList[secIdx].items || []), newItem];
+      return { ...prev, customSections: secList };
+    });
+  };
+
+  const deleteCustomSectionItem = (secIdx, itemIdx) => {
+    handleUpdateCvData(prev => {
+      const secList = [...(prev?.customSections || [])];
+      if (!secList[secIdx]) return prev;
+      secList[secIdx].items = (secList[secIdx].items || []).filter((_, i) => i !== itemIdx);
+      return { ...prev, customSections: secList };
+    });
+  };
+
+  const handleCustomItemChange = (secIdx, itemIdx, field, value) => {
+    handleUpdateCvData(prev => {
+      const secList = [...(prev?.customSections || [])];
+      if (!secList[secIdx] || !secList[secIdx].items?.[itemIdx]) return prev;
+      secList[secIdx].items[itemIdx] = {
+        ...secList[secIdx].items[itemIdx],
+        [field]: value
+      };
+      return { ...prev, customSections: secList };
+    });
+  };
+
+  const moveItem = (_sectionKey, index, direction, customSecIdx = null) => {
+    if (customSecIdx === null) return;
+    const targetIdx = index + direction;
+    handleUpdateCvData(prev => {
+      const secList = [...(prev?.customSections || [])];
+      const items = [...(secList[customSecIdx]?.items || [])];
+      if (targetIdx < 0 || targetIdx >= items.length) return prev;
+      const [removed] = items.splice(index, 1);
+      items.splice(targetIdx, 0, removed);
+      secList[customSecIdx].items = items;
+      return { ...prev, customSections: secList };
+    });
+  };
   return (
     <div className="space-y-4">
       {customSectionsList.map((sec, secIdx) => {
@@ -77,8 +149,8 @@ export default function CustomSections({
                     value={sec.title || ''}
                     onChange={(e) => {
                       const newTitle = e.target.value;
-                      setCvData(prev => {
-                        const nextSections = [...(prev.customSections || [])];
+                      handleUpdateCvData(prev => {
+                        const nextSections = [...(prev?.customSections || [])];
                         if (nextSections[secIdx]) {
                           nextSections[secIdx] = { ...nextSections[secIdx], title: newTitle };
                         }
@@ -89,13 +161,6 @@ export default function CustomSections({
                   />
                 </Field>
                 <div className="flex items-end gap-2">
-                  <Button
-                    size="xs"
-                    onClick={() => addCustomSectionItem(secIdx)}
-                    className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1 text-xs cursor-pointer"
-                  >
-                    <Plus className="size-3.5" /> Add Item
-                  </Button>
                   <Button
                     variant="ghost"
                     size="xs"
@@ -109,9 +174,9 @@ export default function CustomSections({
               </div>
 
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <span className="text-xs text-slate-400 italic">Drag handle to reorder custom section items</span>
+                <span className="text-xs text-slate-400 italic">Drag handle to reorder or delete</span>
                 <Button size="xs" onClick={() => addCustomSectionItem(secIdx)} className="h-7 bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1 text-xs">
-                  <Plus className="size-3.5" /> Add Item
+                  <Plus className="size-3.5" /> Add
                 </Button>
               </div>
 
@@ -128,7 +193,7 @@ export default function CustomSections({
                   </EmptyHeader>
                   <EmptyContent>
                     <Button size="xs" onClick={() => addCustomSectionItem(secIdx)} className="h-7 bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1 text-xs">
-                      <Plus className="size-3.5" /> Add Item
+                      <Plus className="size-3.5" /> Add
                     </Button>
                   </EmptyContent>
                 </Empty>
@@ -187,6 +252,7 @@ function CustomSectionItemCard({
   deleteCustomSectionItem,
   moveItem
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const sortableId = item.id || `custom-${secIdx}-${itemIdx}`;
   const { ref, handleRef, isDragging } = useSortable({
     id: sortableId,
@@ -195,31 +261,33 @@ function CustomSectionItemCard({
     data: { sectionKey: 'custom', index: itemIdx, customSecIdx: secIdx }
   });
 
+  const isExpanded = !isDragging && isOpen;
+
   return (
     <div
       ref={ref}
-      className={`p-5 rounded-xl border border-slate-800 bg-slate-900/90 space-y-5 transition-all ${
-        isDragging
-          ? 'opacity-40 border-dashed border-emerald-500 ring-2 ring-emerald-500/50'
-          : 'hover:border-slate-700'
+      className={`mb-3 rounded-xl border border-slate-800 bg-slate-900/90 overflow-hidden transition-all ${
+        isDragging ? 'opacity-50 ring-2 ring-indigo-500' : ''
       }`}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-        <div className="flex items-center gap-2">
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center justify-between p-3.5 px-4 cursor-pointer transition-colors select-none ${
+          isExpanded 
+            ? 'bg-slate-800/60 text-slate-100' 
+            : 'hover:bg-slate-800/40 text-slate-300'
+        }`}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
           <span
             ref={handleRef}
-            className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-slate-400 hover:text-slate-200 rounded select-none touch-none"
+            onClick={(e) => e.stopPropagation()}
+            className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 p-1 -ml-1 rounded select-none touch-none"
             title="Drag to reorder"
           >
             <GripVertical className="size-4" />
           </span>
-          <span className="text-xs font-semibold text-slate-300">
-            #{itemIdx + 1} {item.heading || 'New Item'}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <div className="flex items-center mr-2 border-r border-slate-700/60 pr-2 space-x-0.5">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon-xs"
@@ -241,102 +309,105 @@ function CustomSectionItemCard({
               <ArrowDown className="size-3" />
             </Button>
           </div>
-
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => deleteCustomSectionItem(secIdx, itemIdx)}
-            className="h-6 w-6 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30"
-            title="Delete item"
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
+          <strong className="text-xs font-semibold truncate">
+            {item.heading || 'New Item'} {item.subheading ? `• ${item.subheading}` : ''}
+          </strong>
         </div>
       </div>
 
-      {/* 2-Column Grid with Continuous Vertical Separator */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1px_1fr] gap-x-8 gap-y-6 items-start">
-        {/* Row 1 */}
-        <Field className="md:col-start-1 md:row-start-1">
-          <FieldLabel className="text-xs font-semibold text-slate-400">Heading / Title</FieldLabel>
-          <Editable
-            value={item.heading || ''}
-            onValueChange={(details) => handleCustomItemChange(secIdx, itemIdx, 'heading', details.value)}
-            onValueRevert={(details) => handleCustomItemChange(secIdx, itemIdx, 'heading', details.value)}
-            placeholder="e.g. React-Fast-Grid / Open Source Project"
-            className="w-full max-w-none"
-          >
-            <EditableArea>
-              <EditablePreview />
-              <EditableInput />
-            </EditableArea>
-          </Editable>
-        </Field>
+      {isExpanded && (
+        <div className="p-5 pt-4 space-y-5 border-t border-slate-800/80">
+          {/* 2-Column Grid with Continuous Vertical Separator */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1px_1fr] gap-x-8 gap-y-6 items-start">
+            {/* Row 1 */}
+            <Field className="md:col-start-1 md:row-start-1">
+              <FieldLabel className="text-xs font-semibold text-slate-400">Heading / Title</FieldLabel>
+              <Editable
+                value={item.heading || ''}
+                autoResize
+                onValueChange={(details) => handleCustomItemChange(secIdx, itemIdx, 'heading', details.value)}
+                onValueRevert={(details) => handleCustomItemChange(secIdx, itemIdx, 'heading', details.value)}
+                placeholder="e.g. React-Fast-Grid / Open Source Project"
+                className="w-full max-w-none"
+              >
+                <EditableArea>
+                  <EditablePreview />
+                  <EditableInput asChild className="data-autoresize:wrap-break-word">
+                    <textarea rows={1} />
+                  </EditableInput>
+                </EditableArea>
+              </Editable>
+            </Field>
 
-        {/* Continuous Vertical Separator spanning rows 1-2 */}
-        <Separator
-          orientation="vertical"
-          className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-2 bg-slate-800/80 self-stretch my-1"
-        />
+            {/* Continuous Vertical Separator spanning rows 1-2 */}
+            <Separator
+              orientation="vertical"
+              className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-2 bg-slate-800/80 self-stretch my-1"
+            />
 
-        <Field className="md:col-start-3 md:row-start-1">
-          <FieldLabel className="text-xs font-semibold text-slate-400">Subheading / Role</FieldLabel>
-          <Editable
-            value={item.subheading || ''}
-            onValueChange={(details) => handleCustomItemChange(secIdx, itemIdx, 'subheading', details.value)}
-            onValueRevert={(details) => handleCustomItemChange(secIdx, itemIdx, 'subheading', details.value)}
-            placeholder="e.g. Lead Developer / Keynote Speaker"
-            className="w-full max-w-none"
-          >
-            <EditableArea>
-              <EditablePreview />
-              <EditableInput />
-            </EditableArea>
-          </Editable>
-        </Field>
+            <Field className="md:col-start-3 md:row-start-1">
+              <FieldLabel className="text-xs font-semibold text-slate-400">Subheading / Role</FieldLabel>
+              <Editable
+                value={item.subheading || ''}
+                autoResize
+                onValueChange={(details) => handleCustomItemChange(secIdx, itemIdx, 'subheading', details.value)}
+                onValueRevert={(details) => handleCustomItemChange(secIdx, itemIdx, 'subheading', details.value)}
+                placeholder="e.g. Lead Developer / Keynote Speaker"
+                className="w-full max-w-none"
+              >
+                <EditableArea>
+                  <EditablePreview />
+                  <EditableInput asChild className="data-autoresize:wrap-break-word">
+                    <textarea rows={1} />
+                  </EditableInput>
+                </EditableArea>
+              </Editable>
+            </Field>
 
-        {/* Row 2 */}
-        <DatePicker
-          value={item.start ? [item.start] : []}
-          onValueChange={(details) => handleCustomItemChange(secIdx, itemIdx, 'start', details.valueAsString[0] || '')}
-          selectionMode="single"
-          className="md:col-start-1 md:row-start-2 flex flex-col gap-1.5"
-        >
-          <DatePickerLabel className="text-xs font-semibold text-slate-400">Start Date</DatePickerLabel>
-          <DatePickerInput />
-          <DatePickerCalendar />
-        </DatePicker>
-
-        <DatePicker
-          value={item.end ? [item.end] : []}
-          onValueChange={(details) => handleCustomItemChange(secIdx, itemIdx, 'end', details.valueAsString[0] || '')}
-          selectionMode="single"
-          className="md:col-start-3 md:row-start-2 flex flex-col gap-1.5"
-        >
-          <div className="flex items-center justify-between">
-            <DatePickerLabel className="text-xs font-semibold text-slate-400">End Date</DatePickerLabel>
-            <button
-              type="button"
-              onClick={() => handleCustomItemChange(secIdx, itemIdx, 'end', item.end === 'Present' ? '' : 'Present')}
-              className="text-[11px] text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer"
+            {/* Row 2 */}
+            <DatePicker
+              value={item.start ? [item.start] : []}
+              onValueChange={(details) => handleCustomItemChange(secIdx, itemIdx, 'start', details.valueAsString[0] || '')}
+              selectionMode="single"
+              className="md:col-start-1 md:row-start-2 flex flex-col gap-1.5"
             >
-              {item.end === 'Present' ? 'Clear Present' : 'Set Present'}
-            </button>
-          </div>
-          <DatePickerInput />
-          <DatePickerCalendar />
-        </DatePicker>
-      </div>
+              <DatePickerLabel className="text-xs font-semibold text-slate-400">Start Date</DatePickerLabel>
+              <DatePickerInput />
+              <DatePickerCalendar />
+            </DatePicker>
 
-      <Field>
-        <FieldLabel className="text-xs font-semibold text-slate-400">Description / Details</FieldLabel>
-        <Textarea
-          rows={2}
-          placeholder="Detail key accomplishments, technologies used, or impact..."
-          value={item.detail || ''}
-          onChange={(e) => handleCustomItemChange(secIdx, itemIdx, 'detail', e.target.value)}
-        />
-      </Field>
+            <DatePicker
+              value={item.end ? [item.end] : []}
+              onValueChange={(details) => handleCustomItemChange(secIdx, itemIdx, 'end', details.valueAsString[0] || '')}
+              selectionMode="single"
+              className="md:col-start-3 md:row-start-2 flex flex-col gap-1.5"
+            >
+              <div className="flex items-center justify-between">
+                <DatePickerLabel className="text-xs font-semibold text-slate-400">End Date</DatePickerLabel>
+                <button
+                  type="button"
+                  onClick={() => handleCustomItemChange(secIdx, itemIdx, 'end', item.end === 'Present' ? '' : 'Present')}
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer"
+                >
+                  {item.end === 'Present' ? 'Clear Present' : 'Set Present'}
+                </button>
+              </div>
+              <DatePickerInput />
+              <DatePickerCalendar />
+            </DatePicker>
+          </div>
+
+          <Field>
+            <FieldLabel className="text-xs font-semibold text-slate-400">Description / Details</FieldLabel>
+            <Textarea
+              rows={2}
+              placeholder="Detail key accomplishments, technologies used, or impact..."
+              value={item.detail || ''}
+              onChange={(e) => handleCustomItemChange(secIdx, itemIdx, 'detail', e.target.value)}
+            />
+          </Field>
+        </div>
+      )}
     </div>
   );
 }

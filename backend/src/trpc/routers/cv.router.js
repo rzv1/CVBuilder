@@ -9,26 +9,30 @@ import {
 } from '../../services/cv.service.js';
 
 export const cvRouter = router({
-  get: publicProcedure.query(async () => {
-    try {
-      const data = await getCvData();
-      return {
-        success: true,
-        ...data,
-      };
-    } catch (err) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: err.message,
-      });
-    }
-  }),
+  get: publicProcedure
+    .input((val) => (typeof val === 'string' ? { userId: val } : val || {}))
+    .query(async ({ input, ctx }) => {
+      try {
+        const userId = input?.userId || ctx?.userId;
+        const data = await getCvData(userId);
+        return {
+          success: true,
+          ...data,
+        };
+      } catch (err) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: err.message,
+        });
+      }
+    }),
 
   save: publicProcedure
     .input((val) => val) // Accept dynamic patch/content/style payload
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
-        const result = await saveCvData(input || {});
+        const payload = { ...(input || {}), userId: input?.userId || ctx?.userId };
+        const result = await saveCvData(payload);
         return {
           success: true,
           ...result,

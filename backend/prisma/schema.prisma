@@ -22,6 +22,8 @@ model User {
   gitCommits   GitCommit[]
   groupMembers GroupMember[]
   comments     GroupComment[]
+  targetJobs   TargetJob[]
+  chatSessions ChatSession[]
 }
 
 model CvData {
@@ -151,4 +153,51 @@ model ApiLog {
   pathname   String
   statusCode Int
   durationMs Int
+}
+
+model TargetJob {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  company          String
+  location         String?
+  url              String?
+  importedAt       String?
+  iconSeed         String?
+  description      String
+  currentScore     Int      @default(0)
+  potentialScore   Int      @default(0)
+  maxScoreAchieved Int      @default(0)
+  coverLetter      String?
+  isOptimized      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender    String      // "user" | "ai"
+  text      String
+  patches   String?     // JSON stringified RFC 6902 patches (if proposed by AI)
+  timestamp String?     // e.g. "17:20"
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
 }

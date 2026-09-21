@@ -1,21 +1,19 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import fs from 'fs';
 
 import { PORT } from './config/env.js';
-import { CMS_UI_DIR } from './config/paths.js';
 import { recordApiLog } from './utils/logger.js';
-
-import usersRoutes from './api/routes/users.routes.js';
-import cvRoutes from './api/routes/cv.routes.js';
-import resourcesRoutes from './api/routes/resources.routes.js';
-import aiRoutes from './api/routes/ai.routes.js';
-import logsRoutes from './api/routes/logs.routes.js';
-import utilsRoutes from './api/routes/utils.routes.js';
 
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { appRouter } from './trpc/appRouter.js';
+import {
+  getTargetJobs,
+  createTargetJob,
+  updateTargetJob,
+  deleteTargetJob,
+} from './services/targetJobs.service.js';
+import { processChatStream } from './services/ai.service.js';
+import { getOrCreateUserByName, getUserById } from './services/users.service.js';
 
 const app = express();
 
@@ -23,95 +21,128 @@ const app = express();
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'X-User-Id']
 }));
 
 app.use(express.json({ limit: '10mb' }));
 
-// API Request Logger Middleware - monkey patching
-app.use((req, res, next) => {
-  const startTime = Date.now();
-  const requestId = 'req_' + Math.random().toString(36).substring(2, 9);
-  const pathname = req.path;
-  const method = req.method.toUpperCase();
 
-  const originalSend = res.send;
-  let responseBodyData = null;
-
-  res.send = function (body) {
-    responseBodyData = body;
-    return originalSend.apply(res, arguments);
-  };
-
-  res.on('finish', () => {
-    if (pathname.startsWith('/api') && !pathname.startsWith('/api/logs')) {
-      let parsedResBody = null;
-      if (typeof responseBodyData === 'string') {
-        try {
-          parsedResBody = JSON.parse(responseBodyData);
-        } catch (e) {
-          parsedResBody = responseBodyData.length > 50000 ? responseBodyData.slice(0, 50000) + '...' : responseBodyData;
-        }
-      } else if (typeof responseBodyData === 'object') {
-        parsedResBody = responseBodyData;
-      }
-
-      recordApiLog({
-        id: requestId,
-        timestamp: new Date().toISOString(),
-        method,
-        url: req.originalUrl,
-        pathname,
-        queryParams: req.query,
-        headers: {
-          host: req.headers.host || '',
-          'content-type': req.headers['content-type'] || '',
-          'user-agent': req.headers['user-agent'] || '',
-          accept: req.headers.accept || ''
-        },
-        body: req.body || null,
-        responseBody: parsedResBody,
-        statusCode: res.statusCode,
-        statusMessage: res.statusMessage || '',
-        durationMs: Date.now() - startTime
-      });
-    }
-  });
-
-  next();
-});
+// Helper to resolve user ID from request headers or query
+const extractUserId = (req) => {
+  const authHeader = req.headers.authorization;
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  return req.headers['x-user-id'] || bearerToken || req.query.userId || null;
+};
 
 // tRPC API Middleware
 app.use(
   '/trpc',
   trpcExpress.createExpressMiddleware({
     router: appRouter,
-    createContext: () => ({}),
+    createContext: ({ req, res }) => {
+      const userId = extractUserId(req);
+      return { userId, req, res };
+    },
   })
 );
 
-// REST API Routes (preserved for backwards compatibility)
-app.use('/api/users', usersRoutes);
-app.use('/api/cv', cvRoutes);
-app.use('/api/resources', resourcesRoutes);
-app.use('/api/articles', resourcesRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/chat', aiRoutes);
-app.use('/api/logs', logsRoutes);
-app.use('/api/utils', utilsRoutes);
-app.use('/api/export-md', utilsRoutes);
+// Unified Authentication & User Creation REST Endpoint
+const handleUnifiedAuth = async (req, res, next) => {
+  try {
+    const name = (req.body?.name || req.body?.username || req.query?.name || req.query?.username || '').trim();
+    if (!name) {
+      return res.status(400).json({ success: false, error: 'Numele de utilizator este obligatoriu.' });
+    }
+    const user = await getOrCreateUserByName(name);
+    return res.json({
+      success: true,
+      id: user.id,
+      userId: user.id,
+      user
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
-// Static Admin CMS UI Middleware & SPA Fallback
-app.use(express.static(CMS_UI_DIR));
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/trpc')) {
-    return next();
+app.get('/api/users/auth', handleUnifiedAuth);
+
+// Get User by Token / ID
+app.get('/api/users/me', async (req, res, next) => {
+  try {
+    const userId = extractUserId(req);
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'ID-ul sau token-ul de utilizator lipsește.' });
+    }
+    const user = await getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Utilizatorul nu a fost găsit.' });
+    }
+    return res.json({ success: true, id: user.id, userId: user.id, user });
+  } catch (err) {
+    next(err);
   }
-  const targetFile = path.join(CMS_UI_DIR, 'index.html');
-  if (fs.existsSync(targetFile)) {
-    return res.sendFile(targetFile);
+});
+
+app.get('/api/users/:id', async (req, res, next) => {
+  try {
+    const user = await getUserById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Utilizatorul nu a fost găsit.' });
+    }
+    return res.json({ success: true, id: user.id, userId: user.id, user });
+  } catch (err) {
+    next(err);
   }
-  return res.status(404).send('CMS UI Not Found');
+});
+
+// REST API for Target Jobs (used directly by Web Extension and third parties)
+app.get('/api/target-jobs', async (req, res, next) => {
+  try {
+    const userId = extractUserId(req);
+    const jobs = await getTargetJobs(userId);
+    return res.json({ success: true, jobs });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/target-jobs', async (req, res, next) => {
+  try {
+    const userId = req.body?.userId || extractUserId(req);
+    const job = await createTargetJob({ ...req.body, userId });
+    return res.status(201).json({ success: true, job, data: job });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.put('/api/target-jobs/:id', async (req, res, next) => {
+  try {
+    const job = await updateTargetJob(req.params.id, req.body);
+    return res.json({ success: true, job });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/target-jobs/:id', async (req, res, next) => {
+  try {
+    await deleteTargetJob(req.params.id);
+    return res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// AI Chat Streaming Route (supports chat and ATS optimization RFC 6902 JSON Patches)
+app.post('/api/chat', async (req, res, next) => {
+  try {
+    const userId = extractUserId(req) || req.body?.userId;
+    await processChatStream({ ...(req.body || {}), userId }, res);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Global Error Handler
@@ -121,6 +152,10 @@ app.use((err, req, res, next) => {
     success: false,
     error: err.message || 'Internal Server Error'
   });
+});
+
+app.listen(PORT, () => {
+    console.log(`server online on: http://localhost:${PORT}\n`);
 });
 
 export default app;

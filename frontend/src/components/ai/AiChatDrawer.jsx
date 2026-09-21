@@ -12,7 +12,8 @@ import {
   History,
   Clock,
   MessageSquare,
-  Trash2
+  Trash2,
+  Bot
 } from 'lucide-react';
 import TypewriterText from './TypewriterText.jsx';
 import { useAiChat } from './hooks/useAiChat.js';
@@ -27,11 +28,9 @@ import {
   MenuSeparator 
 } from '@/frontend/components/ui/menu';
 
-import { Button } from '@/frontend/components/ui/button';
-import { Input } from '@/frontend/components/ui/input';
-import { Badge } from '@/frontend/components/ui/badge';
-import { Progress } from '@/frontend/components/ui/progress';
-import { Card } from '@/frontend/components/ui/card';
+import { Button } from '@/frontend/src/components/ui/button';
+import { Input } from '@/frontend/src/components/ui/input';
+import { ProgressLinear } from '@/frontend/src/components/ui/progress-linear';
 import { 
   Message, 
   MessageAvatar, 
@@ -40,7 +39,7 @@ import {
 } from '@/frontend/components/ui/message';
 import { MessageScroller } from '@/frontend/components/ui/message-scroller';
 import { Bubble, BubbleContent } from '@/frontend/components/ui/bubble';
-import { Avatar, AvatarFallback } from '@/frontend/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/frontend/src/components/ui/avatar';
 import { Marker, MarkerIcon, MarkerContent } from '@/frontend/components/ui/marker';
 import { Spinner } from '@/frontend/components/ui/spinner';
 import { 
@@ -75,7 +74,9 @@ export default function AiChatDrawer(props = {}) {
     sessions,
     activeSessionId,
     handleSelectSession,
-    handleDeleteSession
+    handleDeleteSession,
+    contextLimit,
+    setContextLimit
   } = useAiChat(props);
 
 
@@ -87,19 +88,64 @@ export default function AiChatDrawer(props = {}) {
       <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/20">
-            <Cpu className="size-4" />
+            <Bot className="size-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-slate-100 leading-none">AI Rewriter</h3>
             </div>
             <div className="text-[11.5px] text-slate-400 mt-1">
-              <span className="font-semibold text-indigo-400">Context:</span> {currentUser ? currentUser.name : 'Vizitator'}
+              <span className="font-semibold text-indigo-400">Account:</span> {currentUser ? currentUser.name : 'Vizitator'}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Configurable Context Window Selector */}
+          <Menu
+            positioning={{ placement: "bottom-end", gutter: 8 }}
+            onSelect={(details) => {
+              const val = parseInt(details.value, 10);
+              if (val > 0) setContextLimit(val);
+            }}
+          >
+            <MenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-8 px-2 text-[11px] font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/60 rounded-lg gap-1"
+                title="Fereastră de context AI (ultimele N mesaje)"
+                aria-label="Configurare context mesaje"
+              >
+                <span className="text-slate-400">N=</span>
+                <span className="text-indigo-400 font-bold">{contextLimit}</span>
+              </Button>
+            </MenuTrigger>
+            <MenuPopup
+              positionerClassName="z-[9999]"
+              className="w-44 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 text-slate-200 shadow-2xl shadow-black/80 p-1.5 rounded-xl"
+            >
+              <MenuItemGroup>
+                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  Context Istoric
+                </div>
+                {[1, 2, 3, 5, 8].map((n) => (
+                  <MenuItem
+                    key={n}
+                    value={String(n)}
+                    className={cn(
+                      "flex items-center justify-between px-2 py-1.5 rounded-lg text-xs cursor-pointer transition-colors",
+                      contextLimit === n ? "bg-indigo-950 border border-indigo-500/40 text-indigo-200 font-semibold" : "hover:bg-slate-800 text-slate-300"
+                    )}
+                  >
+                    <span>Ultimele {n} {n === 1 ? 'mesaj' : 'mesaje'}</span>
+                    {contextLimit === n && <span className="text-[10px] text-indigo-400">✓</span>}
+                  </MenuItem>
+                ))}
+              </MenuItemGroup>
+            </MenuPopup>
+          </Menu>
+
           {/* Istoric Chat-uri Dropdown Menu */}
           <Menu 
             positioning={{ placement: "bottom-end", gutter: 8 }}
@@ -245,10 +291,10 @@ export default function AiChatDrawer(props = {}) {
         </div>
       </div>
 
-      {/* AI Credits Remaining Progress Bar */}
+      {/* AI Credits Remaining ProgressLinear Bar */}
       <div className="px-4 py-2.5 bg-slate-950/80 border-b border-slate-800/80 shrink-0">
 
-        <Progress 
+        <ProgressLinear 
           value={Math.min(100, Math.max(0, activeCredits))} 
           className="h-1.5 bg-slate-800"
           indicatorClassName={activeCredits > 20 ? "bg-gradient-to-r from-emerald-500 to-indigo-500" : "bg-gradient-to-r from-amber-500 to-red-500"}
@@ -307,7 +353,7 @@ export default function AiChatDrawer(props = {}) {
                     {isUser ? (
                       <User className="size-3.5" />
                     ) : (
-                      <Sparkles className="size-3.5" />
+                      <Bot className="size-3.5" />
                     )}
                   </AvatarFallback>
                 </Avatar>
@@ -363,7 +409,7 @@ export default function AiChatDrawer(props = {}) {
 
                 {/* RFC 6902 JSON Patch Card Component */}
                 {msg.patches && msg.patches.length > 0 && (
-                  <Card className="mt-2 border-blue-500/40 bg-slate-950/90 p-3 shadow-lg shadow-blue-950/30 rounded-xl">
+                  <div className="mt-2 border-blue-500/40 bg-slate-950/90 p-3 shadow-lg shadow-blue-950/30 rounded-xl">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
                         <FileCode className="size-3.5" /> {msg.patches.length} JSON Patch{msg.patches.length > 1 ? 'es' : ''}
@@ -397,7 +443,7 @@ export default function AiChatDrawer(props = {}) {
                     >
                       <Eye className="size-3.5" /> Vezi Chenar Diferențe pe CV
                     </Button>
-                  </Card>
+                  </div>
                 )}
 
                 {msg.actions && msg.actions.length > 0 && (
@@ -425,7 +471,7 @@ export default function AiChatDrawer(props = {}) {
             <MessageAvatar className="size-7 shrink-0 self-start mt-0.5">
               <Avatar className="size-7 shrink-0 bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-white shadow-sm">
                 <AvatarFallback className="size-full flex items-center justify-center bg-transparent text-white">
-                  <Sparkles className="size-3.5" />
+                  <Bot className="size-3.5" />
                 </AvatarFallback>
               </Avatar>
             </MessageAvatar>

@@ -31,6 +31,7 @@ import {
   MenuSeparator 
 } from '../ui/menu';
 import { useAuth, useUI } from '../../context/index.jsx';
+import { trpcClient } from '../../lib/trpc.js';
 
 export default function HeaderActions(props = {}) {
   const auth = useAuth();
@@ -43,7 +44,8 @@ export default function HeaderActions(props = {}) {
   const onOpenBlog = props.onOpenBlog ?? ui.toggleBlogView;
   const onExportPdf = props.onExportPdf ?? ui.handleExportPdf;
 
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const isAuthOpen = props.isAuthOpen ?? auth.isAuthModalOpen;
+  const setIsAuthOpen = props.setIsAuthOpen ?? auth.setIsAuthModalOpen;
 
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [nameInput, setNameInput] = useState(currentUser?.name || '');
@@ -79,29 +81,26 @@ export default function HeaderActions(props = {}) {
     setErrorMsg('');
 
     try {
-      const res = await fetch('/api/users/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-
-      const data = await res.json();
-      if (data.success && data.user) {
+      const data = await trpcClient.users.auth.mutate({ name });
+      if (data?.success && data?.user) {
         if (onUserAuth) {
           onUserAuth(data.user);
         }
         setIsAuthOpen(false);
       } else {
-        setErrorMsg(data.error || 'Eroare la înregistrare/autentificare.');
+        setErrorMsg(data?.error || 'Eroare la înregistrare/autentificare.');
       }
-    } catch {
-      setErrorMsg('Nu s-a putut conecta la server. Verificați conexiunea.');
+    } catch (err) {
+      setErrorMsg(err?.message || 'Nu s-a putut conecta la server. Verificați conexiunea.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('cv_builder_token');
+    localStorage.removeItem('cv_builder_user');
+    localStorage.removeItem('cv_builder_content');
     if (onUserAuth) {
       onUserAuth(null);
     }
@@ -149,11 +148,6 @@ export default function HeaderActions(props = {}) {
           >
             <MenuIcon className="size-4 text-slate-300" />
             <span className="text-xs font-semibold">Meniu</span>
-            {currentUser ? (
-              <Badge variant="warning" className="text-[10px] py-0 px-1.5 ml-0.5 gap-1 font-semibold">
-                <Zap className="size-2.5 fill-amber-400" /> {currentUser.credits ?? userCredits ?? 0}
-              </Badge>
-            ) : null}
           </Button>
         </MenuTrigger>
 
@@ -228,21 +222,6 @@ export default function HeaderActions(props = {}) {
               <span className="font-medium">Share & Cod QR</span>
             </MenuItem>
 
-            <MenuItem
-              value="blog"
-              onSelect={() => onOpenBlog?.()}
-              className="flex items-center justify-between text-xs px-2.5 py-2 rounded-lg cursor-pointer hover:bg-slate-800 text-slate-200 hover:text-slate-100 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <BookOpen className="size-3.5 text-purple-400" />
-                <span className="font-medium">Blog & Documentație</span>
-              </div>
-              {viewMode === 'blog' ? (
-                <Badge variant="blue" className="text-[9px] py-0 px-1 font-bold">Activ</Badge>
-              ) : (
-                <Badge variant="purple" className="text-[9px] py-0 px-1 font-bold">NEW</Badge>
-              )}
-            </MenuItem>
 
             {currentUser && (
               <>
@@ -333,20 +312,6 @@ export default function HeaderActions(props = {}) {
           </DialogPanel>
 
           <DialogFooter className="flex items-center justify-between">
-            {currentUser ? (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleLogout}
-              >
-                <LogOut className="size-3.5" />
-                Deconectare
-              </Button>
-            ) : (
-              <div />
-            )}
-
             <div className="flex items-center gap-2">
               <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">

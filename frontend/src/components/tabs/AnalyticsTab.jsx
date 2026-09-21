@@ -7,23 +7,32 @@ import {
   Link, 
   ShieldCheck, 
   TrendingUp,
-  QrCode
+  QrCode,
+  Lock
 } from 'lucide-react';
-import { Card } from '@/frontend/components/ui/card';
-import { Button } from '@/frontend/components/ui/button';
-import { Badge } from '@/frontend/components/ui/badge';
-import { useCv, useUI } from '@/frontend/src/context/index.jsx';
+import { Button } from '@/frontend/src/components/ui/button';
+import { Badge } from '@/frontend/src/components/ui/badge';
+import { useCv, useUI, useAuth } from '@/frontend/src/context/index.jsx';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from '../ui/empty';
 
 export default function AnalyticsTab(props = {}) {
   const cv = useCv();
   const ui = useUI();
+  const auth = useAuth();
+  const currentUser = props.currentUser ?? auth.currentUser;
 
   const analyticsEvents = props.analyticsEvents ?? cv.analyticsEvents ?? [];
   const slug = props.slug ?? cv.slug ?? 'alex-popescu';
   const onOpenShareModal = props.onOpenShareModal ?? (() => ui.setIsShareModalOpen(true));
 
   const [copiedLink, setCopiedLink] = useState(false);
-
 
   const hostedUrl = `https://cvbuilder.live/${slug}`;
 
@@ -32,6 +41,64 @@ export default function AnalyticsTab(props = {}) {
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
+
+  if (!currentUser) {
+    return (
+      <div className="w-full h-full min-h-[450px] flex items-center justify-center p-4">
+        <Empty className="w-full max-w-md border-slate-800 bg-slate-900/60 p-8 shadow-sm">
+          <EmptyHeader>
+            <EmptyMedia variant="icon" className="size-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <Lock className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle className="text-base font-bold text-slate-100">
+              Autentificare necesară pentru Statistici
+            </EmptyTitle>
+            <EmptyDescription className="text-xs text-slate-400 max-w-md leading-relaxed">
+              Conectați-vă în cont pentru a monitoriza vizualizările, descărcările PDF și scanările codului QR pentru CV-ul dumneavoastră.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent className="flex flex-col items-center gap-2">
+            <Button
+              onClick={() => auth?.openAuthModal?.()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer"
+            >
+              <Lock className="size-4" />
+              Conectare / Autentificare
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    );
+  }
+
+  if (analyticsEvents.length === 0) {
+    return (
+      <div className="w-full h-full min-h-[450px] flex items-center justify-center p-4">
+        <Empty className="w-full max-w-md border-slate-800 bg-slate-900/60 p-8 shadow-sm">
+          <EmptyHeader>
+            <EmptyMedia variant="icon" className="size-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
+              <BarChart3 className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle className="text-base font-bold text-slate-100">
+              Niciun eveniment de analiză înregistrat
+            </EmptyTitle>
+            <EmptyDescription className="text-xs text-slate-400 max-w-md leading-relaxed">
+              CV-ul dumneavoastră nu a înregistrat încă vizualizări sau descărcări. Partajați link-ul public sau codul QR pentru a începe monitorizarea engagement-ului.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent className="flex flex-col items-center gap-2">
+            <Button
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer"
+            >
+              <Link className="size-4" />
+              {copiedLink ? "Link Copiat!" : "Copiază Link Public CV"}
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    );
+  }
 
   // Compute metrics dynamically from Prisma DB analyticsEvents
   const totalViews = analyticsEvents.filter(e => e.eventType === 'view').length || 342;
@@ -71,7 +138,7 @@ export default function AnalyticsTab(props = {}) {
       </div>
 
       {/* Hosted Subdomain Box */}
-      <Card className="bg-slate-900 border-cyan-500/30 p-4 shadow-sm">
+      <div className="bg-slate-900 border-cyan-500/30 p-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -89,11 +156,11 @@ export default function AnalyticsTab(props = {}) {
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Key Metric Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card className="bg-slate-950/80 border-slate-800 p-4">
+        <div className="bg-slate-950/80 border-slate-800 p-4">
           <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
             <Eye className="size-3.5 text-blue-400 shrink-0" />
             <span>Total Views</span>
@@ -104,9 +171,9 @@ export default function AnalyticsTab(props = {}) {
           <div className="text-xs font-semibold text-emerald-400 mt-1">
             +18.4% vs last week
           </div>
-        </Card>
+        </div>
 
-        <Card className="bg-slate-950/80 border-slate-800 p-4">
+        <div className="bg-slate-950/80 border-slate-800 p-4">
           <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
             <Download className="size-3.5 text-emerald-400 shrink-0" />
             <span>PDF Downloads</span>
@@ -117,9 +184,9 @@ export default function AnalyticsTab(props = {}) {
           <div className="text-xs font-semibold text-emerald-400 mt-1">
             26% conversion rate
           </div>
-        </Card>
+        </div>
 
-        <Card className="bg-slate-950/80 border-slate-800 p-4">
+        <div className="bg-slate-950/80 border-slate-800 p-4">
           <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
             <QrCode className="size-3.5 text-purple-400 shrink-0" />
             <span>QR Code Scans</span>
@@ -130,11 +197,11 @@ export default function AnalyticsTab(props = {}) {
           <div className="text-xs font-semibold text-purple-400 mt-1">
             From print & PDF headers
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Daily Views Bar Chart (Linked to Total Views) */}
-      <Card className="bg-slate-900 border-slate-800 p-5 space-y-4">
+      <div className="bg-slate-900 border-slate-800 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="size-4 text-sky-400 shrink-0" />
@@ -174,7 +241,7 @@ export default function AnalyticsTab(props = {}) {
             );
           })}
         </div>
-      </Card>
+      </div>
 
       {/* Referrer Breakdown Table */}
       <div className="space-y-3">
@@ -183,7 +250,7 @@ export default function AnalyticsTab(props = {}) {
           <span>Traffic Sources & Referrers</span>
         </div>
 
-        <Card className="bg-slate-900 border-slate-800 overflow-hidden divide-y divide-slate-800/60 p-0">
+        <div className="bg-slate-900 border-slate-800 overflow-hidden divide-y divide-slate-800/60 p-0">
           {topReferrers.map((ref, idx) => (
             <div key={idx} className="flex items-center justify-between p-3.5 px-4 hover:bg-slate-800/40 transition-colors">
               <span className="text-xs font-semibold text-slate-200">{ref.source}</span>
@@ -195,7 +262,7 @@ export default function AnalyticsTab(props = {}) {
               </div>
             </div>
           ))}
-        </Card>
+        </div>
       </div>
 
       {/* Privacy Notice */}

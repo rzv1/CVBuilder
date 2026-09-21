@@ -7,16 +7,27 @@ import {
   CheckCircle, 
   Wifi, 
   Radio,
-  UserCheck
+  UserCheck,
+  Lock
 } from 'lucide-react';
-import { Card } from '@/frontend/components/ui/card';
-import { Button } from '@/frontend/components/ui/button';
-import { Badge } from '@/frontend/components/ui/badge';
-import { Input } from '@/frontend/components/ui/input';
-import { useCv } from '@/frontend/src/context/index.jsx';
+import { Card } from '@/frontend/src/components/ui/card';
+import { Button } from '@/frontend/src/components/ui/button';
+import { Badge } from '@/frontend/src/components/ui/badge';
+import { Input } from '@/frontend/src/components/ui/input';
+import { useCv, useAuth } from '@/frontend/src/context/index.jsx';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from '../ui/empty';
 
 export default function CollaborationTab(props = {}) {
   const cv = useCv();
+  const auth = useAuth();
+  const currentUser = props.currentUser ?? auth.currentUser;
 
   const groupMembers = props.groupMembers ?? cv.groupMembers ?? [];
   const comments = props.comments ?? cv.comments ?? [];
@@ -25,7 +36,6 @@ export default function CollaborationTab(props = {}) {
 
   const [newCommentText, setNewCommentText] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
-
 
   const handleSendComment = async () => {
     if (!newCommentText.trim()) return;
@@ -49,6 +59,64 @@ export default function CollaborationTab(props = {}) {
   };
 
   const activeCollaboratorsCount = groupMembers.filter(c => c.active !== false).length;
+
+  if (!currentUser) {
+    return (
+      <div className="w-full h-full min-h-[450px] flex items-center justify-center p-4">
+        <Empty className="w-full max-w-md border-slate-800 bg-slate-900/60 p-8 shadow-sm">
+          <EmptyHeader>
+            <EmptyMedia variant="icon" className="size-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <Lock className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle className="text-base font-bold text-slate-100">
+              Autentificare necesară pentru Colaborare
+            </EmptyTitle>
+            <EmptyDescription className="text-xs text-slate-400 max-w-md leading-relaxed">
+              Conectați-vă în cont pentru a iniția sau participa la sesiuni live de editare colaborativă, feedback și comentarii pe CV.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent className="flex flex-col items-center gap-2">
+            <Button
+              onClick={() => auth?.openAuthModal?.()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer"
+            >
+              <Lock className="size-4" />
+              Conectare / Autentificare
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    );
+  }
+
+  if (groupMembers.length === 0 && comments.length === 0) {
+    return (
+      <div className="w-full h-full min-h-[450px] flex items-center justify-center p-4">
+        <Empty className="w-full max-w-md border-slate-800 bg-slate-900/60 p-8 shadow-sm">
+          <EmptyHeader>
+            <EmptyMedia variant="icon" className="size-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+              <Users className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle className="text-base font-bold text-slate-100">
+              Nicio sesiune de colaborare activă
+            </EmptyTitle>
+            <EmptyDescription className="text-xs text-slate-400 max-w-md leading-relaxed">
+              Nu există colaboratori conectați sau comentarii adăugate pe acest CV. Partajați link-ul camerei pentru a invita colegi sau mentori.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent className="flex flex-col items-center gap-2">
+            <Button
+              onClick={handleCopyInvite}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer"
+            >
+              <Link className="size-4" />
+              {copiedLink ? "Link Copiat!" : "Copiază Link Invitație"}
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-5">

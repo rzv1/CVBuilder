@@ -10,11 +10,21 @@ import {
   EditableInput,
   EditablePreview,
 } from '@/frontend/src/components/ui/editable';
+import { useCv } from '@/frontend/src/context/index.jsx';
 
-export default function PersonalDetailsSection({
-  personalData,
-  handlePersonalChange
-}) {
+export default function PersonalDetailsSection() {
+  const { cvData, handleUpdateCvData } = useCv();
+  const personalData = cvData?.personal || {};
+
+  const handlePersonalChange = (field, value) => {
+    handleUpdateCvData((prev) => ({
+      ...prev,
+      personal: {
+        ...(prev?.personal || {}),
+        [field]: value,
+      },
+    }));
+  };
   return (
     <AccordionItem value="personal" className="border border-slate-800 rounded-xl bg-slate-900 overflow-hidden shadow-sm">
       <AccordionTrigger className="w-full flex items-center justify-between p-4 px-5 text-left hover:bg-slate-800/40 data-[state=open]:bg-slate-800/80 data-[state=open]:border-b data-[state=open]:border-slate-700/60 transition-colors">
@@ -32,6 +42,7 @@ export default function PersonalDetailsSection({
             <FieldLabel className="text-xs font-semibold text-slate-400">Full Name</FieldLabel>
             <Editable
               value={personalData?.name || ''}
+              autoResize
               onValueChange={(details) => handlePersonalChange('name', details.value)}
               onValueRevert={(details) => handlePersonalChange('name', details.value)}
               placeholder="e.g. John Doe"
@@ -39,7 +50,9 @@ export default function PersonalDetailsSection({
             >
               <EditableArea>
                 <EditablePreview />
-                <EditableInput />
+                <EditableInput asChild className="data-autoresize:wrap-break-word">
+                  <textarea rows={1} />
+                </EditableInput>
               </EditableArea>
             </Editable>
           </Field>
@@ -54,6 +67,7 @@ export default function PersonalDetailsSection({
             <FieldLabel className="text-xs font-semibold text-slate-400">Professional Title</FieldLabel>
             <Editable
               value={personalData?.title || ''}
+              autoResize
               onValueChange={(details) => handlePersonalChange('title', details.value)}
               onValueRevert={(details) => handlePersonalChange('title', details.value)}
               placeholder="e.g. Senior Full Stack Engineer"
@@ -61,7 +75,9 @@ export default function PersonalDetailsSection({
             >
               <EditableArea>
                 <EditablePreview />
-                <EditableInput />
+                <EditableInput asChild className="data-autoresize:wrap-break-word">
+                  <textarea rows={1} />
+                </EditableInput>
               </EditableArea>
             </Editable>
           </Field>
@@ -71,6 +87,7 @@ export default function PersonalDetailsSection({
             <FieldLabel className="text-xs font-semibold text-slate-400">Email Address</FieldLabel>
             <Editable
               value={personalData?.email || ''}
+              autoResize
               onValueChange={(details) => handlePersonalChange('email', details.value)}
               onValueRevert={(details) => handlePersonalChange('email', details.value)}
               placeholder="e.g. john.doe@example.com"
@@ -78,7 +95,9 @@ export default function PersonalDetailsSection({
             >
               <EditableArea>
                 <EditablePreview />
-                <EditableInput type="email" />
+                <EditableInput asChild className="data-autoresize:wrap-break-word">
+                  <textarea rows={1} />
+                </EditableInput>
               </EditableArea>
             </Editable>
           </Field>
@@ -87,6 +106,7 @@ export default function PersonalDetailsSection({
             <FieldLabel className="text-xs font-semibold text-slate-400">Phone Number</FieldLabel>
             <Editable
               value={personalData?.phone || ''}
+              autoResize
               onValueChange={(details) => handlePersonalChange('phone', details.value)}
               onValueRevert={(details) => handlePersonalChange('phone', details.value)}
               placeholder="e.g. +1 555 123 4567"
@@ -94,7 +114,9 @@ export default function PersonalDetailsSection({
             >
               <EditableArea>
                 <EditablePreview />
-                <EditableInput type="tel" />
+                <EditableInput asChild className="data-autoresize:wrap-break-word">
+                  <textarea rows={1} />
+                </EditableInput>
               </EditableArea>
             </Editable>
           </Field>
@@ -104,6 +126,7 @@ export default function PersonalDetailsSection({
             <FieldLabel className="text-xs font-semibold text-slate-400">Location</FieldLabel>
             <Editable
               value={personalData?.address || personalData?.location || ''}
+              autoResize
               onValueChange={(details) => {
                 handlePersonalChange('address', details.value);
                 handlePersonalChange('location', details.value);
@@ -117,7 +140,9 @@ export default function PersonalDetailsSection({
             >
               <EditableArea>
                 <EditablePreview />
-                <EditableInput />
+                <EditableInput asChild className="data-autoresize:wrap-break-word">
+                  <textarea rows={1} />
+                </EditableInput>
               </EditableArea>
             </Editable>
           </Field>
@@ -126,6 +151,7 @@ export default function PersonalDetailsSection({
             <FieldLabel className="text-xs font-semibold text-slate-400">Website / Portfolio</FieldLabel>
             <Editable
               value={personalData?.website || ''}
+              autoResize
               onValueChange={(details) => handlePersonalChange('website', details.value)}
               onValueRevert={(details) => handlePersonalChange('website', details.value)}
               placeholder="e.g. https://johndoe.dev"
@@ -133,7 +159,9 @@ export default function PersonalDetailsSection({
             >
               <EditableArea>
                 <EditablePreview />
-                <EditableInput />
+                <EditableInput asChild className="data-autoresize:wrap-break-word">
+                  <textarea rows={1} />
+                </EditableInput>
               </EditableArea>
             </Editable>
           </Field>

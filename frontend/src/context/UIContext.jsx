@@ -11,7 +11,6 @@ export function UIProvider({ children }) {
   const { pendingProposal, proposalViewMode } = useAiProposal();
 
   // Navigation & View Mode State
-  const [viewMode, setViewMode] = useState('app'); // 'app' | 'blog'
   const [isDevMode, setIsDevMode] = useState(false);
   const [activeTab, setActiveTab] = useState('editor'); // 'editor' | 'ats' | 'git' | 'collab' | 'analytics'
   const [isAiChatOpen, setIsAiChatOpen] = useState(true);
@@ -35,9 +34,6 @@ export function UIProvider({ children }) {
     });
   }, [activeTab]);
 
-  const toggleBlogView = useCallback(() => {
-    setViewMode((prev) => (prev === 'blog' ? 'app' : 'blog'));
-  }, []);
 
   const toggleAiChat = useCallback(() => {
     setIsAiChatOpen((prev) => !prev);
@@ -78,9 +74,6 @@ export function UIProvider({ children }) {
   }, [isExportingPdf, handleRecordAnalytics, cvData, styleData, activeVariant, pendingProposal, proposalViewMode]);
 
   const value = {
-    viewMode,
-    setViewMode,
-    toggleBlogView,
     isDevMode,
     setIsDevMode,
     toggleDevMode,

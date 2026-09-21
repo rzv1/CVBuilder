@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   GraduationCap,
   Plus,
@@ -7,9 +7,9 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { Button } from '@/frontend/components/ui/button';
-import { Badge } from '@/frontend/components/ui/badge';
-import { Input } from '@/frontend/components/ui/input';
+import { Button } from '@/frontend/src/components/ui/button';
+import { Badge } from '@/frontend/src/components/ui/badge';
+import { Input } from '../../ui/input';
 import { Textarea } from '@/frontend/components/ui/textarea';
 import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/frontend/src/components/ui/accordion';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/frontend/src/components/ui/empty';
@@ -28,18 +28,53 @@ import {
   EditablePreview,
 } from '@/frontend/src/components/ui/editable';
 import { useSortable } from '@dnd-kit/react/sortable';
+import { useCv } from '@/frontend/src/context/index.jsx';
 
-export default function EducationSection({
-  educationData = [],
-  addEducation,
-  deleteEducation,
-  handleEducationChange,
-  draggedItem,
-  handleDragStart,
-  handleDragOver,
-  handleDrop,
-  moveItem
-}) {
+export default function EducationSection() {
+  const { cvData, handleUpdateCvData } = useCv();
+  const educationData = cvData?.education || [];
+
+  const addEducation = () => {
+    const newEdu = {
+      id: `edu-${Date.now()}`,
+      degree: "Diplomă / Calificare",
+      institution: "Instituție de Învățământ",
+      location: "Oraș, Țară",
+      start: "2019",
+      end: "2023",
+      description: "Rezumat al programului de studii și realizări principale."
+    };
+    handleUpdateCvData(prev => ({
+      ...prev,
+      education: [...(prev?.education || []), newEdu]
+    }));
+  };
+
+  const deleteEducation = (idx) => {
+    handleUpdateCvData(prev => ({
+      ...prev,
+      education: (prev?.education || []).filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleEducationChange = (idx, field, value) => {
+    handleUpdateCvData(prev => {
+      const list = [...(prev?.education || [])];
+      list[idx] = { ...list[idx], [field]: value };
+      return { ...prev, education: list };
+    });
+  };
+
+  const moveItem = (_sectionKey, index, direction) => {
+    const targetIdx = index + direction;
+    handleUpdateCvData(prev => {
+      const list = [...(prev?.education || [])];
+      if (targetIdx < 0 || targetIdx >= list.length) return prev;
+      const [removed] = list.splice(index, 1);
+      list.splice(targetIdx, 0, removed);
+      return { ...prev, education: list };
+    });
+  };
   return (
     <AccordionItem value="education" className="border border-slate-800 rounded-xl bg-slate-900 overflow-hidden shadow-sm">
       <AccordionTrigger className="w-full flex items-center justify-between p-4 px-5 text-left hover:bg-slate-800/40 data-[state=open]:bg-slate-800/80 data-[state=open]:border-b data-[state=open]:border-slate-700/60 transition-colors">
@@ -53,10 +88,10 @@ export default function EducationSection({
       </AccordionTrigger>
 
       <AccordionPanel className="p-6 space-y-6 bg-slate-950" containerClassName="p-0">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <span className="text-xs text-slate-400 italic">Drag handle to reorder education entries</span>
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <span className="text-xs text-slate-400 italic">Drag handle to reorder or delete</span>
           <Button size="xs" onClick={addEducation} className="h-7 bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1 text-xs">
-            <Plus className="size-3.5" /> Add Education
+            <Plus className="size-3.5" /> Add
           </Button>
         </div>
 
@@ -85,7 +120,6 @@ export default function EducationSection({
               eduIdx={eduIdx}
               totalItems={educationData.length}
               handleEducationChange={handleEducationChange}
-              deleteEducation={deleteEducation}
               moveItem={moveItem}
             />
           ))
@@ -100,9 +134,9 @@ function EducationCard({
   eduIdx,
   totalItems,
   handleEducationChange,
-  deleteEducation,
   moveItem
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const sortableId = edu.id || `edu-${eduIdx}`;
   const { ref, handleRef, isDragging } = useSortable({
     id: sortableId,
@@ -111,23 +145,33 @@ function EducationCard({
     data: { sectionKey: 'education', index: eduIdx }
   });
 
+  const isExpanded = !isDragging && isOpen;
+
   return (
     <div
       ref={ref}
-      className={`p-5 rounded-xl border border-slate-800 bg-slate-900/90 space-y-5 transition-all ${
+      className={`mb-3 rounded-xl border border-slate-800 bg-slate-900/90 overflow-hidden transition-all ${
         isDragging ? 'opacity-50 ring-2 ring-indigo-500' : ''
       }`}
     >
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3 gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center justify-between p-3.5 px-4 cursor-pointer transition-colors select-none ${
+          isExpanded 
+            ? 'bg-slate-800/60 text-slate-100' 
+            : 'hover:bg-slate-800/40 text-slate-300'
+        }`}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
           <span
             ref={handleRef}
+            onClick={(e) => e.stopPropagation()}
             className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 p-1 -ml-1 rounded select-none touch-none"
             title="Drag to reorder"
           >
             <GripVertical className="size-4" />
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="ghost"
               size="icon-xs"
@@ -149,122 +193,125 @@ function EducationCard({
               <ArrowDown className="size-3" />
             </Button>
           </div>
-          <strong className="text-xs text-slate-200">
+          <strong className="text-xs font-semibold truncate">
             {edu.degree || 'Degree'} @ {edu.institution || 'University'}
           </strong>
         </div>
-
-        <Button
-          variant="destructive"
-          size="icon-xs"
-          onClick={() => deleteEducation(eduIdx)}
-          className="h-7 w-7 text-red-400 hover:bg-red-500/20"
-          title="Delete Education"
-        >
-          <Trash2 className="size-3.5" />
-        </Button>
       </div>
 
-      {/* Degree / Qualification */}
-      <Field>
-        <FieldLabel className="text-xs font-semibold text-slate-400">Degree / Qualification</FieldLabel>
-        <Editable
-          value={edu.degree || ''}
-          onValueChange={(details) => handleEducationChange(eduIdx, 'degree', details.value)}
-          onValueRevert={(details) => handleEducationChange(eduIdx, 'degree', details.value)}
-          placeholder="e.g. Bachelor of Science in Computer Science"
-          className="w-full max-w-none"
-        >
-          <EditableArea>
-            <EditablePreview />
-            <EditableInput />
-          </EditableArea>
-        </Editable>
-      </Field>
-
-      {/* 2-Column Grid with Continuous Vertical Separator */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1px_1fr] gap-x-8 gap-y-6 items-start">
-        {/* Row 1 */}
-        <Field className="md:col-start-1 md:row-start-1">
-          <FieldLabel className="text-xs font-semibold text-slate-400">Institution / University</FieldLabel>
-          <Editable
-            value={edu.institution || ''}
-            onValueChange={(details) => handleEducationChange(eduIdx, 'institution', details.value)}
-            onValueRevert={(details) => handleEducationChange(eduIdx, 'institution', details.value)}
-            placeholder="e.g. Stanford University"
-            className="w-full max-w-none"
-          >
-            <EditableArea>
-              <EditablePreview />
-              <EditableInput />
-            </EditableArea>
-          </Editable>
-        </Field>
-
-        {/* Continuous Vertical Separator spanning rows 1-2 */}
-        <Separator
-          orientation="vertical"
-          className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-2 bg-slate-800/80 self-stretch my-1"
-        />
-
-        <Field className="md:col-start-3 md:row-start-1">
-          <FieldLabel className="text-xs font-semibold text-slate-400">Location</FieldLabel>
-          <Editable
-            value={edu.location || ''}
-            onValueChange={(details) => handleEducationChange(eduIdx, 'location', details.value)}
-            onValueRevert={(details) => handleEducationChange(eduIdx, 'location', details.value)}
-            placeholder="e.g. Stanford, CA"
-            className="w-full max-w-none"
-          >
-            <EditableArea>
-              <EditablePreview />
-              <EditableInput />
-            </EditableArea>
-          </Editable>
-        </Field>
-
-        {/* Row 2 */}
-        <DatePicker
-          value={edu.start ? [edu.start] : []}
-          onValueChange={(details) => handleEducationChange(eduIdx, 'start', details.valueAsString[0] || '')}
-          selectionMode="single"
-          className="md:col-start-1 md:row-start-2 flex flex-col gap-1.5"
-        >
-          <DatePickerLabel className="text-xs font-semibold text-slate-400">Start Date</DatePickerLabel>
-          <DatePickerInput />
-          <DatePickerCalendar />
-        </DatePicker>
-
-        <DatePicker
-          value={edu.end ? [edu.end] : []}
-          onValueChange={(details) => handleEducationChange(eduIdx, 'end', details.valueAsString[0] || '')}
-          selectionMode="single"
-          className="md:col-start-3 md:row-start-2 flex flex-col gap-1.5"
-        >
-          <div className="flex items-center justify-between">
-            <DatePickerLabel className="text-xs font-semibold text-slate-400">End Date</DatePickerLabel>
-            <button
-              type="button"
-              onClick={() => handleEducationChange(eduIdx, 'end', edu.end === 'Present' ? '' : 'Present')}
-              className="text-[11px] text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer"
+      {isExpanded && (
+        <div className="p-5 pt-4 space-y-5 border-t border-slate-800/80">
+          {/* Degree / Qualification */}
+          <Field>
+            <FieldLabel className="text-xs font-semibold text-slate-400">Degree / Qualification</FieldLabel>
+            <Editable
+              value={edu.degree || ''}
+              autoResize
+              onValueChange={(details) => handleEducationChange(eduIdx, 'degree', details.value)}
+              onValueRevert={(details) => handleEducationChange(eduIdx, 'degree', details.value)}
+              placeholder="e.g. Bachelor of Science in Computer Science"
+              className="w-full max-w-none"
             >
-              {edu.end === 'Present' ? 'Clear Present' : 'Set Present'}
-            </button>
-          </div>
-          <DatePickerInput />
-          <DatePickerCalendar />
-        </DatePicker>
-      </div>
+              <EditableArea>
+                <EditablePreview />
+                <EditableInput asChild className="data-autoresize:wrap-break-word">
+                  <textarea rows={1}/>
+                </EditableInput>
+              </EditableArea>
+            </Editable>
+          </Field>
 
-      <Field>
-        <FieldLabel className="text-xs font-semibold text-slate-400">Description & Achievements</FieldLabel>
-        <Textarea
-          rows={2}
-          placeholder="e.g. Graduated with Honors, Thesis topic..."
-          value={edu.description || ''}
-          onChange={(e) => handleEducationChange(eduIdx, 'description', e.target.value)}
-        />
-      </Field>
+          {/* 2-Column Grid with Continuous Vertical Separator */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1px_1fr] gap-x-8 gap-y-6 items-start">
+            {/* Row 1 */}
+            <Field className="md:col-start-1 md:row-start-1">
+              <FieldLabel className="text-xs font-semibold text-slate-400">Institution / University</FieldLabel>
+              <Editable
+                value={edu.institution || ''}
+                autoResize
+                onValueChange={(details) => handleEducationChange(eduIdx, 'institution', details.value)}
+                onValueRevert={(details) => handleEducationChange(eduIdx, 'institution', details.value)}
+                placeholder="e.g. Stanford University"
+                className="w-full max-w-none"
+              >
+                <EditableArea>
+                  <EditablePreview />
+                  <EditableInput asChild className="data-autoresize:wrap-break-word">
+                    <textarea rows={1} />
+                  </EditableInput>
+                </EditableArea>
+              </Editable>
+            </Field>
+
+            {/* Continuous Vertical Separator spanning rows 1-2 */}
+            <Separator
+              orientation="vertical"
+              className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-2 bg-slate-800/80 self-stretch my-1"
+            />
+
+            <Field className="md:col-start-3 md:row-start-1">
+              <FieldLabel className="text-xs font-semibold text-slate-400">Location</FieldLabel>
+              <Editable
+                value={edu.location || ''}
+                autoResize
+                onValueChange={(details) => handleEducationChange(eduIdx, 'location', details.value)}
+                onValueRevert={(details) => handleEducationChange(eduIdx, 'location', details.value)}
+                placeholder="e.g. Stanford, CA"
+                className="w-full max-w-none"
+              >
+                <EditableArea>
+                  <EditablePreview />
+                  <EditableInput asChild className="data-autoresize:wrap-break-word">
+                    <textarea rows={1} />
+                  </EditableInput>
+                </EditableArea>
+              </Editable>
+            </Field>
+
+            {/* Row 2 */}
+            <DatePicker
+              value={edu.start ? [edu.start] : []}
+              onValueChange={(details) => handleEducationChange(eduIdx, 'start', details.valueAsString[0] || '')}
+              selectionMode="single"
+              className="md:col-start-1 md:row-start-2 flex flex-col gap-1.5"
+            >
+              <DatePickerLabel className="text-xs font-semibold text-slate-400">Start Date</DatePickerLabel>
+              <DatePickerInput />
+              <DatePickerCalendar />
+            </DatePicker>
+
+            <DatePicker
+              value={edu.end ? [edu.end] : []}
+              onValueChange={(details) => handleEducationChange(eduIdx, 'end', details.valueAsString[0] || '')}
+              selectionMode="single"
+              className="md:col-start-3 md:row-start-2 flex flex-col gap-1.5"
+            >
+              <div className="flex items-center justify-between">
+                <DatePickerLabel className="text-xs font-semibold text-slate-400">End Date</DatePickerLabel>
+                <button
+                  type="button"
+                  onClick={() => handleEducationChange(eduIdx, 'end', edu.end === 'Present' ? '' : 'Present')}
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer"
+                >
+                  {edu.end === 'Present' ? 'Clear Present' : 'Set Present'}
+                </button>
+              </div>
+              <DatePickerInput />
+              <DatePickerCalendar />
+            </DatePicker>
+          </div>
+
+          <Field>
+            <FieldLabel className="text-xs font-semibold text-slate-400">Description & Achievements</FieldLabel>
+            <Textarea
+              rows={2}
+              placeholder="e.g. Graduated with Honors, Thesis topic..."
+              value={edu.description || ''}
+              onChange={(e) => handleEducationChange(eduIdx, 'description', e.target.value)}
+            />
+          </Field>
+        </div>
+      )}
     </div>
   );
 }

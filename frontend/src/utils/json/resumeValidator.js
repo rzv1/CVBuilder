@@ -1,6 +1,6 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import jsonResumeSchema from '../../data/content-schema.json' with { type: 'json' };
+import jsonResumeSchema from '../../data/content/content-schema.json' with { type: 'json' };
 
 const ajv = new Ajv({ allErrors: true, strict: false, validateSchema: false });
 addFormats(ajv);

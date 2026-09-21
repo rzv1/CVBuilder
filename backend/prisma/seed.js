@@ -12,8 +12,8 @@ async function main() {
   console.log('Starting Prisma Database Seed process...');
 
   const rootDataDir = path.resolve(__dirname, '../../frontend/src/data');
-  const contentPath = path.join(rootDataDir, 'content.json');
-  const stylePath = path.join(rootDataDir, 'style.json');
+  const contentPath = path.join(rootDataDir, 'content/content.json');
+  const stylePath = path.join(rootDataDir, 'style/style.json');
 
   // 1. Seed Main User
   const mainUser = await prisma.user.upsert({
@@ -221,6 +221,62 @@ async function main() {
       });
     }
     console.log('Seeded AnalyticsEvents successfully.');
+
+    // 7. Seed Initial Target Jobs
+    const initialJobs = [
+      {
+        id: "job-1",
+        userId: mainUser.id,
+        title: "Senior Full Stack Engineer",
+        company: "TechScale Solutions",
+        location: "Remote / USA",
+        importedAt: "Extensie Web • Acum 10 min",
+        iconSeed: "TechScale",
+        description: "Căutăm un Frontend Architect cu experiență avansată în React 19, Next.js, Node.js, microservicii scalabile și cloud AWS...",
+        currentScore: 84,
+        potentialScore: 96,
+        maxScoreAchieved: 84,
+        coverLetter: "Stimate Manager de Recrutare,\\n\\nVă scriu pentru a-mi exprima interesul ferm pentru poziția de Senior Full Stack Engineer în cadrul TechScale Solutions.\\n\\nCu o experiență vastă în dezvoltarea de aplicații web de înaltă performanță și scalabilitate (React, Node.js, Arhitecturi Cloud), consider că profilul meu tehnic se potrivește excelent cerințelor din Job Description.\\n\\nCu stimă,\\nAlexandru Popescu"
+      },
+      {
+        id: "job-2",
+        userId: mainUser.id,
+        title: "Frontend Architect & Tech Lead",
+        company: "CloudCore Systems",
+        location: "București / Hybrid",
+        importedAt: "Extensie Web • Ieri",
+        iconSeed: "CloudCore",
+        description: "Căutăm un Frontend Architect cu experiență avansată în React 19, Next.js, WebGL, TypeScript, Tailwind CSS și arhitecturi micro-frontend high-scale...",
+        currentScore: 72,
+        potentialScore: 90,
+        maxScoreAchieved: 75,
+        coverLetter: "Stimate Manager de Recrutare CloudCore Systems,\\n\\nVă adresez această scrisoare de intenție pentru rolul de Frontend Architect & Tech Lead.\\n\\nCu respect,\\nAlexandru Popescu"
+      },
+      {
+        id: "job-3",
+        userId: mainUser.id,
+        title: "Lead Backend Engineer (Node.js)",
+        company: "DataStream Tech",
+        location: "Remote / EU",
+        importedAt: "Extensie Web • Recent",
+        iconSeed: "DataStream",
+        description: "DataStream recrutează Lead Backend Engineer expert în Node.js, Express, PostgreSQL, Redis, Kubernetes și microservicii distribuite...",
+        currentScore: 0,
+        potentialScore: 0,
+        maxScoreAchieved: 0,
+        isOptimized: false,
+        coverLetter: "Stimate Echipă DataStream Tech,\\n\\nDoresc să îmi depun candidatura pentru poziția de Lead Backend Engineer (Node.js).\\n\\nCu stimă,\\nAlexandru Popescu"
+      }
+    ];
+
+    for (const j of initialJobs) {
+      await prisma.targetJob.upsert({
+        where: { id: j.id },
+        update: j,
+        create: j
+      });
+    }
+    console.log('Seeded TargetJobs successfully.');
   }
 
   console.log('Database Seeding completed successfully!');

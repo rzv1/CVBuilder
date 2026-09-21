@@ -1,0 +1,156 @@
+{
+  "personal": {
+    "name": "Alexandru Popescu",
+    "title": "Senior Full Stack Engineer & Cloud Architect",
+    "email": "alexandru.popescu@example.com",
+    "phone": "+40 721 234 567",
+    "location": "București, România",
+    "github": "https://github.com/alexandru-popescu",
+    "linkedin": "https://linkedin.com/in/alexandru-popescu",
+    "website": "https://alexandru.dev",
+    "summary": "Inginer software cu peste 8 ani de experiență în proiectarea și construirea de aplicații web distribuite, scalabile și reactive. Expertiză aprofundată în React, Node.js, TypeScript și arhitecturi cloud pe AWS. Pasionat de arhitecturi moderne frontend, optimizarea performanței și securitatea sistemelor."
+  },
+  "experience": [
+    {
+      "id": "exp-1",
+      "role": "Lead Software Architect",
+      "company": "TechCorp Global Solutions",
+      "location": "București, România (Hibrid)",
+      "start": "2022",
+      "end": "Prezent",
+      "variant": "all",
+      "description": "Coordonează arhitectura platformelor SaaS de generație nouă și conduce o echipă multidisciplinară de 12 ingineri.",
+      "bullets": [
+        "A redus latența API-urilor cu 45% prin migrarea spre microservicii bazate pe tRPC și caching Redis distribuit.",
+        "A implementat un pipeline automatizat de CI/CD care a scăzut timpul de lansare de la 3 zile la mai puțin de 20 de minute.",
+        "A coordonat refactorizarea arhitecturii frontend către React 19 și un design system bazat pe componente Ark UI accesibile."
+      ],
+      "skills": ["React", "TypeScript", "Node.js", "Docker", "AWS", "PostgreSQL", "tRPC"]
+    },
+    {
+      "id": "exp-2",
+      "role": "Senior Frontend Engineer",
+      "company": "Digital Nexus Labs",
+      "location": "Cluj-Napoca, România (Remote)",
+      "start": "2019",
+      "end": "2022",
+      "variant": "all",
+      "description": "Dezvoltarea interfețelor reactive și a componentelor critice de vizualizare date pentru clienți din domeniul fintech.",
+      "bullets": [
+        "A dezvoltat un motor intern de randare PDF în timp real și generare de contracte financiare securizate.",
+        "A atins un scor de 98+ pe Google Lighthouse prin optimizarea încărcării asset-urilor și tree-shaking eficient.",
+        "A contribuit activ la biblioteca open-source a companiei, primind peste 1.200 de stele pe GitHub."
+      ],
+      "skills": ["JavaScript", "React", "Next.js", "Tailwind CSS", "GraphQL", "Jest"]
+    },
+    {
+      "id": "exp-3",
+      "role": "Software Developer",
+      "company": "Innovatech Solutions",
+      "location": "Iași, România",
+      "start": "2016",
+      "end": "2019",
+      "variant": "all",
+      "description": "Dezvoltare full stack pentru aplicații interne de management operațional și integrare cu servicii terțe.",
+      "bullets": [
+        "A proiectat și dezvoltat RESTful APIs robuste consumate de peste 50.000 de utilizatori zilnici.",
+        "A optimizat interogările bazei de date relaționale, scăzând consumul de resurse CPU ale serverului cu 30%."
+      ],
+      "skills": ["JavaScript", "Node.js", "Express", "MongoDB", "REST API", "Git"]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu-1",
+      "degree": "Master în Securitatea Informației și Sisteme Distribuite",
+      "institution": "Universitatea Politehnica din București",
+      "location": "București, România",
+      "start": "2016",
+      "end": "2018",
+      "description": "Disertație axată pe mecanisme de criptare avansate și consens descentralizat în rețele distribuite."
+    },
+    {
+      "id": "edu-2",
+      "degree": "Licență în Informatică și Ingineria Sistemelor",
+      "institution": "Universitatea Politehnica din București",
+      "location": "București, România",
+      "start": "2012",
+      "end": "2016",
+      "description": "Absolvit cu distincție. Specializare în algoritmi complecși, structuri de date și arhitectura calculatoarelor."
+    }
+  ],
+  "skills": [
+    {
+      "id": "sk-1",
+      "category": "Frontend Architecture",
+      "items": ["React 19", "TypeScript", "Next.js", "Ark UI / Shadcn", "Tailwind CSS", "Vite", "TanStack Query"]
+    },
+    {
+      "id": "sk-2",
+      "category": "Backend & Cloud Services",
+      "items": ["Node.js", "tRPC", "PostgreSQL", "Prisma", "Docker", "AWS (ECS, S3, RDS)", "Redis"]
+    },
+    {
+      "id": "sk-3",
+      "category": "Engineering Practices",
+      "items": ["Clean Architecture", "CI/CD (GitHub Actions)", "TDD & Testing", "Performance Optimization", "Microfrontends"]
+    }
+  ],
+  "languages": [
+    {
+      "id": "lang-1",
+      "name": "Română",
+      "level": "Native / Bilingual"
+    },
+    {
+      "id": "lang-2",
+      "name": "Engleză",
+      "level": "Full Professional (C1 / C2)"
+    },
+    {
+      "id": "lang-3",
+      "name": "Franceză",
+      "level": "Professional Working (B2)"
+    }
+  ],
+  "awards": [
+    {
+      "id": "aw-1",
+      "title": "Architect of the Year",
+      "issuer": "TechCorp Excellence Awards",
+      "date": "2024",
+      "description": "Recunoaștere pentru conducerea cu succes a migrației arhitecturale a platformei enterprise globale."
+    },
+    {
+      "id": "aw-2",
+      "title": "Premiul I - Hackathon Cloud Innovations",
+      "issuer": "Bucharest Tech Week",
+      "date": "2023",
+      "description": "Dezvoltarea unei soluții serverless scalabile de procesare și analiză automată a documentelor financiare."
+    }
+  ],
+  "customSections": [
+    {
+      "id": "custom-sec-1",
+      "title": "Proiecte Relevante & Open Source",
+      "items": [
+        {
+          "id": "csi-1",
+          "heading": "CVBuilder Live Engine",
+          "subheading": "Creator & Lead Maintainer",
+          "start": "2024",
+          "end": "Prezent",
+          "detail": "Platformă open-source de generare și personalizare de CV-uri reactive bazată pe React 19, Monaco Editor și Ark UI."
+        },
+        {
+          "id": "csi-2",
+          "heading": "Micro-State Sync Library",
+          "subheading": "Autor",
+          "start": "2023",
+          "end": "2024",
+          "detail": "Pachet npm ultra-ușor pentru sincronizarea fără conflicte a stărilor locale cu patch-uri RFC 6902."
+        }
+      ]
+    }
+  ]
+}

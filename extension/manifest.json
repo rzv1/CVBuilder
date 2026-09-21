@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "CVBuilder - Job Description Extractor",
+  "version": "1.0.0",
+  "description": "Extrage automat job-uri țintă (JSON-LD & DOM) și le salvează persistent în profilul utilizatorului din CVBuilder.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "http://localhost:5173/*",
+    "http://127.0.0.1:*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "UI/dist/index.html",
+    "default_title": "CVBuilder Job Extractor",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  }
+}

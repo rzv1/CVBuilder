@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { generateJsonPatch, validateClientCvData } from '../utils/json/index.js';
 import { projectMasterToVariant, mergeVariantToMaster } from '../utils/variantProjection.js';
 import { useTRPC, trpcClient } from '../lib/trpc.js';
+import { useAuth } from './AuthContext.jsx';
 
 const CvContext = createContext(null);
 
 export function CvProvider({ children }) {
   const queryClient = useQueryClient();
   const trpc = useTRPC();
+  const { currentUser } = useAuth() || {};
 
   const [masterCvData, setMasterCvData] = useState(null);
   const [styleData, setStyleData] = useState(null);
@@ -22,18 +24,20 @@ export function CvProvider({ children }) {
   const [analyticsEvents, setAnalyticsEvents] = useState([]);
   const [slug, setSlug] = useState('');
 
-  // TanStack Query to fetch CV data via tRPC
-  const cvQuery = useQuery(trpc.cv.get.queryOptions());
-
+  // TanStack Query to fetch CV data via tRPC (only when logged in)
+  const cvQuery = useQuery({
+    ...trpc.cv.get.queryOptions({ userId: currentUser?.id }),
+    enabled: Boolean(currentUser),
+  });
 
   // Reference for last synced RAM snapshot to calculate minimum RFC 6902 patches
   const lastSyncedVariantRAMRef = useRef(null);
 
   // Derived filtered RAM state for the active variant
   const cvData = useMemo(() => {
-    if (!masterCvData) return null;
+    if (!currentUser || !masterCvData) return null;
     return projectMasterToVariant(masterCvData, activeVariant);
-  }, [masterCvData, activeVariant]);
+  }, [currentUser, masterCvData, activeVariant]);
 
   useEffect(() => {
     if (cvData) {
@@ -41,9 +45,23 @@ export function CvProvider({ children }) {
     }
   }, [activeVariant, cvData]);
 
+  // Clear CV data when user logs out
+  useEffect(() => {
+    if (!currentUser) {
+      setMasterCvData(null);
+      setStyleData(null);
+      setVariants([]);
+      setGitCommits([]);
+      setGroupMembers([]);
+      setComments([]);
+      setAnalyticsEvents([]);
+      lastSyncedVariantRAMRef.current = null;
+    }
+  }, [currentUser]);
+
   // Sync loaded server data into local state when query completes
   useEffect(() => {
-    if (cvQuery.data && cvQuery.data.success) {
+    if (currentUser && cvQuery.data && cvQuery.data.success) {
       const data = cvQuery.data;
       if (data.content) {
         setMasterCvData(data.content);
@@ -59,7 +77,7 @@ export function CvProvider({ children }) {
       if (data.analyticsEvents) setAnalyticsEvents(data.analyticsEvents);
       if (data.slug) setSlug(data.slug);
     }
-  }, [cvQuery.data]);
+  }, [currentUser, cvQuery.data]);
 
   // Debounced API persist handle using RFC 6902 JSON Patches
   const saveTimerRef = useRef(null);
@@ -84,6 +102,7 @@ export function CvProvider({ children }) {
 
       trpcClient.cv.save
         .mutate({
+          userId: currentUser?.id,
           variantId,
           patches,
           style: style || styleData,
@@ -99,9 +118,9 @@ export function CvProvider({ children }) {
 
   // State update callback for active variant RAM content
   const handleUpdateCvData = (updater) => {
-    if (!cvData) return;
-    const currentVariantRAM = cvData;
+    const currentVariantRAM = cvData || {};
     const nextVariantRAM = typeof updater === 'function' ? updater(currentVariantRAM) : updater;
+    if (!nextVariantRAM) return;
 
     // Validate client payload
     const val = validateClientCvData(nextVariantRAM);
