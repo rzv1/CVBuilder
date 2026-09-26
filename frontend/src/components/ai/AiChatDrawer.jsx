@@ -27,22 +27,22 @@ import {
   MenuItemGroup, 
   MenuItemGroupLabel, 
   MenuSeparator 
-} from '@/frontend/components/ui/menu';
+} from '@/components/ui/menu';
 
-import { Button } from '@/frontend/src/components/ui/button';
-import { Input } from '@/frontend/src/components/ui/input';
-import { ProgressLinear } from '@/frontend/src/components/ui/progress-linear';
+import { Button } from '@/src/components/ui/button';
+import { Input } from '@/src/components/ui/input';
+import { ProgressLinear } from '@/src/components/ui/progress-linear';
 import { 
   Message, 
   MessageAvatar, 
   MessageContent, 
   MessageHeader 
-} from '@/frontend/components/ui/message';
-import { MessageScroller } from '@/frontend/components/ui/message-scroller';
-import { Bubble, BubbleContent } from '@/frontend/components/ui/bubble';
-import { Avatar, AvatarFallback } from '@/frontend/src/components/ui/avatar';
-import { Marker, MarkerIcon, MarkerContent } from '@/frontend/components/ui/marker';
-import { Spinner } from '@/frontend/components/ui/spinner';
+} from '@/components/ui/message';
+import { MessageScroller } from '@/components/ui/message-scroller';
+import { Bubble, BubbleContent } from '@/components/ui/bubble';
+import { Avatar, AvatarFallback } from '@/src/components/ui/avatar';
+import { Marker, MarkerIcon, MarkerContent } from '@/components/ui/marker';
+import { Spinner } from '@/components/ui/spinner';
 import { 
   Empty, 
   EmptyHeader, 
@@ -50,8 +50,8 @@ import {
   EmptyTitle, 
   EmptyDescription, 
   EmptyContent 
-} from '@/frontend/src/components/ui/empty';
-import { cn } from '@/frontend/lib/utils';
+} from '@/src/components/ui/empty';
+import { cn } from '@/lib/utils';
 import { useUI, useAuth, useAiProposal } from '../../context/index.jsx';
 
 export default function AiChatDrawer(props = {}) {

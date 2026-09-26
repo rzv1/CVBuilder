@@ -6,17 +6,17 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { Button } from '@/frontend/src/components/ui/button';
-import { Badge } from '@/frontend/src/components/ui/badge';
-import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/frontend/src/components/ui/accordion';
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/frontend/src/components/ui/empty';
-import { Field, FieldLabel } from '@/frontend/src/components/ui/field';
+import { Button } from '@/src/components/ui/button';
+import { Badge } from '@/src/components/ui/badge';
+import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/src/components/ui/accordion';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/src/components/ui/empty';
+import { Field, FieldLabel } from '@/src/components/ui/field';
 import {
   Editable,
   EditableArea,
   EditableInput,
   EditablePreview,
-} from '@/frontend/src/components/ui/editable';
+} from '@/src/components/ui/editable';
 import { useSortable } from '@dnd-kit/react/sortable';
 import {
   TagsInput,
@@ -28,8 +28,8 @@ import {
   TagsInputItemInput,
   TagsInputInput,
   TagsInputClearTrigger
-} from '@/frontend/src/components/ui/tags-input';
-import { useCv } from '@/frontend/src/context/index.jsx';
+} from '@/src/components/ui/tags-input';
+import { useCv } from '@/src/context/index.jsx';
 
 export default function SkillsSection() {
   const { cvData, handleUpdateCvData } = useCv();

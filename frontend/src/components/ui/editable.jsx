@@ -1,7 +1,7 @@
 "use client";;
 import { Editable as EditablePrimitive } from "@ark-ui/react/editable";
-import { buttonVariants } from "@/frontend/components/ui/button";
-import { cn } from "@/frontend/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const Editable = ({
   className,

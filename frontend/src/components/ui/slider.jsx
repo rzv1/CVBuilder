@@ -5,7 +5,7 @@ import {
   useSliderContext,
 } from "@ark-ui/react/slider";
 
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export { useSlider, useSliderContext };
 

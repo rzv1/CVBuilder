@@ -5,7 +5,7 @@ import {
   useTagsInputContext,
 } from "@ark-ui/react/tags-input";
 import { XIcon } from "lucide-react";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const TagsInput = ({
   className,

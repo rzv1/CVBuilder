@@ -1,6 +1,6 @@
 "use client";;
 import { ark } from "@ark-ui/react/factory";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Input = ({
   className,

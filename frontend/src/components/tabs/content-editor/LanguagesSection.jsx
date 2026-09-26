@@ -7,18 +7,18 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { Button } from '@/frontend/src/components/ui/button';
-import { Badge } from '@/frontend/src/components/ui/badge';
-import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/frontend/src/components/ui/accordion';
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/frontend/src/components/ui/empty';
-import { Field, FieldLabel } from '@/frontend/src/components/ui/field';
-import { Separator } from '@/frontend/src/components/ui/separator';
+import { Button } from '@/src/components/ui/button';
+import { Badge } from '@/src/components/ui/badge';
+import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/src/components/ui/accordion';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/src/components/ui/empty';
+import { Field, FieldLabel } from '@/src/components/ui/field';
+import { Separator } from '@/src/components/ui/separator';
 import {
   Editable,
   EditableArea,
   EditableInput,
   EditablePreview,
-} from '@/frontend/src/components/ui/editable';
+} from '@/src/components/ui/editable';
 import { useSortable } from '@dnd-kit/react/sortable';
 import {
   Select,
@@ -31,7 +31,7 @@ import {
   SelectItem,
   SelectItemText,
   SelectItemIndicator
-} from '@/frontend/src/components/ui/select';
+} from '@/src/components/ui/select';
 
 const proficiencyLevels = [
   { value: 'Native / Bilingual', label: 'Native / Bilingual' },
@@ -40,7 +40,7 @@ const proficiencyLevels = [
   { value: 'Limited Working (B1)', label: 'Limited Working (B1)' },
   { value: 'Elementary (A1 / A2)', label: 'Elementary (A1 / A2)' }
 ];
-import { useCv } from '@/frontend/src/context/index.jsx';
+import { useCv } from '@/src/context/index.jsx';
 
 export default function LanguagesSection() {
   const { cvData, handleUpdateCvData } = useCv();

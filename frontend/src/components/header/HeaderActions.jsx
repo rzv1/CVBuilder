@@ -36,6 +36,44 @@ import { cn } from '@/lib/utils';
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
+// Helper to downscale and compress avatar to guarantee instant storage persistence
+const compressImage = (dataUrl, maxWidth = 300, maxHeight = 300, quality = 0.85) => {
+  return new Promise((resolve) => {
+    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth || height > maxHeight) {
+        if (width / height > maxWidth / maxHeight) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        } else {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+};
+
 export default function HeaderActions(props = {}) {
   const auth = useAuth();
   const ui = useUI();
@@ -50,6 +88,7 @@ export default function HeaderActions(props = {}) {
   const isAuthOpen = props.isAuthOpen ?? auth.isAuthModalOpen;
   const setIsAuthOpen = props.setIsAuthOpen ?? auth.setIsAuthModalOpen;
 
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [nameInput, setNameInput] = useState(currentUser?.name || '');
   const [avatar, setAvatar] = useState(currentUser?.avatar || '');
@@ -72,18 +111,21 @@ export default function HeaderActions(props = {}) {
     setNameInput(currentUser?.name || '');
     setAvatar(currentUser?.avatar || '');
     setErrorMsg('');
+    if (!currentUser) {
+      setAuthMode('login');
+    }
   }, [currentUser, isAuthOpen]);
 
   const handleAvatarChange = (details) => {
     if (details?.acceptedFiles && details.acceptedFiles.length > 0) {
       const file = details.acceptedFiles[0];
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setAvatar(event.target?.result || '');
+      reader.onload = async (event) => {
+        const raw = event.target?.result || '';
+        const compressed = await compressImage(raw);
+        setAvatar(compressed);
       };
       reader.readAsDataURL(file);
-    } else {
-      setAvatar('');
     }
   };
 
@@ -99,15 +141,25 @@ export default function HeaderActions(props = {}) {
     setErrorMsg('');
 
     try {
-      const mutation = props.registerMutation ?? auth.registerMutation;
-      const data = await mutation.mutateAsync({ name, avatar });
+      let data;
+      if (currentUser) {
+        const updateMut = props.updateMutation ?? auth.updateMutation;
+        data = await updateMut.mutateAsync({ id: currentUser.id, name, avatar });
+      } else if (authMode === 'login') {
+        const loginMut = props.loginMutation ?? auth.loginMutation;
+        data = await loginMut.mutateAsync({ name });
+      } else {
+        const regMut = props.registerMutation ?? auth.registerMutation;
+        data = await regMut.mutateAsync({ name, avatar });
+      }
+
       if (data?.success && data?.user) {
         if (onUserAuth) {
           onUserAuth(data.user);
         }
         setIsAuthOpen(false);
       } else {
-        setErrorMsg(data?.error || 'Eroare la înregistrare/autentificare.');
+        setErrorMsg(data?.error || (authMode === 'login' ? 'Eroare la conectare.' : 'Eroare la înregistrare.'));
       }
     } catch (err) {
       setErrorMsg(err?.message || 'Nu s-a putut conecta la server. Verificați conexiunea.');
@@ -166,8 +218,12 @@ export default function HeaderActions(props = {}) {
             title="Meniu Acțiuni"
             aria-label="Deschide meniu acțiuni"
           >
-            <MenuIcon className="size-4 text-slate-300" />
-            <span className="text-xs font-semibold">Meniu</span>
+            {currentUser?.avatar ? (
+              <img src={currentUser.avatar} alt={currentUser.name} className="size-4.5 rounded-full object-cover ring-1 ring-indigo-400/50" />
+            ) : (
+              <MenuIcon className="size-4 text-slate-300" />
+            )}
+            <span className="text-xs font-semibold">{currentUser?.name ? currentUser.name : 'Meniu'}</span>
           </Button>
         </MenuTrigger>
 
@@ -269,18 +325,24 @@ export default function HeaderActions(props = {}) {
         <DialogPopup>
           <DialogHeader>
             <DialogTitle>
-              {currentUser ? 'Profil Utilizator' : 'Autentificare / Înregistrare'}
+              {currentUser
+                ? 'Profil Utilizator'
+                : authMode === 'login'
+                ? 'Conectare în cont'
+                : 'Înregistrare cont nou'}
             </DialogTitle>
             <DialogDescription>
               {currentUser
                 ? 'Gestionează-ți contul și creditele AI'
-                : 'Conectează-te pentru a primi 100 credite AI cadou'}
+                : authMode === 'login'
+                ? 'Introdu numele de utilizator pentru a intra în cont'
+                : 'Creează un cont nou pentru a primi 100 credite AI cadou'}
             </DialogDescription>
           </DialogHeader>
 
           <DialogPanel>
             <form onSubmit={handleAuthSubmit} id="user-auth-form" className="flex flex-col gap-4">
-              {!currentUser ? (
+              {!currentUser && authMode === 'register' && (
                 <Item>
                   <ItemMedia>
                     <Zap className="size-4" />
@@ -292,7 +354,9 @@ export default function HeaderActions(props = {}) {
                     </ItemDescription>
                   </ItemContent>
                 </Item>
-              ) : (
+              )}
+
+              {currentUser && (
                 <Item>
                   <ItemMedia>
                     {currentUser.avatar ? (
@@ -313,96 +377,116 @@ export default function HeaderActions(props = {}) {
                 </Item>
               )}
 
-              {/* Avatar Photo Upload */}
-              <div className="flex flex-col items-center justify-center w-full py-1">
-                <FileUpload
-                  accept={{ "image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"] }}
-                  className="w-full max-w-xs flex-col items-center gap-4"
-                  maxFileSize={AVATAR_MAX_BYTES}
-                  maxFiles={1}
-                  onFileChange={handleAvatarChange}
-                >
-                  <FileUploadLabel className="sr-only">Avatar photo</FileUploadLabel>
-                  <div className="relative size-40 sm:size-48 shrink-0">
-                    <FileUploadContext>
-                      {({ acceptedFiles }) => {
-                        if (acceptedFiles.length <= 0) {
+              {/* Avatar Photo Upload - available for current user or when registering */}
+              {(currentUser || authMode === 'register') && (
+                <div className="flex flex-col items-center justify-center w-full py-1">
+                  <FileUpload
+                    accept={{ "image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"] }}
+                    className="w-full max-w-xs flex-col items-center gap-4"
+                    maxFileSize={AVATAR_MAX_BYTES}
+                    maxFiles={1}
+                    onFileChange={handleAvatarChange}
+                  >
+                    <FileUploadLabel className="sr-only">Avatar photo</FileUploadLabel>
+                    <div className="relative size-40 sm:size-48 shrink-0">
+                      <FileUploadContext>
+                        {({ acceptedFiles }) => {
+                          if (acceptedFiles.length <= 0) {
+                            return (
+                              <FileUploadDropzone
+                                className={cn(
+                                  "cursor-pointer flex size-40 sm:size-48 flex-col items-center justify-center gap-2 rounded-full border-2 border-dashed border-input bg-muted/20 p-4 transition-colors relative overflow-hidden group",
+                                  "hover:bg-muted/35 data-dragging:border-primary data-dragging:bg-primary/5",
+                                )}
+                              >
+                                {avatar ? (
+                                  <>
+                                    <img src={avatar} alt="Avatar" className="size-full object-cover absolute inset-0 rounded-full" />
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-2">
+                                      <UserRoundIcon className="size-8 mb-1" />
+                                      <span className="text-xs text-center font-medium">Schimbă poza</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserRoundIcon className="size-12 text-muted-foreground" />
+                                    <span className="px-2 text-center text-muted-foreground text-xs leading-tight">
+                                      Tap or drop image
+                                    </span>
+                                  </>
+                                )}
+                              </FileUploadDropzone>
+                            );
+                          }
+
                           return (
-                            <FileUploadDropzone
+                            <FileUploadItemGroup
                               className={cn(
-                                "cursor-pointer flex size-40 sm:size-48 flex-col items-center justify-center gap-2 rounded-full border-2 border-dashed border-input bg-muted/20 p-4 transition-colors relative overflow-hidden group",
-                                "hover:bg-muted/35 data-dragging:border-primary data-dragging:bg-primary/5",
+                                "absolute inset-0 m-0 flex items-center justify-center p-0",
                               )}
                             >
-                              {avatar ? (
-                                <>
-                                  <img src={avatar} alt="Avatar" className="size-full object-cover absolute inset-0 rounded-full" />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-2">
-                                    <UserRoundIcon className="size-8 mb-1" />
-                                    <span className="text-xs text-center font-medium">Schimbă poza</span>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <UserRoundIcon className="size-12 text-muted-foreground" />
-                                  <span className="px-2 text-center text-muted-foreground text-xs leading-tight">
-                                    Tap or drop image
-                                  </span>
-                                </>
-                              )}
-                            </FileUploadDropzone>
+                              {acceptedFiles.map((file) => (
+                                <FileUploadItem
+                                  key={`${file.name}-${file.size}`}
+                                  className="relative size-full max-h-40 sm:max-h-48 max-w-40 sm:max-w-48 border-0 bg-transparent p-0 shadow-none"
+                                  file={file}
+                                >
+                                  <FileUploadItemPreview
+                                    className="size-full overflow-hidden rounded-full border-0"
+                                    type="image/*"
+                                  >
+                                    <FileUploadItemPreviewImage className="size-full max-h-none max-w-none border-0 object-cover" />
+                                  </FileUploadItemPreview>
+                                  <FileUploadItemDeleteTrigger
+                                    aria-label={`Remove ${file.name}`}
+                                    className="absolute top-4 right-3 z-10 rounded-full bg-background p-1 hover:bg-muted"
+                                  >
+                                    <XIcon className="stroke-[2.5]" />
+                                  </FileUploadItemDeleteTrigger>
+                                </FileUploadItem>
+                              ))}
+                            </FileUploadItemGroup>
                           );
-                        }
-
-                        return (
-                          <FileUploadItemGroup
-                            className={cn(
-                              "absolute inset-0 m-0 flex items-center justify-center p-0",
-                            )}
-                          >
-                            {acceptedFiles.map((file) => (
-                              <FileUploadItem
-                                key={`${file.name}-${file.size}`}
-                                className="relative size-full max-h-40 sm:max-h-48 max-w-40 sm:max-w-48 border-0 bg-transparent p-0 shadow-none"
-                                file={file}
-                              >
-                                <FileUploadItemPreview
-                                  className="size-full overflow-hidden rounded-full border-0"
-                                  type="image/*"
-                                >
-                                  <FileUploadItemPreviewImage className="size-full max-h-none max-w-none border-0 object-cover" />
-                                </FileUploadItemPreview>
-                                <FileUploadItemDeleteTrigger
-                                  aria-label={`Remove ${file.name}`}
-                                  className="absolute top-4 right-3 z-10 rounded-full bg-background p-1 hover:bg-muted"
-                                >
-                                  <XIcon className="stroke-[2.5]" />
-                                </FileUploadItemDeleteTrigger>
-                              </FileUploadItem>
-                            ))}
-                          </FileUploadItemGroup>
-                        );
-                      }}
+                        }}
+                      </FileUploadContext>
+                    </div>
+                    <FileUploadContext>
+                      {({ acceptedFiles }) => (
+                        <div className="flex flex-col items-center gap-1 text-center">
+                          <p className="font-semibold text-base text-foreground leading-tight">
+                            {acceptedFiles.length > 0 || avatar ? "Avatar încărcat" : "Adaugă avatar"}
+                          </p>
+                          <p className="text-muted-foreground text-xs leading-snug">
+                            PNG, JPG optimizat automat
+                          </p>
+                          {avatar && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAvatar('');
+                              }}
+                              className="text-[11px] text-red-400 hover:text-red-300 hover:bg-red-950/30 h-6 px-2 mt-1 cursor-pointer"
+                            >
+                              <XIcon className="size-3 mr-1" /> Elimină poza
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </FileUploadContext>
-                  </div>
-                  <FileUploadContext>
-                    {({ acceptedFiles }) => (
-                      <div className="flex flex-col items-center gap-1 text-center">
-                        <p className="font-semibold text-base text-foreground leading-tight">
-                          {acceptedFiles.length > 0 || avatar ? "Avatar uploaded" : "Add your avatar"}
-                        </p>
-                        <p className="text-muted-foreground text-sm leading-snug">
-                          PNG, JPG up to 2MB
-                        </p>
-                      </div>
-                    )}
-                  </FileUploadContext>
-                </FileUpload>
-              </div>
+                  </FileUpload>
+                </div>
+              )}
 
               <div className="flex flex-col gap-2">
                 <ItemDescription>
-                  {currentUser ? 'Modifică numele contului:' : 'Introduceți numele dumneavoastră:'}
+                  {currentUser
+                    ? 'Modifică numele contului:'
+                    : authMode === 'login'
+                    ? 'Nume utilizator:'
+                    : 'Alege un nume de utilizator:'}
                 </ItemDescription>
                 <InputGroup>
                   <InputGroupAddon align="inline-start">
@@ -427,6 +511,22 @@ export default function HeaderActions(props = {}) {
           </DialogPanel>
 
           <DialogFooter className="flex items-center justify-between">
+            {!currentUser ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAuthMode((prev) => (prev === 'login' ? 'register' : 'login'));
+                  setErrorMsg('');
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer px-2"
+              >
+                {authMode === 'login' ? 'Nu ai cont? Înregistrează-te' : 'Ai deja cont? Conectează-te'}
+              </Button>
+            ) : (
+              <div />
+            )}
             <div className="flex items-center gap-2">
               <DialogClose asChild>
                 <Button type="button" variant="ghost" size="sm">
@@ -440,7 +540,11 @@ export default function HeaderActions(props = {}) {
                 disabled={isLoading}
                 loading={isLoading}
               >
-                {currentUser ? 'Actualizează Cont' : 'Înregistrare / Autentificare'}
+                {currentUser
+                  ? 'Actualizează Cont'
+                  : authMode === 'login'
+                  ? 'Conectare'
+                  : 'Înregistrare'}
               </Button>
             </div>
           </DialogFooter>

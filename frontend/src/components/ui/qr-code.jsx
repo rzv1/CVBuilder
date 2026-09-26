@@ -5,7 +5,7 @@ import {
   useQrCodeContext,
 } from "@ark-ui/react/qr-code";
 
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 const qrCodeLayoutStyle = (
   {

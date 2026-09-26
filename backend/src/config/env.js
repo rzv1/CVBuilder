@@ -9,5 +9,5 @@ const BACKEND_ROOT = path.resolve(__dirname, '../..');
 dotenv.config({ path: path.join(BACKEND_ROOT, '.env') });
 
 export const PORT = 3001;
-export const DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
+export const DATABASE_URL = process.env.DATABASE_URL || 'file:./file-data/dev.db';
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_API_KEY || '';

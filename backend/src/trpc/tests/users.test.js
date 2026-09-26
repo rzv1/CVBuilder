@@ -71,17 +71,27 @@ describe('Users tRPC Integration Tests', () => {
     await expect(caller.users.getById(user.id)).rejects.toThrow();
   });
 
-  it('users.auth should save and update avatar', async () => {
-    const userName = `Avatar User ${Date.now()}`;
+  it('users.auth should create a user and reject duplicate username', async () => {
+    const userName = `Auth User ${Date.now()}`;
     const avatarUrl = 'data:image/png;base64,mockAvatarData';
     const authRes = await caller.users.auth({ name: userName, avatar: avatarUrl });
     expect(authRes.success).toBe(true);
     expect(authRes.user.avatar).toBe(avatarUrl);
 
-    // Updating avatar via users.auth again
-    const updatedAvatar = 'data:image/png;base64,newAvatarData';
-    const updatedRes = await caller.users.auth({ name: userName, avatar: updatedAvatar });
-    expect(updatedRes.success).toBe(true);
-    expect(updatedRes.user.avatar).toBe(updatedAvatar);
+    // Duplicate username should be rejected at auth
+    await expect(caller.users.auth({ name: userName })).rejects.toThrow();
+  });
+
+  it('users.login should log in existing user and reject non-existent user', async () => {
+    const userName = `Login User ${Date.now()}`;
+    await caller.users.auth({ name: userName });
+
+    // Login with existing user
+    const loginRes = await caller.users.login({ name: userName });
+    expect(loginRes.success).toBe(true);
+    expect(loginRes.user.name).toBe(userName);
+
+    // Login with non-existent user should fail
+    await expect(caller.users.login({ name: 'completely_random_non_existent_user_9999' })).rejects.toThrow();
   });
 });

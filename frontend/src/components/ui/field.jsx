@@ -1,7 +1,7 @@
 "use client";;
 import { Field as FieldPrimitive } from "@ark-ui/react/field";
-import { Input } from "@/frontend/components/ui/input";
-import { cn } from "@/frontend/lib/utils";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export const Field = ({
   className,

@@ -12,18 +12,18 @@ import {
   ChevronRightIcon,
   XIcon,
 } from "lucide-react";
-import { Button, buttonVariants } from "@/frontend/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   ButtonGroup,
   ButtonGroupSeparator,
-} from "@/frontend/components/ui/button-group";
-import { Input } from "@/frontend/components/ui/input";
+} from "@/components/ui/button-group";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "@/frontend/components/ui/input-group";
-import { cn } from "@/frontend/lib/utils";
+} from "@/components/ui/input-group";
+import { cn } from "@/lib/utils";
 
 export const safeParseDate = (date) => {
   if (!date) return null;

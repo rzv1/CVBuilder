@@ -1,16 +1,16 @@
 import React from 'react';
 import { User } from 'lucide-react';
-import { Textarea } from '@/frontend/components/ui/textarea';
-import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/frontend/src/components/ui/accordion';
-import { Field, FieldLabel } from '@/frontend/src/components/ui/field';
-import { Separator } from '@/frontend/src/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/src/components/ui/accordion';
+import { Field, FieldLabel } from '@/src/components/ui/field';
+import { Separator } from '@/src/components/ui/separator';
 import {
   Editable,
   EditableArea,
   EditableInput,
   EditablePreview,
-} from '@/frontend/src/components/ui/editable';
-import { useCv } from '@/frontend/src/context/index.jsx';
+} from '@/src/components/ui/editable';
+import { useCv } from '@/src/context/index.jsx';
 
 export default function PersonalDetailsSection() {
   const { cvData, handleUpdateCvData } = useCv();

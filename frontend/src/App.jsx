@@ -15,12 +15,12 @@ import AiChatDrawer from './components/ai/AiChatDrawer.jsx';
 import { useUI } from './context/index.jsx';
 import { Edit3, GitBranch, Users, BarChart3, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
-import { ScrollFade } from '@/frontend/components/ui/scroll-fade';
+import { ScrollFade } from '@/components/ui/scroll-fade';
 import { 
   ResizablePanelGroup, 
   ResizablePanel, 
   ResizableHandle 
-} from '@/frontend/components/ui/resizable';
+} from '@/components/ui/resizable';
 
 export default function App() {
   const {

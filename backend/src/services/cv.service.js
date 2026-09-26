@@ -1,6 +1,6 @@
 import { prisma } from '../config/db.js';
-import { applySmartPatches } from '../../../frontend/src/utils/jsonPatch.js';
-import { projectMasterToVariant, mergeVariantToMaster } from '../../../frontend/src/utils/variantProjection.js';
+import { applySmartPatches } from '../utils/jsonPatch.js';
+import { projectMasterToVariant, mergeVariantToMaster } from '../utils/variantProjection.js';
 import { validateCvPayload } from '../utils/cvValidator.js';
 
 export const DEFAULT_STYLE = {

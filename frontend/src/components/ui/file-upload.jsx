@@ -3,8 +3,8 @@ import {
   FileUpload as FileUploadPrimitive,
   useFileUpload,
 } from "@ark-ui/react/file-upload";
-import { buttonVariants } from "@/frontend/components/ui/button";
-import { cn } from "@/frontend/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export { useFileUpload };
 

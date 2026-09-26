@@ -1,7 +1,7 @@
 "use client";;
 import { Pagination as PaginationPrimitive } from "@ark-ui/react/pagination";
-import { Button, buttonVariants } from "@/frontend/components/ui/button";
-import { cn } from "@/frontend/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const Pagination = ({
   className,

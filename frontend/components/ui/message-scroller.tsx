@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ChevronDown } from "lucide-react";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface MessageScrollerProps
   extends React.HTMLAttributes<HTMLDivElement> {

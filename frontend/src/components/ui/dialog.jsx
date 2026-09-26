@@ -5,7 +5,7 @@ import { Portal } from "@ark-ui/react/portal";
 import { cva } from "class-variance-authority";
 import { XIcon } from "lucide-react";
 
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Dialog = (props) => (
   <DialogPrimitive.Root {...props} />

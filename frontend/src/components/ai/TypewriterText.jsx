@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTypewriter } from './hooks/useTypewriter.js';
+import { SimpleMarkdown } from '../ui/simple-markdown.jsx';
 
 /**
  * Reusable Typewriter / Streaming Text Component using Tailwind CSS and custom hook
@@ -21,19 +22,15 @@ export default function TypewriterText({
     onComplete
   });
 
-  return (
-    <span className="inline break-words">
-      {visibleText.split('\n').map((line, idx, arr) => (
-        <React.Fragment key={idx}>
-          {line}
-          {idx < arr.length - 1 && <br />}
-        </React.Fragment>
-      ))}
-      {(isCurrentlyTyping || isStreaming) && (
-        <span className="inline-block ml-0.5 animate-pulse text-indigo-400 font-mono select-none">
-          ▋
-        </span>
-      )}
+  const cursor = (isCurrentlyTyping || isStreaming) ? (
+    <span className="inline-block ml-0.5 animate-pulse text-indigo-400 font-mono select-none">
+      ▋
     </span>
+  ) : null;
+
+  return (
+    <div className="break-words">
+      <SimpleMarkdown content={visibleText} cursor={cursor} />
+    </div>
   );
 }

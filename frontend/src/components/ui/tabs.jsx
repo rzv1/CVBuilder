@@ -5,7 +5,7 @@ import {
   useTabsContext,
 } from "@ark-ui/react/tabs";
 import { createContext, useContext } from "react";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export { useTabs, useTabsContext };
 

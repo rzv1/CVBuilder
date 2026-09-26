@@ -10,9 +10,9 @@ import {
   QrCode,
   Lock
 } from 'lucide-react';
-import { Button } from '@/frontend/src/components/ui/button';
-import { Badge } from '@/frontend/src/components/ui/badge';
-import { useCv, useUI, useAuth } from '@/frontend/src/context/index.jsx';
+import { Button } from '@/src/components/ui/button';
+import { Badge } from '@/src/components/ui/badge';
+import { useCv, useUI, useAuth } from '@/src/context/index.jsx';
 import {
   Empty,
   EmptyHeader,

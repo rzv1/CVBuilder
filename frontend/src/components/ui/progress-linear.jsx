@@ -5,7 +5,7 @@ import {
   useProgressContext,
 } from "@ark-ui/react/progress";
 
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export { useProgress, useProgressContext };
 

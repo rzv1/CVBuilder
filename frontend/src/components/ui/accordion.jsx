@@ -4,7 +4,7 @@ import {
   useAccordion,
 } from "@ark-ui/react/accordion";
 import { ChevronDownIcon } from "lucide-react";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Accordion = ({
   className,

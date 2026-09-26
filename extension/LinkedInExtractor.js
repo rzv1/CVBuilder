@@ -11,7 +11,7 @@ export function extractJobFromPage() {
     description: '',
     url: window.location.href,
     source: 'web-extension',
-    extractedVia: 'none',
+    extractedVia: 'LinkedInExtractor',
   };
 
   // Helper to sanitize and format HTML to plain text with bullet preservation

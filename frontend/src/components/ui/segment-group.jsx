@@ -4,7 +4,7 @@ import {
   useSegmentGroup,
   useSegmentGroupContext,
 } from "@ark-ui/react/segment-group";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export { useSegmentGroup, useSegmentGroupContext };
 

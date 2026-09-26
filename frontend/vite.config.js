@@ -11,7 +11,7 @@ export default defineConfig({
     alias: {
       '@/components': path.resolve(__dirname, './components'),
       '@/lib': path.resolve(__dirname, './lib'),
-      '@': path.resolve(__dirname, '../')
+      '@': path.resolve(__dirname, './')
     }
   },
   server: {

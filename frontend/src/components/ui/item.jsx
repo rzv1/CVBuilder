@@ -1,8 +1,8 @@
 "use client";;
 import { ark } from "@ark-ui/react/factory";
 import { cva } from "class-variance-authority";
-import { Separator } from "@/frontend/components/ui/separator";
-import { cn } from "@/frontend/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export const ItemGroup = ({
   className,

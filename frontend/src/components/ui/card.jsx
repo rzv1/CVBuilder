@@ -2,7 +2,7 @@
 
 import { ark } from "@ark-ui/react/factory";
 import * as React from "react";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 const Card = ({
   className,

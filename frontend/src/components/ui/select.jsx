@@ -10,9 +10,9 @@ import {
 } from "@ark-ui/react/select";
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
 import { Fragment, useEffect, useMemo } from "react";
-import { Button } from "@/frontend/components/ui/button";
-import { ButtonGroup } from "@/frontend/components/ui/button-group";
-import { cn } from "@/frontend/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { cn } from "@/lib/utils";
 
 export { createListCollection, SelectRootProvider, useListCollection, useSelect, useSelectContext };
 

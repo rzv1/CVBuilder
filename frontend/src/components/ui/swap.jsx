@@ -1,7 +1,7 @@
 "use client";;
 import { Swap as SwapPrimitive } from "@ark-ui/react/swap";
 
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Swap = ({
   className,

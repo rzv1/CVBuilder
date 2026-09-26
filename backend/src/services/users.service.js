@@ -26,21 +26,33 @@ export async function getUserById(userId) {
   }
 }
 
-export async function getOrCreateUserByName(name, avatar) {
+export async function loginUserByName(name) {
   const trimmedName = (name || '').trim();
   if (!trimmedName) {
-    throw new Error('Numele este obligatoriu pentru autentificare.');
+    throw new Error('Numele de utilizator este obligatoriu pentru conectare.');
+  }
+
+  const user = await getUserById(trimmedName);
+  if (!user) {
+    throw new Error('Utilizatorul nu a fost găsit. Te rugăm să îți creezi un cont nou.');
   }
 
   const now = new Date();
-  const existingUser = await getUserById(trimmedName);
+  return await updateUser(user.id, { lastActive: now, status: 'active' });
+}
 
-  if (existingUser) {
-    const updatePayload = { lastActive: now.toISOString(), status: 'active' };
-    if (avatar !== undefined) updatePayload.avatar = avatar;
-    return await updateUser(existingUser.id, updatePayload);
+export async function registerUserByName(name, avatar) {
+  const trimmedName = (name || '').trim();
+  if (!trimmedName) {
+    throw new Error('Numele de utilizator este obligatoriu pentru înregistrare.');
   }
 
+  const existingUser = await getUserById(trimmedName);
+  if (existingUser) {
+    throw new Error('Acest nume de utilizator este deja folosit. Te rugăm să alegi alt nume sau să te conectezi.');
+  }
+
+  const now = new Date();
   const newId = 'usr_' + slugify(trimmedName) + '_' + Math.random().toString(36).substring(2, 7);
 
   try {
@@ -60,7 +72,26 @@ export async function getOrCreateUserByName(name, avatar) {
   }
 }
 
-export const registerUser = getOrCreateUserByName;
+export async function getOrCreateUserByName(name, avatar) {
+  const trimmedName = (name || '').trim();
+  if (!trimmedName) {
+    throw new Error('Numele este obligatoriu pentru autentificare.');
+  }
+
+  const now = new Date();
+  const existingUser = await getUserById(trimmedName);
+
+  if (existingUser) {
+    const updatePayload = { lastActive: now.toISOString(), status: 'active' };
+    if (avatar !== undefined) updatePayload.avatar = avatar;
+    return await updateUser(existingUser.id, updatePayload);
+  }
+
+  return await registerUserByName(trimmedName, avatar);
+}
+
+export const registerUser = registerUserByName;
+export const loginUser = loginUserByName;
 
 export async function updateUser(userId, data) {
   const now = new Date();

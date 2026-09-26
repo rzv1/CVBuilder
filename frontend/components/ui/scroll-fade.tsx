@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface ScrollFadeProps extends React.HTMLAttributes<HTMLDivElement> {
   fadeSize?: "sm" | "md" | "lg";

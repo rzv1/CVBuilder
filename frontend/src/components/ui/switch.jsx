@@ -1,7 +1,7 @@
 "use client";;
 import { Switch as SwitchPrimitive } from "@ark-ui/react/switch";
 
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const SwitchRoot = ({
   children,

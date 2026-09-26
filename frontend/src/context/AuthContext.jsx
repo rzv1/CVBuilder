@@ -9,13 +9,24 @@ export function AuthProvider({ children }) {
   const trpc = useTRPC();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Initialize currentUser from localStorage (reads token and cached user)
+  // Initialize currentUser from localStorage (reads token, cached user, and cached avatar)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('cv_builder_user');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.id && !parsed.avatar) {
+          const cachedAvatar = localStorage.getItem(`cv_builder_avatar_${parsed.id}`);
+          if (cachedAvatar) parsed.avatar = cachedAvatar;
+        }
+        return parsed;
+      }
       const token = localStorage.getItem('cv_builder_token');
-      return token ? { id: token, name: '' } : null;
+      if (token) {
+        const cachedAvatar = localStorage.getItem(`cv_builder_avatar_${token}`);
+        return { id: token, name: '', avatar: cachedAvatar || null };
+      }
+      return null;
     } catch {
       return null;
     }
@@ -32,15 +43,55 @@ export function AuthProvider({ children }) {
   // Sync refreshed server data to currentUser and localStorage token
   useEffect(() => {
     if (userData?.success && userData?.user) {
-      setCurrentUser(userData.user);
-      localStorage.setItem('cv_builder_token', userData.user.id);
-      localStorage.setItem('cv_builder_user', JSON.stringify(userData.user));
+      const updatedUser = { ...userData.user };
+      if (!updatedUser.avatar && updatedUser.id) {
+        try {
+          const cachedAvatar = localStorage.getItem(`cv_builder_avatar_${updatedUser.id}`);
+          if (cachedAvatar) updatedUser.avatar = cachedAvatar;
+        } catch (_) {}
+      }
+      setCurrentUser(updatedUser);
+      try {
+        localStorage.setItem('cv_builder_token', updatedUser.id);
+        localStorage.setItem('cv_builder_user', JSON.stringify(updatedUser));
+        if (updatedUser.avatar) {
+          localStorage.setItem(`cv_builder_avatar_${updatedUser.id}`, updatedUser.avatar);
+        }
+      } catch (err) {
+        console.warn('Eroare la salvarea în localStorage:', err);
+      }
     }
   }, [userData]);
 
-  // Mutation for unified user login / registration via tRPC
+  // Mutation for user registration / auth via tRPC
   const registerMutation = useMutation(
     trpc.users.auth.mutationOptions({
+      onSuccess: (data) => {
+        const user = data?.user || data;
+        if (user) {
+          handleUserAuth(user);
+          setIsAuthModalOpen(false);
+        }
+      },
+    })
+  );
+
+  // Mutation for user login via tRPC
+  const loginMutation = useMutation(
+    trpc.users.login.mutationOptions({
+      onSuccess: (data) => {
+        const user = data?.user || data;
+        if (user) {
+          handleUserAuth(user);
+          setIsAuthModalOpen(false);
+        }
+      },
+    })
+  );
+
+  // Mutation for updating current user profile via tRPC
+  const updateMutation = useMutation(
+    trpc.users.update.mutationOptions({
       onSuccess: (data) => {
         const user = data?.user || data;
         if (user) {
@@ -54,13 +105,31 @@ export function AuthProvider({ children }) {
   const handleUserAuth = (user) => {
     setCurrentUser(user);
     if (user && user.id) {
-      localStorage.setItem('cv_builder_token', user.id);
-      localStorage.setItem('cv_builder_user', JSON.stringify(user));
+      try {
+        localStorage.setItem('cv_builder_token', user.id);
+        localStorage.setItem('cv_builder_user', JSON.stringify(user));
+        if (user.avatar) {
+          localStorage.setItem(`cv_builder_avatar_${user.id}`, user.avatar);
+        } else {
+          localStorage.removeItem(`cv_builder_avatar_${user.id}`);
+        }
+      } catch (err) {
+        console.warn('Eroare salvare sesiune utilizator:', err);
+      }
       queryClient.setQueryData(['user', user.id], { success: true, user });
+      try {
+        queryClient.setQueryData(trpc.users.getById.queryKey(user.id), { success: true, user });
+      } catch (_) {}
+      queryClient.invalidateQueries(trpc.users.getById.queryFilter());
     } else {
-      localStorage.removeItem('cv_builder_token');
-      localStorage.removeItem('cv_builder_user');
-      localStorage.removeItem('cv_builder_content');
+      try {
+        if (currentUser?.id) {
+          localStorage.removeItem(`cv_builder_avatar_${currentUser.id}`);
+        }
+        localStorage.removeItem('cv_builder_token');
+        localStorage.removeItem('cv_builder_user');
+        localStorage.removeItem('cv_builder_content');
+      } catch (_) {}
       queryClient.clear();
     }
   };
@@ -97,7 +166,10 @@ export function AuthProvider({ children }) {
     handleUserAuth,
     handleLogout,
     deductCredit,
+    loginMutation,
     registerMutation,
+    authMutation: registerMutation,
+    updateMutation,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

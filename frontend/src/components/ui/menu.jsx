@@ -6,7 +6,7 @@ import {
   useMenuItemContext,
 } from "@ark-ui/react/menu";
 import { Portal } from "@ark-ui/react/portal";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Menu = ({
   positioning,

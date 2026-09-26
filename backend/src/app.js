@@ -11,7 +11,11 @@ import {
   updateTargetJob,
   deleteTargetJob,
 } from './services/targetJobs.service.js';
-import { getOrCreateUserByName } from './services/users.service.js';
+import { 
+  loginUserByName, 
+  registerUserByName, 
+  getOrCreateUserByName 
+} from './services/users.service.js';
 
 const app = express();
 
@@ -43,14 +47,14 @@ app.use(
   })
 );
 
-// Unified Authentication & User Creation REST Endpoint (Used by Extension)
-const handleUnifiedAuth = async (req, res, next) => {
+// 1. Login REST Endpoint: only verifies user exists and logs in
+const handleLogin = async (req, res, next) => {
   try {
     const name = (req.body?.name || req.body?.username || req.query?.name || req.query?.username || '').trim();
     if (!name) {
       return res.status(400).json({ success: false, error: 'Numele de utilizator este obligatoriu.' });
     }
-    const user = await getOrCreateUserByName(name);
+    const user = await loginUserByName(name);
     return res.json({
       success: true,
       id: user.id,
@@ -58,12 +62,35 @@ const handleUnifiedAuth = async (req, res, next) => {
       user
     });
   } catch (err) {
-    next(err);
+    return res.status(404).json({ success: false, error: err.message });
   }
 };
 
-app.get('/api/users/auth', handleUnifiedAuth);
-app.post('/api/users/auth', handleUnifiedAuth);
+// 2. Auth / Register REST Endpoint: creates new user, disallows already taken names
+const handleAuth = async (req, res, next) => {
+  try {
+    const name = (req.body?.name || req.body?.username || req.query?.name || req.query?.username || '').trim();
+    const avatar = req.body?.avatar || req.query?.avatar;
+    if (!name) {
+      return res.status(400).json({ success: false, error: 'Numele de utilizator este obligatoriu.' });
+    }
+    const user = await registerUserByName(name, avatar);
+    return res.status(201).json({
+      success: true,
+      id: user.id,
+      userId: user.id,
+      user
+    });
+  } catch (err) {
+    return res.status(409).json({ success: false, error: err.message });
+  }
+};
+
+app.get('/api/users/login', handleLogin);
+app.post('/api/users/login', handleLogin);
+
+app.get('/api/users/auth', handleAuth);
+app.post('/api/users/auth', handleAuth);
 
 // REST API for Target Jobs (Used directly by Web Extension)
 app.get('/api/target-jobs', async (req, res, next) => {

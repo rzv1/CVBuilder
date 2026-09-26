@@ -2,12 +2,42 @@ import { router, publicProcedure, TRPCError } from '../trpc.js';
 import { 
   getUsers, 
   getUserById, 
+  loginUserByName,
+  registerUserByName,
   getOrCreateUserByName,
   updateUser, 
   deleteUser
 } from '../../services/users.service.js';
 
 export const usersRouter = router({
+  login: publicProcedure
+    .input((val) => typeof val === 'string' ? { name: val } : val)
+    .mutation(async ({ input }) => {
+      const name = typeof input === 'string' ? input.trim() : (input?.name?.trim() || input?.username?.trim());
+      if (!name) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Numele de utilizator este obligatoriu.',
+        });
+      }
+
+      try {
+        const user = await loginUserByName(name);
+        return {
+          success: true,
+          id: user.id,
+          userId: user.id,
+          message: `Bine ai revenit, ${user.name}!`,
+          user,
+        };
+      } catch (err) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: err.message,
+        });
+      }
+    }),
+
   auth: publicProcedure
     .input((val) => typeof val === 'string' ? { name: val } : val)
     .mutation(async ({ input }) => {
@@ -16,22 +46,22 @@ export const usersRouter = router({
       if (!name) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'You must provide a username.',
+          message: 'Numele de utilizator este obligatoriu.',
         });
       }
 
       try {
-        const user = await getOrCreateUserByName(name, avatar);
+        const user = await registerUserByName(name, avatar);
         return {
           success: true,
           id: user.id,
           userId: user.id,
-          message: `Welcome, ${user.name}!`,
+          message: `Bun venit, ${user.name}!`,
           user,
         };
       } catch (err) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
+          code: 'CONFLICT',
           message: err.message,
         });
       }
@@ -45,20 +75,22 @@ export const usersRouter = router({
       if (!name) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Numele este obligatoriu pentru înregistrare.',
+          message: 'Numele de utilizator este obligatoriu.',
         });
       }
 
       try {
-        const user = await getOrCreateUserByName(name, avatar);
+        const user = await registerUserByName(name, avatar);
         return {
           success: true,
-          message: `Bine ai revenit, ${user.name}!`,
+          id: user.id,
+          userId: user.id,
+          message: `Bun venit, ${user.name}!`,
           user,
         };
       } catch (err) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
+          code: 'CONFLICT',
           message: err.message,
         });
       }

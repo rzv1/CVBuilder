@@ -7,28 +7,28 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { Button } from '@/frontend/src/components/ui/button';
-import { Badge } from '@/frontend/src/components/ui/badge';
+import { Button } from '@/src/components/ui/button';
+import { Badge } from '@/src/components/ui/badge';
 import { Input } from '../../ui/input';
-import { Textarea } from '@/frontend/components/ui/textarea';
-import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/frontend/src/components/ui/accordion';
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/frontend/src/components/ui/empty';
+import { Textarea } from '@/components/ui/textarea';
+import { AccordionItem, AccordionTrigger, AccordionPanel } from '@/src/components/ui/accordion';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/src/components/ui/empty';
 import {
   DatePicker,
   DatePickerLabel,
   DatePickerInput,
   DatePickerCalendar,
-} from '@/frontend/src/components/ui/date-picker';
-import { Field, FieldLabel } from '@/frontend/src/components/ui/field';
-import { Separator } from '@/frontend/src/components/ui/separator';
+} from '@/src/components/ui/date-picker';
+import { Field, FieldLabel } from '@/src/components/ui/field';
+import { Separator } from '@/src/components/ui/separator';
 import {
   Editable,
   EditableArea,
   EditableInput,
   EditablePreview,
-} from '@/frontend/src/components/ui/editable';
+} from '@/src/components/ui/editable';
 import { useSortable } from '@dnd-kit/react/sortable';
-import { useCv } from '@/frontend/src/context/index.jsx';
+import { useCv } from '@/src/context/index.jsx';
 
 export default function EducationSection() {
   const { cvData, handleUpdateCvData } = useCv();

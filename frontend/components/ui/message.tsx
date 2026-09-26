@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 const messageVariants = cva("flex w-full gap-2.5 transition-opacity", {
   variants: {

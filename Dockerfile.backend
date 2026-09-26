@@ -1,0 +1,23 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install OpenSSL 1.1 (required for SQLite on Debian 12/Node 20)
+RUN apk add --no-cache openssl
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Docker layer caching - copy first deps list so that this layer is only recreated when pnpm-lock.yaml changes
+COPY backend/pnpm-*.yaml ./
+COPY backend/package.json ./
+COPY backend/prisma ./prisma
+
+# Install dependencies
+RUN pnpm install
+RUN pnpm exec prisma generate
+
+# Copy app source code
+COPY backend/ ./
+
+EXPOSE 3001
+CMD ["pnpm", "start"]

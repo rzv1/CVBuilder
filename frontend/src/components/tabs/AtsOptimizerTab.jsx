@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-import { Card } from '@/frontend/src/components/ui/card';
-import { Button } from '@/frontend/src/components/ui/button';
-import { Badge } from '@/frontend/src/components/ui/badge';
-import { Textarea } from '@/frontend/components/ui/textarea';
-import { ProgressCircular } from '@/frontend/src/components/ui/progress-circular';
+import { Card } from '@/src/components/ui/card';
+import { Button } from '@/src/components/ui/button';
+import { Badge } from '@/src/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { ProgressCircular } from '@/src/components/ui/progress-circular';
 import {
   Empty,
   EmptyHeader,
@@ -33,7 +33,7 @@ import {
   EmptyDescription,
   EmptyContent,
 } from '../ui/empty';
-import { useCv, useAuth, useTRPC, useAiProposal } from '@/frontend/src/context/index.jsx';
+import { useCv, useAuth, useTRPC, useAiProposal } from '@/src/context/index.jsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { analyzeAtsMatch } from '../../utils/atsAnalyzer.js';
 import { sendChatMessageApi } from '../ai/api/aiApi.js';

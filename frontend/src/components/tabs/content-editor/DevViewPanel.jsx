@@ -11,10 +11,10 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
-import { Button } from '@/frontend/src/components/ui/button';
-import { Badge } from '@/frontend/src/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/frontend/src/components/ui/tabs';
-import { Swap, SwapIndicator } from '@/frontend/src/components/ui/swap';
+import { Button } from '@/src/components/ui/button';
+import { Badge } from '@/src/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
+import { Swap, SwapIndicator } from '@/src/components/ui/swap';
 import { useDevView } from './hooks/useDevView.jsx';
 
 export default function DevViewPanel(props = {}) {

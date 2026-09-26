@@ -1,7 +1,7 @@
 "use client";;
 import { ark } from "@ark-ui/react/factory";
 import { cva } from "class-variance-authority";
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Empty = ({
   className,

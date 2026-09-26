@@ -130,6 +130,7 @@ export default function App() {
   const [extractedJob, setExtractedJob] = useState(null)
   const [currentTabUrl, setCurrentTabUrl] = useState("")
   const [siteIcon, setSiteIcon] = useState(reactLogo)
+  const [loginError, setLoginError] = useState("")
 
   // Revoke previous blob URL to prevent memory leaks
   useEffect(() => {
@@ -251,34 +252,31 @@ export default function App() {
     init()
   }, [])
 
-  // 1. Unified Login / Register fetch function by username
+  // 1. Login fetch function by username (calls only /api/users/login)
   const handleLogin = async (e) => {
     e.preventDefault()
     const name = loginInput.trim()
     if (!name || isLoggingIn) return
 
     setIsLoggingIn(true)
+    setLoginError("")
     let authenticatedUser = null
     let lastError = null
 
     for (const base of BACKEND_BASE_URLS) {
       try {
-        const res = await fetch(`${base}/api/users/auth`, {
+        const res = await fetch(`${base}/api/users/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name }),
         })
 
-        if (res.ok) {
-          const data = await res.json()
-          if (data?.success && data?.user) {
-            authenticatedUser = data.user
-            break
-          } else {
-            lastError = new Error(data?.error || 'Eroare la autentificare')
-          }
+        const data = await res.json().catch(() => null)
+        if (res.ok && data?.success && data?.user) {
+          authenticatedUser = data.user
+          break
         } else {
-          lastError = new Error(`Status ${res.status}`)
+          lastError = new Error(data?.error || `Eroare la conectare (Status ${res.status})`)
         }
       } catch (networkErr) {
         lastError = networkErr
@@ -290,6 +288,7 @@ export default function App() {
     if (authenticatedUser) {
       setUser(authenticatedUser)
       setLoginInput("")
+      setLoginError("")
       localStorage.setItem('cv_builder_token', authenticatedUser.id)
       localStorage.setItem('cv_builder_user', JSON.stringify(authenticatedUser))
       if (typeof chrome !== 'undefined' && chrome.storage?.local) {
@@ -300,6 +299,7 @@ export default function App() {
       }
     } else {
       console.warn('Eroare autentificare backend:', lastError)
+      setLoginError(lastError?.message || 'Utilizatorul nu a fost găsit.')
     }
   }
 
@@ -516,7 +516,10 @@ export default function App() {
                   placeholder="Login with username"
                   type="text"
                   value={loginInput}
-                  onChange={(e) => setLoginInput(e.target.value)}
+                  onChange={(e) => {
+                    setLoginInput(e.target.value)
+                    if (loginError) setLoginError("")
+                  }}
                   className="h-7 text-xs placeholder:text-muted-foreground/60"
                   disabled={isLoggingIn}
                 />
@@ -537,6 +540,11 @@ export default function App() {
                   </Button>
                 </InputGroupAddon>
               </InputGroup>
+              {loginError && (
+                <p className="text-[10px] text-destructive text-center mt-1 font-medium px-2 leading-tight">
+                  {loginError}
+                </p>
+              )}
             </form>
           )}
         </div>

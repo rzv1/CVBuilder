@@ -3,7 +3,7 @@ import { Clipboard as ClipboardPrimitive } from "@ark-ui/react/clipboard";
 import { cva } from "class-variance-authority";
 import { Check, Copy } from "lucide-react";
 
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 const clipboardRootVariants = cva("w-full max-w-full", {
   defaultVariants: {

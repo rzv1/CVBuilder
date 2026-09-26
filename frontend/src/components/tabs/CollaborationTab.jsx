@@ -10,11 +10,11 @@ import {
   UserCheck,
   Lock
 } from 'lucide-react';
-import { Card } from '@/frontend/src/components/ui/card';
-import { Button } from '@/frontend/src/components/ui/button';
-import { Badge } from '@/frontend/src/components/ui/badge';
-import { Input } from '@/frontend/src/components/ui/input';
-import { useCv, useAuth } from '@/frontend/src/context/index.jsx';
+import { Card } from '@/src/components/ui/card';
+import { Button } from '@/src/components/ui/button';
+import { Badge } from '@/src/components/ui/badge';
+import { Input } from '@/src/components/ui/input';
+import { useCv, useAuth } from '@/src/context/index.jsx';
 import {
   Empty,
   EmptyHeader,

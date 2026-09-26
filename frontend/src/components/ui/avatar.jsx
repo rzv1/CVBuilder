@@ -2,7 +2,7 @@
 import { Avatar as AvatarPrimitive } from "@ark-ui/react/avatar";
 import { ark } from "@ark-ui/react/factory";
 
-import { cn } from "@/frontend/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Avatar = ({
   className,
