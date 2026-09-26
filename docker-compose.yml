@@ -1,8 +1,6 @@
 services:
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: ghcr.io/rzv1/cvbuilder-backend:latest
     container_name: cvbuilder-backend
     restart: unless-stopped
     environment:
@@ -15,9 +13,7 @@ services:
       - internal-net
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: ghcr.io/rzv1/cvbuilder-frontend:latest
     container_name: cvbuilder-frontend
     restart: unless-stopped
     depends_on:
